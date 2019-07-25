@@ -233,13 +233,13 @@ contract('Poap', function() {
 
       it('should allow users to burn their own tokens', async function() {
         let alice = accounts[1];
-        let EventId = 1;
+        let eventId = 1;
 
         // Save initial token balance of Alice
         let initialBalance = parseInt(await proxy.methods.balanceOf(alice).call());
 
         // Mint one new token for the Alice
-        let txInfo = await proxy.methods.mintToken(EventId, alice).send({from: admin, gas: 1000000});
+        let txInfo = await proxy.methods.mintToken(eventId, alice).send({from: admin, gas: 1000000});
 
         // Get new minted token id
         let mintedTokenId = txInfo.events.EventToken.returnValues.tokenId;
@@ -255,10 +255,10 @@ contract('Poap', function() {
       it('should NOT allow users to burn not owned or approved tokens', async function() {
         let alice = accounts[1];
         let bob = accounts[2];
-        let EventId = 1;
+        let eventId = 1;
 
         // Mint one new token for the Alice
-        let txInfo = await proxy.methods.mintToken(EventId, alice).send({from: admin, gas: 1000000});
+        let txInfo = await proxy.methods.mintToken(eventId, alice).send({from: admin, gas: 1000000});
 
         // Get new minted token id
         let mintedTokenId = txInfo.events.EventToken.returnValues.tokenId;
@@ -275,10 +275,10 @@ contract('Poap', function() {
       it('should allow users to burn approved tokens', async function() {
         let alice = accounts[1];
         let charly = accounts[3];
-        let EventId = 1;
+        let eventId = 1;
 
         // Mint one new token for the Alice
-        let txInfo = await proxy.methods.mintToken(EventId, alice).send({from: admin, gas: 1000000});
+        let txInfo = await proxy.methods.mintToken(eventId, alice).send({from: admin, gas: 1000000});
 
         // Get new minted token id
         let mintedTokenId = txInfo.events.EventToken.returnValues.tokenId;
@@ -286,7 +286,7 @@ contract('Poap', function() {
         // Approve Charly to handle Alice minted token
         await proxy.methods.approve(charly, mintedTokenId).send({from: alice, gas: 1000000});
 
-        // Burn Alice token as Bob
+        // Burn Alice token as Charly (approved account)
         await proxy.methods.burn(mintedTokenId).send({from: charly, gas: 1000000});
 
         assert(true, 'token was burned from a approved user');
@@ -294,13 +294,13 @@ contract('Poap', function() {
 
       it('should allow admins to burn any tokens', async function() {
         let alice = accounts[1];
-        let EventId = 1;
+        let eventId = 1;
 
         // Save initial token balance of Alice
         let initialBalance = parseInt(await proxy.methods.balanceOf(alice).call());
 
         // Mint one new token for the Alice
-        let txInfo = await proxy.methods.mintToken(EventId, alice).send({from: admin, gas: 1000000});
+        let txInfo = await proxy.methods.mintToken(eventId, alice).send({from: admin, gas: 1000000});
 
         // Get new minted token id
         let mintedTokenId = txInfo.events.EventToken.returnValues.tokenId;
@@ -311,6 +311,29 @@ contract('Poap', function() {
         // Check that Alice has the same amount of tokens as started
         let finalBalance = parseInt(await proxy.methods.balanceOf(alice).call());
         expect(finalBalance).to.eq(initialBalance);
+      });
+
+      it('should NOT allow event minters to burn any tokens', async function() {
+        let alice = accounts[1];
+        let dave = accounts[4];
+        let eventId = 1;
+
+        // Add Dave as event minter of token event
+        await proxy.methods.addEventMinter(eventId, dave).send({ from: admin });
+
+        // Mint one new token for the Alice
+        let txInfo = await proxy.methods.mintToken(eventId, alice).send({from: admin, gas: 1000000});
+
+        // Get new minted token id
+        let mintedTokenId = txInfo.events.EventToken.returnValues.tokenId;
+
+        // Burn minted token as Dave (event minter)
+        try {
+          await proxy.methods.burn(mintedTokenId).send({from: dave, gas: 1000000});
+        } catch (err) {
+          return;
+        }
+        assert(false, 'token was burned for a non owner or approved user');
       });
 
     });
