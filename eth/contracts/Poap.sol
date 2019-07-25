@@ -144,7 +144,7 @@ contract Poap is Initializable, ERC721, ERC721Enumerable, PoapRoles, PoapPausabl
      * @param tokenId uint256 id of the ERC721 token to be burned.
      */
     function burn(uint256 tokenId) public {
-        require(_isApprovedOrOwner(msg.sender, tokenId));
+        require(_isApprovedOrOwner(msg.sender, tokenId) || isAdmin(msg.sender));
         _burn(tokenId);
     }    
 

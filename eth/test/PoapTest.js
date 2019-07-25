@@ -9,10 +9,10 @@ const Poap = Contracts.getFromLocal('Poap');
 // const ERC20 = Contracts.getFromNodeModules("openzeppelin-eth", "ERC20");
 
 async function expectError(f) {
-  fail = true;
+  let fail = true;
   try {
     await f();
-  } catch {
+  } catch (err) {
     fail = false;
   }
   if (fail) {
@@ -37,7 +37,7 @@ contract('Poap', function() {
     project = await TestHelper();
     proxy = await project.createProxy(Poap, {
       initMethod: 'initialize',
-      initArgs: ['Poap', 'POAP', 'https://poap.xyz/', [accounts[9]]],
+      initArgs: ['Poap', 'POAP', 'https://poap.xyz/', [admin]],
     });
   });
 
@@ -225,6 +225,95 @@ contract('Poap', function() {
       });
     });
 
+  });
+
+  describe('Token Burning', function() {
+
+    describe('burn', function() {
+
+      it('should allow users to burn their own tokens', async function() {
+        let alice = accounts[1];
+        let EventId = 1;
+
+        // Save initial token balance of Alice
+        let initialBalance = parseInt(await proxy.methods.balanceOf(alice).call());
+
+        // Mint one new token for the Alice
+        let txInfo = await proxy.methods.mintToken(EventId, alice).send({from: admin, gas: 1000000});
+
+        // Get new minted token id
+        let mintedTokenId = txInfo.events.EventToken.returnValues.tokenId;
+
+        // Burn minted token as Alice
+        await proxy.methods.burn(mintedTokenId).send({from: alice, gas: 1000000});
+
+        // Check that Alice has the same amount of tokens as started
+        let finalBalance = parseInt(await proxy.methods.balanceOf(alice).call());
+        expect(finalBalance).to.eq(initialBalance);
+      });
+
+      it('should NOT allow users to burn not owned or approved tokens', async function() {
+        let alice = accounts[1];
+        let bob = accounts[2];
+        let EventId = 1;
+
+        // Mint one new token for the Alice
+        let txInfo = await proxy.methods.mintToken(EventId, alice).send({from: admin, gas: 1000000});
+
+        // Get new minted token id
+        let mintedTokenId = txInfo.events.EventToken.returnValues.tokenId;
+
+        // Burn minted token as Bob
+        try {
+          await proxy.methods.burn(mintedTokenId).send({from: bob, gas: 1000000});
+        } catch (err) {
+          return;
+        }
+        assert(false, 'token was burned for a non owner or approved user');
+      });
+
+      it('should allow users to burn approved tokens', async function() {
+        let alice = accounts[1];
+        let charly = accounts[3];
+        let EventId = 1;
+
+        // Mint one new token for the Alice
+        let txInfo = await proxy.methods.mintToken(EventId, alice).send({from: admin, gas: 1000000});
+
+        // Get new minted token id
+        let mintedTokenId = txInfo.events.EventToken.returnValues.tokenId;
+
+        // Approve Charly to handle Alice minted token
+        await proxy.methods.approve(charly, mintedTokenId).send({from: alice, gas: 1000000});
+
+        // Burn Alice token as Bob
+        await proxy.methods.burn(mintedTokenId).send({from: charly, gas: 1000000});
+
+        assert(true, 'token was burned from a approved user');
+      });
+
+      it('should allow admins to burn any tokens', async function() {
+        let alice = accounts[1];
+        let EventId = 1;
+
+        // Save initial token balance of Alice
+        let initialBalance = parseInt(await proxy.methods.balanceOf(alice).call());
+
+        // Mint one new token for the Alice
+        let txInfo = await proxy.methods.mintToken(EventId, alice).send({from: admin, gas: 1000000});
+
+        // Get new minted token id
+        let mintedTokenId = txInfo.events.EventToken.returnValues.tokenId;
+
+        // Burn minted token as Admin
+        await proxy.methods.burn(mintedTokenId).send({from: admin, gas: 1000000});
+
+        // Check that Alice has the same amount of tokens as started
+        let finalBalance = parseInt(await proxy.methods.balanceOf(alice).call());
+        expect(finalBalance).to.eq(initialBalance);
+      });
+
+    });
   });
 
   // mintToken:
