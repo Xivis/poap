@@ -9,6 +9,7 @@ import FooterShadow from '../images/footer-shadow.svg';
 import FooterShadowDesktop from '../images/footer-shadow-desktop.svg';
 import FooterPattern from '../images/footer-pattern.svg';
 import PoapLogo from '../images/POAP.svg';
+import BuiltOnEth from '../images/built-on-eth.png';
 import { useBodyClassName } from '../react-helpers';
 
 export const ScanPage: React.FC<RouteComponentProps> = ({ match, history }) => {
@@ -47,7 +48,6 @@ const ScanHeader: React.FC = React.memo(() => (
         </div>
       </div>
     </header>
-    <div className="fix-element" />
   </>
 ));
 
@@ -64,6 +64,9 @@ const ScanFooter: React.FC = React.memo(() => (
           Powered by <b>POAP</b>
         </p>
         <p>An EthDenver 2019 hack</p>
+        <div className='eth-branding'>
+          <img src={BuiltOnEth} alt="Built on Ethereum" />
+        </div>
       </div>
     </div>
   </footer>

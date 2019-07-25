@@ -60,7 +60,6 @@ export const BackOffice: React.FC = () => (
         </div>
       </div>
     </header>
-    <div className="fix-element" />
     <main className="app-content">
       <div className="container">
         <div className="bk-container">
