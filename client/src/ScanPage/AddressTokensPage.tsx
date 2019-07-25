@@ -1,10 +1,12 @@
 import React from 'react';
 import { RouteComponentProps } from 'react-router';
-import { TokenInfo, getTokensFor } from '../api';
-import classNames from 'classnames';
-import NoEventsImg from '../images/event-2019.svg';
 import { Link } from 'react-router-dom';
+import classNames from 'classnames';
+
+import { TokenInfo, getTokensFor } from '../api';
+import NoEventsImg from '../images/event-2019.svg';
 import { Loading } from '../components/Loading';
+
 type AddressTokensPageState = {
   tokens: null | TokenInfo[];
   error: boolean;
@@ -12,7 +14,7 @@ type AddressTokensPageState = {
 
 export class AddressTokensPage extends React.Component<
   RouteComponentProps<{
-    address: string;
+    account: string;
   }>,
   AddressTokensPageState
 > {
@@ -23,7 +25,8 @@ export class AddressTokensPage extends React.Component<
 
   async componentDidMount() {
     try {
-      const tokens = await getTokensFor(this.props.match.params.address);
+      // TODO: If there is no location.state.address run same logic from ChooseAddressPage submit
+      const tokens = await getTokensFor(this.props.location.state.address);
       this.setState({ tokens });
     } catch (err) {
       console.error(err);
@@ -96,13 +99,24 @@ export class AddressTokensPage extends React.Component<
   }
 
   render() {
+    const { error } = this.state;
+    const { match, location } = this.props;
+    let hasAccount = false;
+
+    if (!error) {
+      hasAccount = match.params.account! !== location.state.address;
+    }
+
     return (
       <main id="site-main" role="main" className="app-content">
         <div className="container">
           <div className="content-event years" data-aos="fade-up" data-aos-delay="300">
-            <h1>
-              Hey <span>{this.props.match.params.address}!</span>
-            </h1>
+            {!this.state.error && (
+              <h1>
+                Hey {hasAccount && <span>{match.params.account}!</span>}
+                {hasAccount ? ` (${location.state.address})` : `${location.state.address}!`}
+              </h1>
+            )}
 
             {this.state.error ? (
               <div className="bk-msg-error">

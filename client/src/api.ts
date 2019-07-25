@@ -34,6 +34,8 @@ export interface ClaimProof {
 
 export type ENSQueryResult = { valid: false } | { valid: true; address: string };
 
+export type AddressQueryResult = { valid: false } | { valid: true; ens: string };
+
 const API_BASE =
   process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : 'https://api.poap.xyz';
 
@@ -63,6 +65,10 @@ async function secureFetchNoResponse(input: RequestInfo, init?: RequestInit): Pr
 
 export function resolveENS(name: string): Promise<ENSQueryResult> {
   return fetchJson(`${API_BASE}/actions/ens_resolve?name=${encodeURIComponent(name)}`);
+}
+
+export function getENSFromAddress(address: Address): Promise<AddressQueryResult> {
+  return fetchJson(`${API_BASE}/actions/ens_lookup/${address}`);
 }
 
 export function getTokensFor(address: string): Promise<TokenInfo[]> {

@@ -106,6 +106,40 @@ export default async function routes(fastify: FastifyInstance) {
   );
 
   fastify.get(
+    '/actions/ens_lookup/:address',
+    {
+      schema: {
+        params: {
+          address: {
+            type: 'string',
+          },
+        },
+      },
+    },
+    async (req, res) => {
+      const mainnetProvider = getDefaultProvider('homestead');
+      const address = req.params.address;
+
+      if (address == null || address == '') {
+        throw new createError.BadRequest('"address" query parameter is required');
+      }
+
+      const resolved = await mainnetProvider.lookupAddress(address);
+
+      if (resolved == null) {
+        return {
+          valid: false,
+        };
+      } else {
+        return {
+          valid: true,
+          ens: resolved,
+        };
+      }
+    }
+  );
+
+  fastify.get(
     '/actions/scan/:address',
     {
       schema: {
