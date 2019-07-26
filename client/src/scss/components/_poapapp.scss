@@ -1,5 +1,5 @@
 /* ******************************************************
-   Main Sections POAP App 
+   Main Sections POAP App
    ****************************************************** */
 
 .poap-app {
@@ -100,22 +100,6 @@
   }
 }
 
-.fix-element {
-  padding-top: 200px;
-
-  -webkit-overflow-scrolling: touch;
-  -webkit-transition: top 0.5s ease-in-out;
-  transition: top 0.5s ease-in-out;
-  -webkit-backface-visibility: hidden;
-
-  &.fixed {
-    padding-top: 200px;
-    -webkit-overflow-scrolling: touch;
-    -webkit-transition: top 0.5s ease-in-out;
-    transition: top 0.5s ease-in-out;
-    -webkit-backface-visibility: hidden;
-  }
-}
 
 /* ******************************************************
    App Content
