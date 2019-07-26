@@ -44,10 +44,11 @@ export async function mintToken(eventId: number, toAddr: Address) {
     gasLimit: estimateMintingGas(1),
   });
 
-  console.log(tx.hash);
+  console.log(`mintToken: Transaction: ${tx.hash}`);
 
   // The operation is NOT complete yet; we must wait until it is mined
   await tx.wait();
+  console.log(`mintToken: Finished: ${tx.hash}`);
 }
 
 export async function mintEventToManyUsers(eventId: number, toAddr: Address[]) {
@@ -58,7 +59,7 @@ export async function mintEventToManyUsers(eventId: number, toAddr: Address[]) {
     gasLimit: estimateMintingGas(toAddr.length),
   });
 
-  console.log(`mintTokenBatch: transaction: ${tx.hash}`);
+  console.log(`mintTokenBatch: Transaction: ${tx.hash}`);
 
   // The operation is NOT complete yet; we must wait until it is mined
   await tx.wait();
@@ -73,7 +74,7 @@ export async function mintUserToManyEvents(eventIds: number[], toAddr: Address) 
     gasLimit: estimateMintingGas(eventIds.length),
   });
 
-  console.log(`mintTokenBatch: transaction: ${tx.hash}`);
+  console.log(`mintTokenBatch: Transaction: ${tx.hash}`);
 
   // The operation is NOT complete yet; we must wait until it is mined
   await tx.wait();
@@ -88,10 +89,11 @@ export async function burnToken(tokenId: string | number): Promise<boolean> {
     gasLimit: estimateMintingGas(1),
   });
 
-  console.log(tx.hash);
+  console.log(`burn: Transaction: ${tx.hash}`);
 
   // The operation is NOT complete yet; we must wait until it is mined
   await tx.wait();
+  console.log(`burn: Finished ${tx.hash}`);
   return true
 }
 
