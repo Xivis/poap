@@ -6,8 +6,8 @@ const assert = require('chai').assert;
 ZWeb3.initialize(web3.currentProvider);
 
 const Poap = Contracts.getFromLocal('Poap');
-// const ERC20 = Contracts.getFromNodeModules("openzeppelin-eth", "ERC20");
 
+// TODO Optimization: should specify that type of error is expected (revert, out of gas, etc.)
 async function expectError(f) {
   let fail = true;
   try {
@@ -76,6 +76,7 @@ contract('Poap', function() {
       await proxy.methods.addAdmin(accounts[1]).send({ from: admin });
       expect(await proxy.methods.isAdmin(accounts[1]).call()).to.be.true;
     });
+
     it('should NOT allow other users to add another admin', async function() {
       await expectError(() => proxy.methods.addAdmin(accounts[2]).send({ from: accounts[1] }));
     });
@@ -114,6 +115,7 @@ contract('Poap', function() {
       beforeEach(async function() {
         await proxy.methods.addEventMinter(55, accounts[1]).send({ from: admin });
       });
+
       it('should allow admin to remove an eventMinter', async function() {
         await proxy.methods.removeEventMinter(55, accounts[1]).send({ from: admin });
         expect(await proxy.methods.isEventMinter(55, accounts[1]).call()).to.be.false;
@@ -124,6 +126,7 @@ contract('Poap', function() {
           proxy.methods.removeEventMinter(55, accounts[1]).send({ from: accounts[2] })
         );
       });
+
       it('should NOT allow other eventMinter to remove an eventMinter', async function() {
         await expectError(() =>
           proxy.methods.removeEventMinter(55, accounts[1]).send({ from: accounts[1] })
@@ -132,10 +135,15 @@ contract('Poap', function() {
     });
   });
 
+  // TODO Add test to setBaseURI function
+
+  // TODO Add test to setApprovalForAll tokens
+
+  // TODO Add test to transferFrom tokens
+
   describe('Token Minting', function() {
 
     describe('mintToken', function() {
-
       it('should NOT allow admin to mint token for address 0', async function() {
         try{
           const emptyAddress = '0x0000000000000000000000000000000000000000';
@@ -153,11 +161,9 @@ contract('Poap', function() {
         let finalBalance = parseInt(await proxy.methods.balanceOf(tokenOwner).call());
         expect(finalBalance - initialBalance).to.eq(1);
       });
-
     });
 
     describe('mintUserToManyEvents', function() {
-
       it('should allow admin to mint multiple tokens for a single user', async function() {
         let tokenOwner = accounts[1];
         let eventIds = [100, 101, 102];
@@ -166,11 +172,9 @@ contract('Poap', function() {
         let finalBalance = parseInt(await proxy.methods.balanceOf(tokenOwner).call());
         expect(finalBalance - initialBalance).to.eq(eventIds.length);
       });
-
     });
 
     describe('mintEventToManyUsers', function() {
-
       it('should allow admin to mint same event token for multiple users', async function() {
         let tokenOwners = [accounts[1], accounts[2], accounts[3]];
         let eventId = 1;
@@ -190,8 +194,11 @@ contract('Poap', function() {
         });
 
       });
-
     });
+
+    // TODO Test if EventMinter can mint token
+
+    // TODO Test if can't mint when contract is paused
 
     describe('Integration tests', function() {
       it('should mint valid tokens using all minting methods consecutively', async function() {
@@ -224,13 +231,11 @@ contract('Poap', function() {
 
       });
     });
-
   });
 
   describe('Token Burning', function() {
 
     describe('burn', function() {
-
       it('should allow users to burn their own tokens', async function() {
         let alice = accounts[1];
         let eventId = 1;
@@ -335,30 +340,8 @@ contract('Poap', function() {
         }
         assert(false, 'token was burned for a non owner or approved user');
       });
-
     });
+
+    // TODO Test if can't burn when contract is paused
   });
-
-  // mintToken:
-  // Admin can mint token
-  // EventMinter can mint token
-  // Minted token has a valid URI
-  // Can't mint same token twice
-  // Can't mint when contract is paused
-
-  // minttokenBatch
-  // Admin can mint batch
-  // EventMinter can mint batch
-  // Minted tokens go from [tokenId, tokenId + len(address)]
-  // Can't mint when contract is paused
-
-  // Owner can burn it's own token
-
-  // approve / transfer tests
-
-  //   it('should create a proxy for the EVM package', async function () {
-  //     const proxy = await this.project.createProxy(ERC20, { contractName: 'StandaloneERC20', packageName: 'openzeppelin-eth' });
-  //     const result = await proxy.methods.totalSupply().call();
-  //     result.should.eq('0');
-  //   })
 });

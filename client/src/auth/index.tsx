@@ -14,10 +14,12 @@ export class AuthService {
 
   async init() {
     this.client = await createAuth0Client({
-      domain: 'poapauth.auth0.com',
-      client_id: 'bLaYZ7f1NQZ7K0oY6v4wAFliLRVbxqjc',
+      domain: 'poap-test.auth0.com',
+      // domain: 'poapauth.auth0.com',
+      client_id: 'HUA9Mxaq2fNmAuiiu3jmOqq5gFfEPmLw',
+      // client_id: 'bLaYZ7f1NQZ7K0oY6v4wAFliLRVbxqjc',
       redirect_uri: `${BASE_URI}/callback`,
-      audience: 'poap-api',
+      // audience: 'poap-api',
     });
     this._isAuthenticated = await this.client.isAuthenticated();
   }

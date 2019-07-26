@@ -9,6 +9,7 @@ import {
   mintEventToManyUsers,
   verifyClaim,
   mintUserToManyEvents,
+  burnToken
 } from './poap-helper';
 import { Claim, PoapEvent } from './types';
 
@@ -210,6 +211,26 @@ export default async function routes(fastify: FastifyInstance) {
       const tokenId = req.params.tokenId;
       const tokenInfo = await getTokenInfo(tokenId);
       return tokenInfo;
+    }
+  );
+
+  fastify.post(
+    '/burn/:tokenId',
+    {
+      preValidation: [fastify.authenticate],
+      schema: {
+        params: {
+          tokenId: { type: 'integer' },
+        },
+      },
+    },
+    async (req, res) => {
+      const isOk = await burnToken(req.params.tokenId);
+      if (!isOk) {
+        return new createError.NotFound('Invalid token or action');
+      }
+      res.status(204);
+      return;
     }
   );
 
