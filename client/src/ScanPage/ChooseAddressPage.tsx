@@ -1,9 +1,13 @@
 import React, { useState, useCallback } from 'react';
-import { tryGetAccount, hasMetamask, isMetamaskLogged } from '../poap-eth';
-import { useToggleState, useAsync } from '../react-helpers';
-import { resolveENS, getENSFromAddress } from '../api';
-import { getAddress } from 'ethers/utils';
 import classNames from 'classnames';
+
+/* Hooks */
+import { useToggleState, useAsync } from '../react-helpers';
+/* Helpers */
+import { tryGetAccount, hasMetamask, isMetamaskLogged } from '../poap-eth';
+import { resolveENS, getENSFromAddress } from '../api';
+import { isValidAddress } from '../lib/helpers';
+/* Components */
 // import { Loading } from '../components/Loading';
 
 enum AccountState {
@@ -132,14 +136,6 @@ const AddressInput: React.FC<AddressInputProps> = ({ onAddress }) => {
     event.preventDefault();
     setWorking(true);
 
-    // 1. Si el address es valido => convertimos a ENS => chequeamos si el ENS es valido
-    // => si => mandamos a onAddress(ENS, address)
-    // => no => mandamos a onAddress(address, address)
-
-    // 2. Si el address no es valido => chequeamos si el ENS es valido
-    //=> si => mandamos a onAddress(ENS, address)
-    //=> no => mandamos a onAddress(address, address)
-
     if (isValidAddress(address)) {
       const addressResponse = await getENSFromAddress(address);
       return addressResponse.valid
@@ -167,6 +163,7 @@ const AddressInput: React.FC<AddressInputProps> = ({ onAddress }) => {
         required
         placeholder="matoken.eth"
         onChange={handleChange}
+        autoComplete={'off'}
         className={classNames(ensError && 'error')}
       />
       {ensError && <p className="text-error">Invalid ENS name</p>}
@@ -181,13 +178,3 @@ const AddressInput: React.FC<AddressInputProps> = ({ onAddress }) => {
     </form>
   );
 };
-
-function isValidAddress(str: string) {
-  try {
-    getAddress(str);
-    return true;
-  } catch (e) {
-    // invalid Address. Try ENS
-    return false;
-  }
-}

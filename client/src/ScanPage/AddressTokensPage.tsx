@@ -2,14 +2,22 @@ import React from 'react';
 import { RouteComponentProps } from 'react-router';
 import { Link } from 'react-router-dom';
 import classNames from 'classnames';
+import delve from 'dlv';
 
-import { TokenInfo, getTokensFor } from '../api';
+/* Helpers */
+import { TokenInfo, getTokensFor, resolveENS, getENSFromAddress } from '../api';
+import { isValidAddress } from '../lib/helpers';
+/* Assets */
 import NoEventsImg from '../images/event-2019.svg';
+/* Components */
 import { Loading } from '../components/Loading';
 
 type AddressTokensPageState = {
   tokens: null | TokenInfo[];
+  address: null | string;
+  ens: null | string;
   error: boolean;
+  loading: boolean;
 };
 
 export class AddressTokensPage extends React.Component<
@@ -21,16 +29,41 @@ export class AddressTokensPage extends React.Component<
   state: AddressTokensPageState = {
     tokens: null,
     error: false,
+    address: null,
+    ens: null,
+    loading: false,
   };
 
-  async componentDidMount() {
+  componentDidMount() {
+    this.getTokens();
+  }
+
+  async getTokens() {
     try {
-      // TODO: If there is no location.state.address run same logic from ChooseAddressPage submit
-      const tokens = await getTokensFor(this.props.location.state.address);
-      this.setState({ tokens });
+      this.setState({ loading: true });
+
+      const { location, match } = this.props;
+      const account = delve(match, 'params.account');
+      const addressFromHistory = delve(location, 'state.address');
+      const address = account || addressFromHistory;
+
+      if (isValidAddress(address)) {
+        const tokens = await getTokensFor(address);
+        const ens = await getENSFromAddress(address);
+
+        this.setState({ tokens, address, ens: ens.valid ? ens.ens : null });
+      } else {
+        const ensResponse = await resolveENS(address);
+
+        if (ensResponse.valid) {
+          const tokens = await getTokensFor(ensResponse.address);
+          this.setState({ tokens, address: ensResponse.address, ens: address });
+        }
+      }
     } catch (err) {
-      console.error(err);
       this.setState({ error: true });
+    } finally {
+      this.setState({ loading: false });
     }
   }
 
@@ -99,46 +132,46 @@ export class AddressTokensPage extends React.Component<
   }
 
   render() {
-    const { error } = this.state;
-    const { match, location } = this.props;
-    let hasAccount = false;
-
-    if (!error) {
-      hasAccount = match.params.account! !== location.state.address;
-    }
+    const { error, loading, address, ens, tokens } = this.state;
+    const message = ens ? (
+      <>
+        Hey <span>{ens}!</span> ({address})
+      </>
+    ) : (
+      <>Hey {address}!</>
+    );
 
     return (
       <main id="site-main" role="main" className="app-content">
         <div className="container">
           <div className="content-event years" data-aos="fade-up" data-aos-delay="300">
-            {!this.state.error && (
-              <h1>
-                Hey {hasAccount && <span>{match.params.account}!</span>}
-                {hasAccount ? ` (${location.state.address})` : `${location.state.address}!`}
-              </h1>
-            )}
+            {!error && !loading && <h1>{message}</h1>}
 
-            {this.state.error ? (
+            {error && !loading && (
               <div className="bk-msg-error">
                 There was an error.
                 <br />
                 Check the address and try again
               </div>
-            ) : this.state.tokens == null ? (
+            )}
+
+            {loading === true && (
               <>
                 <Loading />
                 <div style={{ textAlign: 'center' }}>Waiting for your tokens... Hang tight</div>
               </>
-            ) : this.state.tokens.length === 0 ? (
+            )}
+
+            {tokens && tokens.length === 0 && (
               <div className={classNames('event-year', 'empty-year')} style={{ marginTop: '30px' }}>
                 <img src={NoEventsImg} alt="" />
                 <p className="image-description">
                   You don't seem to have any tokens. You're quite a couch potato!
                 </p>
               </div>
-            ) : (
-              this.renderTokens()
             )}
+
+            {tokens && tokens.length > 0 && this.renderTokens()}
           </div>
         </div>
       </main>
