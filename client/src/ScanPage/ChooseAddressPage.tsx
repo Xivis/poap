@@ -93,15 +93,17 @@ type LoginButtonProps = {
 
 const LoginButton: React.FC<LoginButtonProps> = ({ onAddress }) => {
   const [gotAccount, setGotAccount] = useState<boolean | null>(null);
+
   const doLogin = useCallback(async () => {
     const account = await tryGetAccount();
     setGotAccount(account != null);
 
     if (account) {
       const ensResponse = await getENSFromAddress(account);
-      return ensResponse.valid ? onAddress(ensResponse.ens, account) : onAddress(account, account);
+      onAddress(ensResponse.valid ? ensResponse.ens : account, account);
     }
   }, [onAddress]);
+
   return (
     <button className="btn" onClick={doLogin} disabled={gotAccount === false}>
       {gotAccount === false ? (
@@ -138,9 +140,7 @@ const AddressInput: React.FC<AddressInputProps> = ({ onAddress }) => {
 
     if (isValidAddress(address)) {
       const addressResponse = await getENSFromAddress(address);
-      return addressResponse.valid
-        ? onAddress(addressResponse.ens, address)
-        : onAddress(address, address);
+      onAddress(addressResponse.valid ? addressResponse.ens : address, address);
     } else {
       setEnsError(false);
       const ensResponse = await resolveENS(address);
