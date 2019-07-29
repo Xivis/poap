@@ -128,6 +128,15 @@ export async function requestProof(
   });
 }
 
+export function burnToken(tokenId: string): Promise<any> {
+  return secureFetchNoResponse(`${API_BASE}/burn/${tokenId}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+}
+
 export async function mintEventToManyUsers(eventId: number, addresses: string[]): Promise<any> {
   return secureFetchNoResponse(`${API_BASE}/actions/mintEventToManyUsers`, {
     method: 'POST',
