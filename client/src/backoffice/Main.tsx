@@ -1,10 +1,14 @@
+/* eslint jsx-a11y/anchor-is-valid: 0 */
 import React, { useCallback, useContext, useState } from 'react';
 import { slide as Menu } from 'react-burger-menu';
 import { Link, Route, withRouter } from 'react-router-dom';
+
+/* Components */
 import { AuthContext } from '../auth';
-import PoapLogo from '../images/POAP.svg';
-import { IssueForEventPage, IssueForUserPage } from './IssuePage';
 import { EventsPage } from './EventsPage';
+import { IssueForEventPage, IssueForUserPage } from './IssuePage';
+/* Assets */
+import PoapLogo from '../images/POAP.svg';
 
 export const MintersPage = () => <div> This is a MintersPage </div>;
 

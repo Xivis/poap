@@ -13,7 +13,9 @@ import { useBodyClassName } from '../react-helpers';
 
 export const ScanPage: React.FC<RouteComponentProps> = ({ match, history }) => {
   const showBadges = useCallback(
-    (address: string) => history.push(`${match.path}scan/${address}`),
+    (addressOrENS: string, address: string) => {
+      return history.push(`${match.path}scan/${addressOrENS}`, { address });
+    },
     [history, match]
   );
   useBodyClassName('poap-app');
@@ -26,7 +28,7 @@ export const ScanPage: React.FC<RouteComponentProps> = ({ match, history }) => {
         path={match.path}
         render={() => <ChooseAddressPage onAccountDetails={showBadges} />}
       />
-      <Route path={`${match.path}scan/:address`} component={AddressTokensPage} />
+      <Route path={`${match.path}scan/:account`} component={AddressTokensPage} />
       <Route path={`${match.path}token/:tokenId`} component={TokenDetailPage} />
       <ScanFooter />
     </>
