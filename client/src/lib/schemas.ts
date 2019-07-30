@@ -1,6 +1,6 @@
 import * as yup from 'yup';
 
-import { ADDRESS_REGEXP } from '../lib/constants';
+import { ADDRESS_REGEXP } from './constants';
 
 const BurnFormSchema = yup.object().shape({
   tokenId: yup

@@ -9,6 +9,7 @@ import { getTokenInfo, TokenInfo, burnToken } from '../api';
 import { BurnFormSchema } from '../lib/schemas';
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
+import { Loading } from '../components/Loading';
 
 const BurnPage: FC = () => {
   return (
@@ -55,12 +56,9 @@ const BurnToken: FC = props => {
   const tokenId = delve(props, 'match.params.tokenId');
   const [token, setToken] = useState<null | TokenInfo>(null);
   const [errorTokenInfo, setErrorTokenInfo] = useState<null | Error>(null);
-  // const [errorBurn, setErrorBurn] = useState<null | Error>(null);
-  /*
-
-  TODO:    - Set error and success for burn
-           - Set loading for Burn Tokens
-  */
+  const [errorBurn, setErrorBurn] = useState<null | Error>(null);
+  const [loadingBurn, setLoadingBurn] = useState<null | boolean>(null);
+  const [successBurn, setSuccessBurn] = useState<null | boolean>(null);
 
   useEffect(() => {
     getTokenInfo(tokenId)
@@ -69,7 +67,15 @@ const BurnToken: FC = props => {
   }, [tokenId]);
 
   const handleBurn = async (tokenId: string) => {
-    await burnToken(tokenId);
+    try {
+      setLoadingBurn(true);
+      const res = await burnToken(tokenId);
+      if (res.status === 204) setSuccessBurn(true);
+    } catch (error) {
+      setErrorBurn(error);
+    } finally {
+      setLoadingBurn(false);
+    }
   };
 
   return (
@@ -89,14 +95,20 @@ const BurnToken: FC = props => {
           </div>
 
           <div className="actions">
-            <button className="action-btn" onClick={() => handleBurn(token.tokenId)}>
-              Burn token
-            </button>
+            {loadingBurn ? (
+              <Loading />
+            ) : (
+              <button className="action-btn" onClick={() => handleBurn(token.tokenId)}>
+                Burn token
+              </button>
+            )}
           </div>
         </div>
       )}
 
-      {errorTokenInfo && <p className="error">Couldn't find your token</p>}
+      {errorTokenInfo && <p className="error">Couldn't find token {tokenId}</p>}
+      {errorBurn && <p className="error">Couldn't burn token {tokenId}</p>}
+      {successBurn && <p>Token {tokenId} was successfully burned!</p>}
     </div>
   );
 };
