@@ -2,13 +2,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link, Switch, Route, RouteComponentProps } from 'react-router-dom';
 import classNames from 'classnames';
 import { Formik, Form, Field, ErrorMessage, FieldProps } from 'formik';
-import * as yup from 'yup';
 
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
 /* Helpers */
 import { useAsync } from '../react-helpers';
-import { ADDRESS_REGEXP } from '../lib/constants';
+import { PoapEventSchema } from '../lib/schemas';
 import { getEvents, PoapEvent, getEvent, updateEvent, createEvent } from '../api';
 
 export const EventsPage: React.FC = () => {
@@ -20,38 +19,6 @@ export const EventsPage: React.FC = () => {
     </Switch>
   );
 };
-
-const PoapEventSchema = yup.object().shape({
-  year: yup
-    .number()
-    .required()
-    .min(1990)
-    .max(new Date().getFullYear() + 1),
-  start_date: yup
-    .string()
-    .matches(/[0-9]{4}-[0-9]{2}-[0-9]{2}/, 'Date must be expressed in YYYY-MM-DD Format'),
-  end_date: yup
-    .string()
-    .matches(/[0-9]{4}-[0-9]{2}-[0-9]{2}/, 'Date must be expressed in YYYY-MM-DD Format'),
-  image_url: yup
-    .string()
-    .label('Image Url')
-    .required()
-    .url(),
-  event_url: yup
-    .string()
-    .label('Website')
-    .url(),
-  signer_ip: yup
-    .string()
-    .label('Signer Url')
-    .url()
-    .nullable(),
-  signer: yup
-    .string()
-    .matches(ADDRESS_REGEXP, 'Must be a valid Ethereum Address')
-    .nullable(),
-});
 
 const CreateEventForm: React.FC = () => {
   return <EventForm create />;

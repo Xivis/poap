@@ -1,12 +1,12 @@
 import React, { FC, useEffect, useState } from 'react';
 import { Switch, Route, RouteComponentProps } from 'react-router-dom';
 import { Formik, Form, Field, FieldProps, ErrorMessage } from 'formik';
-import * as yup from 'yup';
 import classNames from 'classnames';
 import delve from 'dlv';
 
 /* Helpers */
 import { getTokenInfo, TokenInfo, burnToken } from '../api';
+import { BurnFormSchema } from '../lib/schemas';
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
 
@@ -18,14 +18,6 @@ const BurnPage: FC = () => {
     </Switch>
   );
 };
-
-const BurnFormSchema = yup.object().shape({
-  tokenId: yup
-    .number()
-    .required()
-    .positive()
-    .integer(),
-});
 
 const BurnForm: FC<RouteComponentProps> = ({ history }) => {
   return (
