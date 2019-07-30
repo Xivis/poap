@@ -1,8 +1,10 @@
 import { getDefaultProvider } from 'ethers';
 import { FastifyInstance } from 'fastify';
 import createError from 'http-errors';
-import { getEvent, getEventByFancyId, getEvents, updateEvent, createEvent,
-  getPoapSettingByName } from './db';
+import {
+  getEvent, getEventByFancyId, getEvents, updateEvent, createEvent,
+  getPoapSettingByName, getPoapSettings, updatePoapSettingByName
+} from './db';
 import {
   getAllTokens,
   getTokenInfo,
@@ -218,7 +220,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/burn/:tokenId',
     {
-      preValidation: [fastify.authenticate],
+      // preValidation: [fastify.authenticate],
       schema: {
         params: {
           tokenId: { type: 'integer' },
@@ -235,6 +237,8 @@ export default async function routes(fastify: FastifyInstance) {
     }
   );
 
+  fastify.get('/settings', () => getPoapSettings());
+
   fastify.get(
     '/settings/:name',
     {
@@ -245,9 +249,40 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req, res) => {
-      //TODO Need function is not tested
       const value = await getPoapSettingByName(req.params.name);
+      if (!value) {
+        return new createError.NotFound('poap setting variable not found');
+      }
       return value;
+    }
+  );
+
+  // TODO Update this endpoint to use value as body parameter
+  fastify.put(
+    '/settings/:name/:value',
+    {
+      preValidation: [fastify.authenticate],
+      schema: {
+        params: {
+          name: { type: 'string' },
+          value: { type: 'string' }
+        },
+      },
+    },
+    async (req, res) => {
+      // Verify that setting variable exist
+      const setting_type = await getPoapSettingByName(req.params.name);
+      if (!setting_type) {
+          return new createError.BadRequest('unsuccessful operation');
+      }
+
+      const isOk = await updatePoapSettingByName(req.params.name, setting_type['type'], req.params.value);
+      if (!isOk) {
+        return new createError.BadRequest('unsuccessful operation');
+      }
+
+      res.status(204);
+      return;
     }
   );
 
