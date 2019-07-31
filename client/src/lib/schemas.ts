@@ -2,6 +2,14 @@ import * as yup from 'yup';
 
 import { ADDRESS_REGEXP } from './constants';
 
+const GasPriceSchema = yup.object().shape({
+  gasPrice: yup
+    .number()
+    .required()
+    .positive()
+    .integer(),
+});
+
 const BurnFormSchema = yup.object().shape({
   tokenId: yup
     .number()
@@ -66,6 +74,7 @@ const IssueForUserFormValueSchema = yup.object().shape({
 });
 
 export {
+  GasPriceSchema,
   BurnFormSchema,
   PoapEventSchema,
   IssueForEventFormValueSchema,
