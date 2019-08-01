@@ -5,7 +5,7 @@ import classNames from 'classnames';
 import delve from 'dlv';
 
 /* Helpers */
-import { getTokenInfo, TokenInfo, burnToken } from '../api';
+import { getTokenInfo, TokenInfo, burnToken, getENSFromAddress } from '../api';
 import { BurnFormSchema } from '../lib/schemas';
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
@@ -67,7 +67,18 @@ const BurnToken: FC<RouteComponentProps> = props => {
 
   useEffect(() => {
     getTokenInfo(tokenId)
-      .then(token => setToken(token))
+      .then(async token => {
+        try {
+          const ens = await getENSFromAddress(token.owner);
+          const ownerText = ens.valid ? `${ens.ens} (${token.owner})` : `${token.owner}`;
+          const tokenParsed = { ...token, ens, ownerText };
+          setToken(tokenParsed);
+        } catch (error) {
+          const ownerText = `${token.owner}`;
+          const tokenParsed = { ...token, ownerText };
+          setToken(tokenParsed);
+        }
+      })
       .catch(error => setErrorTokenInfo(error));
   }, [tokenId]);
 
@@ -94,8 +105,9 @@ const BurnToken: FC<RouteComponentProps> = props => {
               <img src={token.event.image_url} alt={token.event.description} className="avatar" />
             </div>
             <div>
-              <h3>{token.event.name}</h3>
-              <p>{token.event.description}</p>
+              <h3 className="title">{token.event.name}</h3>
+              <p className="subtitle">{token.event.description}</p>
+              <p className="info">{token.ownerText}</p>
             </div>
           </div>
 
@@ -104,7 +116,7 @@ const BurnToken: FC<RouteComponentProps> = props => {
               <Loading />
             ) : (
               <button className="action-btn" onClick={() => handleBurn(token.tokenId)}>
-                Burn token
+                Burn Token
               </button>
             )}
           </div>
