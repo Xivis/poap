@@ -10,6 +10,7 @@ import { AuthContext } from '../auth';
 import { EventsPage } from './EventsPage';
 import { BurnPage } from './BurnPage';
 import { IssueForEventPage, IssueForUserPage } from './IssuePage';
+import { GasPricePage } from './GasPricePage';
 
 export const MintersPage = () => <div> This is a MintersPage </div>;
 
@@ -29,6 +30,9 @@ const NavigationMenu = withRouter(({ history }) => {
       </Link>
 
       <h2>Other Tasks</h2>
+      <Link to="/admin/gas-price" onClick={closeMenu}>
+        Change Gas Price
+      </Link>
       <Link to="/admin/events" onClick={closeMenu}>
         Manage Events
       </Link>
@@ -77,6 +81,7 @@ export const BackOffice: React.FC = () => (
           <Route path="/admin/events" component={EventsPage} />
           <Route path="/admin/minters" component={MintersPage} />
           <Route path="/admin/burn" component={BurnPage} />
+          <Route path="/admin/gas-price" component={GasPricePage} />
           <Route
             exact
             path="/admin/"
