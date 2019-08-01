@@ -1,5 +1,5 @@
-import React, { FC, useEffect, useState } from 'react';
-import { Switch, Route, RouteComponentProps } from 'react-router-dom';
+import React, { FC, Fragment, useEffect, useState } from 'react';
+import { Switch, Route, RouteComponentProps, Link } from 'react-router-dom';
 import { Formik, Form, Field, FieldProps, ErrorMessage } from 'formik';
 import classNames from 'classnames';
 import delve from 'dlv';
@@ -44,7 +44,11 @@ const BurnForm: FC<RouteComponentProps> = ({ history }) => {
               )}
             />
             <ErrorMessage name="token" component="p" className="bk-error" />
-            <SubmitButton text="Burn" isSubmitting={isSubmitting} canSubmit={isValid && dirty} />
+            <SubmitButton
+              text="Find token"
+              isSubmitting={isSubmitting}
+              canSubmit={isValid && dirty}
+            />
           </Form>
         )}
       </Formik>
@@ -52,8 +56,9 @@ const BurnForm: FC<RouteComponentProps> = ({ history }) => {
   );
 };
 
-const BurnToken: FC = props => {
+const BurnToken: FC<RouteComponentProps> = props => {
   const tokenId = delve(props, 'match.params.tokenId');
+
   const [token, setToken] = useState<null | TokenInfo>(null);
   const [errorTokenInfo, setErrorTokenInfo] = useState<null | Error>(null);
   const [errorBurn, setErrorBurn] = useState<null | Error>(null);
@@ -106,7 +111,14 @@ const BurnToken: FC = props => {
         </div>
       )}
 
-      {errorTokenInfo && <p className="error">Couldn't find token {tokenId}</p>}
+      {errorTokenInfo && (
+        <Fragment>
+          <p className="bk-error">Couldn't find token {tokenId}</p>
+          <Link to={`/admin/burn`}>
+            <button className="btn">Find another token</button>
+          </Link>
+        </Fragment>
+      )}
       {errorBurn && <p className="error">Couldn't burn token {tokenId}</p>}
       {successBurn && <p>Token {tokenId} was successfully burned!</p>}
     </div>
