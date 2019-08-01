@@ -17,13 +17,13 @@ body {
 }
 
 header,
-main{
+main {
   float: left;
   width: 100%;
   clear: both;
 }
 
-#root {
+#root .landing {
   min-height: 100vh;
   display: flex;
   justify-content: space-between;
