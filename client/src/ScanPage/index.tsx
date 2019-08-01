@@ -22,7 +22,7 @@ export const ScanPage: React.FC<RouteComponentProps> = ({ match, history }) => {
   useBodyClassName('poap-app');
 
   return (
-    <>
+    <div className="landing">
       <ScanHeader />
       <Route
         exact
@@ -32,7 +32,7 @@ export const ScanPage: React.FC<RouteComponentProps> = ({ match, history }) => {
       <Route path={`${match.path}scan/:account`} component={AddressTokensPage} />
       <Route path={`${match.path}token/:tokenId`} component={TokenDetailPage} />
       <ScanFooter />
-    </>
+    </div>
   );
 };
 
@@ -66,7 +66,7 @@ const ScanFooter: React.FC = React.memo(() => (
           Powered by <b>POAP</b>
         </p>
         <p>An EthDenver 2019 hack</p>
-        <div className='eth-branding'>
+        <div className="eth-branding">
           <img src={BuiltOnEth} alt="Built on Ethereum" />
         </div>
       </div>

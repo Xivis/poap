@@ -5,6 +5,7 @@ export interface TokenInfo {
   tokenId: string;
   owner: string;
   event: PoapEvent;
+  ownerText?: string;
 }
 export interface PoapEvent {
   id: number;
@@ -125,6 +126,12 @@ export async function requestProof(
     headers: {
       'Content-Type': 'application/json',
     },
+  });
+}
+
+export function burnToken(tokenId: string): Promise<any> {
+  return secureFetchNoResponse(`${API_BASE}/burn/${tokenId}`, {
+    method: 'POST',
   });
 }
 
