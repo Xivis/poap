@@ -37,8 +37,8 @@ export type ENSQueryResult = { valid: false } | { valid: true; address: string }
 
 export type AddressQueryResult = { valid: false } | { valid: true; ens: string };
 
-const API_BASE = 'https://api.poap.xyz';
-// process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : 'https://api.poap.xyz';
+const API_BASE =
+  process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : 'https://api.poap.xyz';
 
 async function fetchJson<A>(input: RequestInfo, init?: RequestInit): Promise<A> {
   const res = await fetch(input, init);
@@ -132,9 +132,6 @@ export async function requestProof(
 export function burnToken(tokenId: string): Promise<any> {
   return secureFetchNoResponse(`${API_BASE}/burn/${tokenId}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
   });
 }
 
