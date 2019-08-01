@@ -30,6 +30,9 @@ const NavigationMenu = withRouter(({ history }) => {
       </Link>
 
       <h2>Other Tasks</h2>
+      <Link to="/admin/gas-price" onClick={closeMenu}>
+        Change Gas Price
+      </Link>
       <Link to="/admin/events" onClick={closeMenu}>
         Manage Events
       </Link>
