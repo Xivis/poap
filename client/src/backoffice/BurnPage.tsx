@@ -109,9 +109,8 @@ const BurnToken: FC<RouteComponentProps> = props => {
           </div>
 
           <div className="actions">
-            {loadingBurn ? (
-              <Loading />
-            ) : (
+            {loadingBurn && <Loading />}
+            {!loadingBurn && !successBurn && (
               <button
                 className="action-btn"
                 disabled={successBurn || Boolean(errorBurn)}
@@ -124,24 +123,17 @@ const BurnToken: FC<RouteComponentProps> = props => {
         </div>
       )}
 
-      {errorTokenInfo && (
-        <Fragment>
-          <p className="bk-msg-error">Couldn't find token {tokenId}</p>
-          <Link to={`/admin/burn`}>
-            <button className="btn">Find another token</button>
-          </Link>
-        </Fragment>
-      )}
-      {errorBurn && <p className="bk-msg-error">Couldn't burn token {tokenId}</p>}
+      <Fragment>
+        {errorTokenInfo && <p className="bk-msg-error">Couldn't find token {tokenId}</p>}
+        {errorBurn && <p className="bk-msg-error">Couldn't burn token {tokenId}</p>}
+        {successBurn && <p className="bk-msg-ok">Token {tokenId} was successfully burned!</p>}
 
-      {successBurn && (
-        <Fragment>
-          <p className="bk-msg-ok">Token {tokenId} was successfully burned!</p>
+        {(errorTokenInfo || errorBurn || successBurn) && (
           <Link to={`/admin/burn`}>
             <button className="btn">Find another token</button>
           </Link>
-        </Fragment>
-      )}
+        )}
+      </Fragment>
     </div>
   );
 };
