@@ -96,6 +96,8 @@
   justify-content: space-between;
   padding: 16px 18px;
   text-align: left;
+  margin-bottom: 16px;
+  min-height: 118px;
 
   .content {
     display: flex;
@@ -120,6 +122,9 @@
 
   .actions {
     display: flex;
+    flex-basis: 100px;
+    align-items: center;
+    justify-content: center;
   }
 }
 
@@ -135,4 +140,9 @@
   font-size: 18px;
   cursor: pointer;
   color: $color-primary;
+}
+
+.action-btn:disabled {
+  cursor: not-allowed;
+  color: $color-secondary;
 }

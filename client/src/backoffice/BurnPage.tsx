@@ -5,7 +5,7 @@ import classNames from 'classnames';
 import delve from 'dlv';
 
 /* Helpers */
-import { getTokenInfo, TokenInfo, burnToken, getENSFromAddress } from '../api';
+import { getTokenInfoWithENS, TokenInfo, burnToken } from '../api';
 import { BurnFormSchema } from '../lib/schemas';
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
@@ -60,35 +60,30 @@ const BurnToken: FC<RouteComponentProps> = props => {
   const tokenId = delve(props, 'match.params.tokenId');
 
   const [token, setToken] = useState<null | TokenInfo>(null);
+  const [loadingTokenInfo, setLoadingTokenInfo] = useState<null | boolean>(null);
   const [errorTokenInfo, setErrorTokenInfo] = useState<null | Error>(null);
-  const [errorBurn, setErrorBurn] = useState<null | Error>(null);
-  const [loadingBurn, setLoadingBurn] = useState<null | boolean>(null);
+
   const [successBurn, setSuccessBurn] = useState<null | boolean>(null);
+  const [loadingBurn, setLoadingBurn] = useState<null | boolean>(null);
+  const [errorBurn, setErrorBurn] = useState<null | Error>(null);
 
   useEffect(() => {
-    getTokenInfo(tokenId)
-      .then(async token => {
-        try {
-          const ens = await getENSFromAddress(token.owner);
-          const ownerText = ens.valid ? `${ens.ens} (${token.owner})` : `${token.owner}`;
-          const tokenParsed = { ...token, ens, ownerText };
-          setToken(tokenParsed);
-        } catch (error) {
-          const ownerText = `${token.owner}`;
-          const tokenParsed = { ...token, ownerText };
-          setToken(tokenParsed);
-        }
-      })
-      .catch(error => setErrorTokenInfo(error));
+    setLoadingTokenInfo(true);
+    getTokenInfoWithENS(tokenId)
+      .then(token => setToken(token))
+      .catch(error => setErrorTokenInfo(error))
+      .finally(() => setLoadingTokenInfo(false));
   }, [tokenId]);
 
   const handleBurn = async (tokenId: string) => {
+    if (loadingBurn) return;
+
     try {
       setLoadingBurn(true);
-      const res = await burnToken(tokenId);
-      if (res.status === 204) setSuccessBurn(true);
+      await burnToken(tokenId);
+      setSuccessBurn(true);
     } catch (error) {
-      setErrorBurn(error);
+      setErrorBurn(error.message);
     } finally {
       setLoadingBurn(false);
     }
@@ -97,6 +92,8 @@ const BurnToken: FC<RouteComponentProps> = props => {
   return (
     <div className="content-event aos-init aos-animate" data-aos="fade-up" data-aos-delay="300">
       <h2>Token Info</h2>
+
+      {loadingTokenInfo && <Loading />}
 
       {token && (
         <div className="card">
@@ -115,7 +112,11 @@ const BurnToken: FC<RouteComponentProps> = props => {
             {loadingBurn ? (
               <Loading />
             ) : (
-              <button className="action-btn" onClick={() => handleBurn(token.tokenId)}>
+              <button
+                className="action-btn"
+                disabled={successBurn || Boolean(errorBurn)}
+                onClick={() => handleBurn(token.tokenId)}
+              >
                 Burn Token
               </button>
             )}
@@ -125,14 +126,22 @@ const BurnToken: FC<RouteComponentProps> = props => {
 
       {errorTokenInfo && (
         <Fragment>
-          <p className="bk-error">Couldn't find token {tokenId}</p>
+          <p className="bk-msg-error">Couldn't find token {tokenId}</p>
           <Link to={`/admin/burn`}>
             <button className="btn">Find another token</button>
           </Link>
         </Fragment>
       )}
-      {errorBurn && <p className="error">Couldn't burn token {tokenId}</p>}
-      {successBurn && <p>Token {tokenId} was successfully burned!</p>}
+      {errorBurn && <p className="bk-msg-error">Couldn't burn token {tokenId}</p>}
+
+      {successBurn && (
+        <Fragment>
+          <p className="bk-msg-ok">Token {tokenId} was successfully burned!</p>
+          <Link to={`/admin/burn`}>
+            <button className="btn">Find another token</button>
+          </Link>
+        </Fragment>
+      )}
     </div>
   );
 };
