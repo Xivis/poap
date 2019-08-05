@@ -98,6 +98,19 @@ export async function getSetting(settingName: string): Promise<null | PoapSettin
   return fetchJson(`${API_BASE}/settings/${settingName}`);
 }
 
+export async function getTokenInfoWithENS(tokenId: string): Promise<TokenInfo> {
+  const token = await getTokenInfo(tokenId);
+
+  try {
+    const ens = await getENSFromAddress(token.owner);
+    const ownerText = ens.valid ? `${ens.ens} (${token.owner})` : `${token.owner}`;
+    const tokenParsed = { ...token, ens, ownerText };
+    return tokenParsed;
+  } catch (error) {
+    return token;
+  }
+}
+
 export async function claimToken(claim: Claim): Promise<void> {
   const res = await fetch(`${API_BASE}/actions/claim`, {
     method: 'POST',
