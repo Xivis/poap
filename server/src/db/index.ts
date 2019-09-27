@@ -1,5 +1,6 @@
 import { format } from 'date-fns';
 import pgPromise from 'pg-promise';
+
 import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus } from '../types';
 
 const db = pgPromise()({
@@ -13,6 +14,26 @@ function replaceDates(event: PoapEvent): PoapEvent {
   event.start_date = format(new Date(event.start_date), 'MM/DD/YYYY');
   event.end_date = format(new Date(event.end_date), 'MM/DD/YYYY');
   return event;
+}
+
+export async function getTransactions(limit:number, offset:number): Promise<Transaction[]> {
+  let query = 'SELECT * FROM server_transactions ORDER BY created_date DESC'
+  if(limit > 0) {
+    query = query + ' LIMIT ' + limit + ' OFFSET ' + offset;
+  }
+  const res = await db.manyOrNone<Transaction>(query);
+  return res;
+}
+
+export async function getTotalTransactions(): Promise<number> {
+  let query = 'SELECT COUNT(*) FROM server_transactions'
+  const res = await db.result(query);
+  return res.rows[0].count;
+}
+
+export async function getSigners(): Promise<Signer[]> {
+  const res = await db.manyOrNone<Signer>('SELECT * FROM signers ORDER BY created_date DESC');
+  return res;
 }
 
 export async function getPoapSettings(): Promise<PoapSetting[]> {
@@ -79,6 +100,20 @@ export async function updateEvent(
     {
       fancy_id: fancyId,
       ...changes,
+    }
+  );
+  return res.rowCount === 1;
+}
+
+export async function updateSignerGasPrice(
+  Id: string,
+  GasPrice: string
+): Promise<boolean> {
+  const res = await db.result(
+    'update signers set gas_price=${gas_price} where id = ${id}',
+    {
+      gas_price: GasPrice,
+      id: Id
     }
   );
   return res.rowCount === 1;

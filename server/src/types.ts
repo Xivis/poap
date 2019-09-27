@@ -56,6 +56,7 @@ export interface Signer {
   role: SignerRole;
   gas_price: string;
   created_date: Date;
+  balance: string;
 }
 
 export interface Transaction {
