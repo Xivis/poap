@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import pgPromise from 'pg-promise';
-import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, ClaimQR } from '../types';
+import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, ClaimQR, EventMinter } from '../types';
 import { ContractTransaction } from 'ethers';
 
 const db = pgPromise()({
@@ -206,4 +206,11 @@ export async function updateQrClaim(qr_hash: string, beneficiary:string, tx: Con
     qr_hash
   });
   return res.rowCount === 1;
+}
+
+export async function getEventMinter(id: string): Promise<null | EventMinter> {
+  const res = await db.oneOrNone<EventMinter>('SELECT * FROM event_minters WHERE id=${id} AND valid_from <= current_timestamp AND valid_to >= current_timestamp', {
+    id
+  });
+  return res;
 }
