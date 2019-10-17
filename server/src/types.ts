@@ -112,3 +112,14 @@ export interface POAPVote {
   claimer: Address;
   proposal: number;
 }
+
+export interface EventMinter {
+  id: string;
+  address: Address;
+  valid_from: Date;
+  valid_to: Date;
+  event_name: null | string;
+  event_id: number;
+  event: PoapEvent;
+  tx_hash: null | string;
+}

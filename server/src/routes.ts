@@ -18,7 +18,8 @@ import {
   claimQrClaim,
   updateQrClaim,
   checkDualQrClaim,
-  getPendingTxsAmount
+  getPendingTxsAmount,
+  getEventMinter
 } from './db';
 
 import {
@@ -731,6 +732,62 @@ export default async function routes(fastify: FastifyInstance) {
       }
       res.status(204);
       return;
+    }
+  );
+
+
+  fastify.post(
+    '/actions/mint',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['address'],
+        },
+        headers: {
+          type: 'object',
+          properties: {
+            'api_key': { type: 'string' }
+          },
+          required: ['api_key']
+        },
+      },
+    },
+    async (req, res) => {
+      const event_minter = await getEventMinter(req.headers.api_key);
+      if (!event_minter) {
+        return new createError.BadRequest('You dont have permission to mint');
+      }
+
+      const event = await getEvent(event_minter.event_id);
+      if (!event) {
+        return new createError.InternalServerError('Qr Claim does not have any event');
+      }
+      event_minter.event = event
+
+      const parsed_address = await checkAddress(req.body.address);
+      if (!parsed_address) {
+        return new createError.BadRequest('Address is not valid');
+      }
+
+      const dual_qr_claim = await checkDualQrClaim(event_minter.event.id, parsed_address);
+      if (!dual_qr_claim) {
+        return new createError.BadRequest('Address already has this claim');
+      }
+
+      const has_token = await checkHasToken(event_minter.event.id, parsed_address);
+      if (has_token) {
+        return new createError.BadRequest('Address already has this claim');
+      }
+
+      const tx_mint = await mintToken(event_minter.event.id, parsed_address, false);
+      if (!tx_mint || !tx_mint.hash) {
+        return new createError.InternalServerError('There was a problem in token mint');
+      }
+
+      event_minter.tx_hash = tx_mint.hash
+
+      return event_minter
     }
   );
 }
