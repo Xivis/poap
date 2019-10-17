@@ -37,3 +37,14 @@ CREATE TABLE qr_claims (
   "created_date" timestamp with time zone not null default now(),
   "is_active" boolean default true
 );
+
+CREATE EXTENSION pgcrypto;
+
+CREATE TABLE event_minters (
+    "id" uuid default gen_random_uuid() not null constraint table_name_pk PRIMARY KEY,
+    "address" varchar(256) not null,
+    "valid_from" timestamp not null,
+    "valid_to" timestamp not null,
+    "event_name" varchar(256),
+    "event_id" integer not null
+);
