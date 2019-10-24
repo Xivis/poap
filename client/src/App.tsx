@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Switch, Redirect } from 'react-router-dom';
 
 import { ROUTES } from './lib/constants';
 import { AuthProvider, AuthService } from './auth';
@@ -21,7 +21,8 @@ const App: React.FC<AppProps> = ({ auth }) => (
         <Route path={ROUTES.signerClaimPage} component={SignerClaimPage} />
         <Route path={ROUTES.codeClaimPageHash} component={CodeClaimPage} />
         <Route path={ROUTES.codeClaimPage} component={CodeClaimPage} />
-        <Route path={ROUTES.home} component={ScanPage} />
+        <Route exact path={ROUTES.home} component={ScanPage} />
+        <Route path='*' component={() => <Redirect to={'/'} />} />
       </Switch>
     </Router>
   </AuthProvider>

@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <!-- Mobile-friendly viewport -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#6534FF">
 
     <meta
       name="description"
@@ -38,7 +39,7 @@
 
     <link rel="shortcut icon" href="/favicon.ico" />
     <link rel="canonical" href="https://xyz.io" />
-
+    <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" sizes="57x57" href="/images/apple-icon-57x57.png" />
     <link rel="apple-touch-icon" sizes="60x60" href="/images/apple-icon-60x60.png" />
     <link rel="apple-touch-icon" sizes="72x72" href="/images/apple-icon-72x72.png" />
@@ -66,5 +67,20 @@
   <body class="poap-app">
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('worker.js').then(function(registration) {
+            console.log('Worker registration successful', registration.scope);
+          }, function(err) {
+            console.log('Worker registration failed', err);
+          }).catch(function(err) {
+            console.log(err);
+          });
+        });
+      } else {
+        console.log('Service Worker is not supported by browser.');
+      }
+    </script>
   </body>
 </html>
