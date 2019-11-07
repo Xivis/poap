@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import pgPromise from 'pg-promise';
-import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, ClaimQR } from '../types';
+import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, ClaimQR, Task, UnlockTask, TaskCreator, Services } from '../types';
 import { ContractTransaction } from 'ethers';
 
 const db = pgPromise()({
@@ -211,4 +211,64 @@ export async function updateQrClaim(qr_hash: string, beneficiary:string, tx: Con
     qr_hash
   });
   return res.rowCount === 1;
+}
+
+export async function getTaskCreator(apiKey: string): Promise<null | TaskCreator> {
+  const res = await db.oneOrNone<TaskCreator>(
+    'SELECT * FROM task_creators WHERE api_key=${apiKey} AND valid_from <= current_timestamp AND valid_to >= current_timestamp',
+    {apiKey}
+  );
+  return res;
+}
+
+export async function createTask(data: any, taskName: string): Promise<null | Task> {
+  const task = await db.one(
+    'INSERT INTO tasks(name, task_data) VALUES(${taskName}, ${data}) RETURNING id, name, task_data, status, return_data',
+    {taskName, data}
+  );
+
+  return task;
+}
+
+export async function getPendingTasks(): Promise<Task[]>{
+  const res = await db.manyOrNone<Task>('SELECT * FROM tasks WHERE status=\'PENDING\'');
+  return res;
+}
+
+export async function hasToken(unlockTask: UnlockTask): Promise<boolean>{
+  const taskId = unlockTask.id;
+  const address = unlockTask.task_data.accountAddress;
+  const unlockProtocol = Services.unlockProtocol
+  const res = await db.result(
+    'SELECT * FROM tasks WHERE status<>\'FINISH_WITH_ERROR\' AND id < ${taskId} AND name=${unlockProtocol} AND task_data ->> \'accountAddress\' = ${address}',
+    {taskId, address, unlockProtocol})
+  return res.rowCount > 0;
+}
+
+export async function finishTaskWithErrors(errors: string, taskId: number){
+  await db.result(
+    'UPDATE tasks SET status=\'FINISH_WITH_ERROR\', return_data=${errors} where id=${taskId}',
+    {errors, taskId}
+  );
+}
+
+export async function setInProcessTask(taskId: number){
+  await db.result(
+    'UPDATE tasks SET status=\'IN_PROCESS\' where id=${taskId}',
+    {taskId}
+  );
+}
+
+export async function setPendingTask(taskId: number){
+  await db.result(
+    'UPDATE tasks SET status=\'PENDING\' where id=${taskId}',
+    {taskId}
+  );
+}
+
+export async function finishTask(txHash: string | undefined, taskId: number){
+  await db.result(
+    'UPDATE tasks SET status=\'FINISH\', return_data=${txHash} where id=${taskId}',
+    {txHash, taskId}
+  );
 }

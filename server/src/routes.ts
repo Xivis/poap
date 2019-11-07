@@ -19,7 +19,9 @@ import {
   updateQrClaim,
   checkDualQrClaim,
   getPendingTxsAmount,
-  unclaimQrClaim
+  unclaimQrClaim,
+  createTask,
+  getTaskCreator,
 } from './db';
 
 import {
@@ -37,7 +39,7 @@ import {
   checkAddress,
   checkHasToken,
   getTokenImg
-} from './poap-helper';
+} from './eth/helpers';
 
 import { Claim, PoapEvent, TransactionStatus, Address } from './types';
 import crypto from 'crypto';
@@ -767,4 +769,34 @@ export default async function routes(fastify: FastifyInstance) {
     }
   );
 
+  //********************************************************************
+  // TASKS
+  //********************************************************************
+
+  fastify.post(
+    '/tasks/',
+    {
+      schema: {
+        headers: {
+          required: ['Authorization'],
+          type: 'object',
+          properties: {
+            'Authorization': { type: 'string' },
+          }
+        },
+      },
+    },
+    async (req, res) => {
+      const taskCreator = await getTaskCreator(req.headers['authorization']);
+      if (!taskCreator) {
+        return new createError.NotFound('Invalid or expired token');
+      }
+
+      const task = await createTask(req.body, taskCreator.task_name);
+      if (!task) {
+        return new createError.BadRequest('Couldn\'t create the task');
+      }
+      return task;
+    }
+  );
 }

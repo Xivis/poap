@@ -113,3 +113,32 @@ export interface POAPVote {
   claimer: Address;
   proposal: number;
 }
+
+export interface TaskCreator {
+  id: number;
+  api_key: string;
+  valid_from: Date;
+  valid_to: Date;
+  description: string;
+  task_name: string;
+}
+
+export interface Task{
+  id: number;
+  name: string;
+  task_data: object;
+  status: string;
+  return_data: string;
+}
+
+export interface UnlockTask extends Task{
+  task_data: {
+    accountAddress: Address,
+    lockAddress: Address,
+    timestamp: Date,
+  }
+}
+
+export enum Services {
+  unlockProtocol = 'unlock-protocol',
+}
