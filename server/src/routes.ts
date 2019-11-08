@@ -43,6 +43,7 @@ import {
 
 import { Claim, PoapEvent, TransactionStatus, Address } from './types';
 import crypto from 'crypto';
+import WebSocket from 'ws';
 import getEnv from './envs';
 
 function sleep(ms: number){
@@ -799,4 +800,23 @@ export default async function routes(fastify: FastifyInstance) {
       return task;
     }
   );
+
+  //********************************************************************
+  // WEB SOCKET
+  //********************************************************************
+  fastify.wss.on('connection', function connection(ws: any, request: any, client: any) {
+    ws.on('message', function message(msg: string) {
+      if(msg === 'broadcast') {
+        fastify.wss.clients.forEach(function each(client) {
+          console.log(client);
+          if (client.readyState === WebSocket.OPEN) {
+            client.send('response broadcast');
+          }
+        });
+      } else {
+        ws.send('response only you');
+      }
+    });
+  });
+
 }

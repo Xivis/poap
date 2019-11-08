@@ -2,7 +2,7 @@ import fastifyFactory from 'fastify';
 import fastifyHelmet from 'fastify-helmet';
 import fastifyCors from 'fastify-cors';
 import fastifyRateLimit from 'fastify-rate-limit';
-
+import fastifyWebsocketServer from 'fastify-websocket-server';
 // @ts-ignore
 import fastifyCompress from 'fastify-compress';
 
@@ -29,6 +29,11 @@ fastify.register(fastifyRateLimit, {
 
 fastify.register(fastifyCors, {});
 fastify.register(fastifyCompress, {});
+fastify.register(fastifyWebsocketServer, {
+  
+}).after((err) => {
+  if (err) { throw err; }
+})
 
 fastify.register(authPlugin);
 fastify.register(routes);
