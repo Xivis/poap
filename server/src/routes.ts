@@ -22,6 +22,9 @@ import {
   unclaimQrClaim,
   createTask,
   getTaskCreator,
+  getNotifications,
+  getTotalNotifications,
+  createNotification
 } from './db';
 
 import {
@@ -38,12 +41,14 @@ import {
   lookupAddress,
   checkAddress,
   checkHasToken,
-  getTokenImg
+  getTokenImg,
+  getAllEventIds
 } from './eth/helpers';
 
-import { Claim, PoapEvent, TransactionStatus, Address } from './types';
+import { Claim, PoapEvent, TransactionStatus, Address, NotificationType, Notification } from './types';
 import crypto from 'crypto';
 import getEnv from './envs';
+import * as admin from "firebase-admin";
 
 function sleep(ms: number){
   return new Promise(resolve=>{
@@ -104,13 +109,28 @@ export default async function routes(fastify: FastifyInstance) {
     pattern: '^0x[0-9a-fA-F]{130}$',
   });
 
-  fastify.get('/metadata/:eventId/:tokenId', async (req, res) => {
-    const event = await getEvent(parseInt(req.params.eventId));
-    if (!event) {
-      throw new createError.NotFound('Invalid Event');
-    }
-    const tokenUrl = `https://api.poap.xyz/metadata/${req.params.eventId}/${req.params.tokenId}`;
-    return buildMetadataJson(tokenUrl, event);
+  fastify.get(
+    '/metadata/:eventId/:tokenId',
+    {
+      schema: {
+        tags: ['metadata', ],
+        params: {
+          eventId: {
+            type: 'string',
+          },
+          tokenId: {
+            type: 'string',
+          },
+        },
+      },
+    },
+    async (req, res) => {
+      const event = await getEvent(parseInt(req.params.eventId));
+      if (!event) {
+        throw new createError.NotFound('Invalid Event');
+      }
+      const tokenUrl = `https://api.poap.xyz/metadata/${req.params.eventId}/${req.params.tokenId}`;
+      return buildMetadataJson(tokenUrl, event);
   });
 
   //********************************************************************
@@ -121,6 +141,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/actions/ens_resolve',
     {
       schema: {
+        tags: ['actions', ],
         querystring: {
           name: { type: 'string' },
         },
@@ -149,6 +170,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/actions/ens_lookup/:address',
     {
       schema: {
+        tags: ['actions', ],
         params: {
           address: {
             type: 'string',
@@ -182,6 +204,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/actions/scan/:address',
     {
       schema: {
+        tags: ['actions', ],
         params: {
           address: 'address#',
         },
@@ -199,6 +222,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
+        tags: ['actions', ],
         body: {
           type: 'object',
           required: ['eventId', 'addresses', 'signer_address'],
@@ -238,6 +262,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
+        tags: ['actions', ],
         body: {
           type: 'object',
           required: ['eventIds', 'address', 'signer_address'],
@@ -268,6 +293,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/actions/claim',
     {
       schema: {
+        tags: ['actions', ],
         body: {
           type: 'object',
           required: ['claimId', 'eventId', 'proof', 'claimer', 'claimerSignature'],
@@ -297,6 +323,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/actions/claim-qr',
     {
       schema: {
+        tags: ['actions', ],
         querystring: {
           qr_hash: { type: 'string' },
         },
@@ -340,6 +367,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/actions/claim-qr',
     {
       schema: {
+        tags: ['actions', ],
         body: {
           type: 'object',
           required: ['address', 'qr_hash', 'secret'],
@@ -429,6 +457,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
+        tags: ['actions', ],
         body: {
           type: 'object',
           required: ['txHash', 'gasPrice'],
@@ -451,6 +480,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/token/:tokenId',
     {
       schema: {
+        tags: ['token', ],
         params: {
           tokenId: { type: 'integer' },
         },
@@ -468,6 +498,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
+        tags: ['burn', ],
         params: {
           tokenId: { type: 'integer' },
         },
@@ -486,13 +517,23 @@ export default async function routes(fastify: FastifyInstance) {
   //********************************************************************
   // SETTINGS
   //********************************************************************
-
-  fastify.get('/settings', () => getPoapSettings());
+  fastify.get(
+    '/settings',
+    {
+      schema: {
+        tags: ['settings', ],
+      },
+    },
+    async (req, res) => {
+      return getPoapSettings();
+    }
+  );
 
   fastify.get(
     '/settings/:name',
     {
       schema: {
+        tags: ['settings', ],
         params: {
           name: { type: 'string' },
         },
@@ -513,6 +554,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
+        tags: ['settings', ],
         params: {
           name: { type: 'string' },
           value: { type: 'string' },
@@ -544,12 +586,25 @@ export default async function routes(fastify: FastifyInstance) {
   // EVENTS
   //********************************************************************
 
-  fastify.get('/events', () => getEvents());
+  fastify.get(
+    '/events',
+    {
+      schema: {
+        tags: ['events', ],
+      },
+    },
+    async (req, res) => {
+      const events = await getEvents();
+      return events;
+    }
+  );
+
 
   fastify.get(
     '/events/:fancyid',
     {
       schema: {
+        tags: ['events', ],
         params: {
           fancyid: { type: 'string' },
         },
@@ -569,6 +624,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
+        tags: ['events', ],
         body: {
           type: 'object',
           required: [
@@ -631,6 +687,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
+        tags: ['events', ],
         params: {
           fancyid: { type: 'string' },
         },
@@ -670,6 +727,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
+        tags: ['transactions', ],
         querystring: {
           limit: { type: 'number' },
           offset: { type: 'number' },
@@ -707,7 +765,11 @@ export default async function routes(fastify: FastifyInstance) {
   //********************************************************************
 
   fastify.get(
-    '/signers', {},
+    '/signers', {
+      schema: {
+        tags: ['signers', ],
+      }
+    },
     async (req, res) => {
       let signers = await getSigners();
 
@@ -725,6 +787,7 @@ export default async function routes(fastify: FastifyInstance) {
     {
       preValidation: [fastify.authenticate],
       schema: {
+        tags: ['signers', ],
         params: {
           id: { type: 'string' },
         },
@@ -748,6 +811,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/token/:tokenId/image',
     {
       schema: {
+        tags: ['token', ],
         params: {
           tokenId: { type: 'integer' },
         },
@@ -777,6 +841,7 @@ export default async function routes(fastify: FastifyInstance) {
     '/tasks/',
     {
       schema: {
+        tags: ['tasks', ],
         headers: {
           required: ['Authorization'],
           type: 'object',
@@ -799,4 +864,217 @@ export default async function routes(fastify: FastifyInstance) {
       return task;
     }
   );
+
+  //********************************************************************
+  // NOTIFICATIONS
+  //********************************************************************
+
+  fastify.get(
+    '/notifications',
+    {
+      schema: {
+        tags: ['notifications', ],
+        querystring: {
+          limit: { type: 'number' },
+          offset: { type: 'number' },
+          address: { type: 'string' },
+          event_id: { type: 'number' },
+          type: { type: 'string' },
+        },
+        response: {
+          200: {
+            description: 'Successful response',
+            type: 'object',
+            properties: {
+              limit: { type: 'number' },
+              offset: { type: 'number' },
+              total: { type: 'number' },
+              notifications: { 
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'number'},
+                    title: { type: 'string'},
+                    description: { type: 'string'},
+                    type: { type: 'string'},
+                    event_id: { type: 'number'},
+                    event: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'number'},
+                        fancy_id: { type: 'string'},
+                        signer: { type: 'string'},
+                        signer_ip: { type: 'string'},
+                        name: { type: 'string'},
+                        description: { type: 'string'},
+                        city: { type: 'string'},
+                        country: { type: 'string'},
+                        event_url: { type: 'string'},
+                        image_url: { type: 'string'},
+                        year: { type: 'number'},
+                        start_date: { type: 'string'},
+                        end_date: { type: 'string'},
+                      }
+                    },
+                    created_date: { type: 'string'}
+                  }
+                }
+              },
+            }
+          }
+        },
+
+      },
+    },
+    async (req, res) => {
+      const limit = req.query.limit || 10;
+      const offset = req.query.offset || 0;
+      const type = req.query.type || null;
+      const event_id = req.query.event_id || null;
+      const address = req.query.address || null;
+      let event_ids:number[] = [];
+
+      if(type && [NotificationType.inbox, NotificationType.push].indexOf(type) == -1) {
+        return new createError.BadRequest('notification type must be in ["inbox", "push"]');
+      }
+
+      if(event_id) {
+        const event = await getEvent(event_id);
+        if (!event) {
+          return new createError.BadRequest('event does not exist');
+        }
+
+        event_ids.push(event.id)
+      }
+
+      if(address) {
+        const parsed_address = await checkAddress(address);
+        if (!parsed_address) {
+          return new createError.BadRequest('Address is not valid');
+        }
+
+        event_ids = await getAllEventIds(address)
+      }
+
+      let notifications = await getNotifications(limit, offset, type, event_ids);
+      const totalNotifications = await getTotalNotifications(type, event_ids);
+
+      const allEvents = await getEvents();
+
+      let indexedEvents: { [id: number] : PoapEvent; } = {}
+      for (let event of allEvents) {
+        indexedEvents[event.id] = event;
+      }
+
+      notifications = notifications.map((notification: Notification) => {
+        return {...notification, event:indexedEvents[notification.event_id]};
+      });
+
+      return {
+        limit: limit,
+        offset: offset,
+        total: totalNotifications,
+        notifications: notifications,
+      };
+    }
+  );
+
+  fastify.post(
+    '/notifications',
+    {
+      preValidation: [fastify.authenticate],
+      schema: {
+        tags: ['notifications', ],
+        body: {
+          type: 'object',
+          required: ['title', 'description', 'type', 'event_id'],
+          properties: {
+            title: {type: 'string'},
+            description: {type: 'string'},
+            type: {type: 'string'},
+            event_id: {type: 'number'}
+          },
+        },
+        response: {
+          200: {
+            description: 'Successful response',
+            type: 'object',
+            properties: {
+              id: { type: 'number'},
+              title: { type: 'string'},
+              description: { type: 'string'},
+              type: { type: 'string'},
+              event_id: { type: 'number'},
+              event: {
+                type: 'object',
+                properties: {
+                  id: { type: 'number'},
+                  fancy_id: { type: 'string'},
+                  signer: { type: 'string'},
+                  signer_ip: { type: 'string'},
+                  name: { type: 'string'},
+                  description: { type: 'string'},
+                  city: { type: 'string'},
+                  country: { type: 'string'},
+                  event_url: { type: 'string'},
+                  image_url: { type: 'string'},
+                  year: { type: 'number'},
+                  start_date: { type: 'string'},
+                  end_date: { type: 'string'},
+                }
+              },
+              created_date: { type: 'string'}
+            }
+          }
+        },
+      },
+    },
+    async (req, res) => {
+      const event_id = req.body.event_id || null;
+
+      if([NotificationType.inbox, NotificationType.push].indexOf(req.body.type) == -1) {
+        return new createError.BadRequest('notification type must be in ["inbox", "push"]');
+      }
+
+      const notification = await createNotification(req.body);
+      if (!notification) {
+        return new createError.BadRequest('Couldn\'t create the task');
+      }
+      
+      let topic = 'all';
+      if(event_id) {
+        const event = await getEvent(req.body.event_id);
+        if (!event) {
+          return new createError.BadRequest('event does not exist');
+        }
+        notification.event = event;
+        topic = `event-${event.id}`;
+      }
+
+      let message = {
+        topic: topic,
+        notification: {
+          title: notification.title,
+          body: notification.description
+        }
+      }
+
+      // Send a message to devices subscribed to the provided topic.
+      admin.messaging().send(message).then((response) => {}).catch((error) => {
+        return new createError.InternalServerError("Error sending push notification: " + error);
+      });
+
+      return notification
+    }
+  );
+
+  //********************************************************************
+  // SWAGGER
+  //********************************************************************
+
+  fastify.ready(err => {
+    if (err) throw err
+    fastify.swagger()
+  })
 }
