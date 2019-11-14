@@ -1,5 +1,5 @@
 /* eslint jsx-a11y/anchor-is-valid: 0 */
-import React, { useCallback, useContext, useState } from 'react';
+import React, { useCallback, useContext, useState, useEffect } from 'react';
 import { Link, Route, withRouter } from 'react-router-dom';
 import { slide as Menu } from 'react-burger-menu';
 
@@ -14,6 +14,8 @@ import { BurnPage } from './BurnPage';
 import { IssueForEventPage, IssueForUserPage } from './IssuePage';
 import { AddressManagementPage } from './AddressManagementPage';
 import { TransactionsPage } from './TransactionsPage';
+import { InboxPage } from './InboxPage';
+import { InboxListPage } from './InboxListPage';
 
 export const MintersPage = () => <div> This is a MintersPage </div>;
 
@@ -21,6 +23,11 @@ const NavigationMenu = withRouter(({ history }) => {
   const auth = useContext(AuthContext);
   const [isOpen, setIsOpen] = useState(false);
   const closeMenu = useCallback(() => setIsOpen(false), []);
+
+  useEffect(() => {
+    const { pathname } = history.location;
+    if (pathname === '/admin' || pathname === '/admin/') setIsOpen(true);
+  }, []);
 
   return (
     <Menu isOpen={isOpen} onStateChange={state => setIsOpen(state.isOpen)} right disableAutoFocus>
@@ -30,6 +37,14 @@ const NavigationMenu = withRouter(({ history }) => {
       </Link>
       <Link to={ROUTES.issueForUser} onClick={closeMenu}>
         Many Events
+      </Link>
+
+      <h2>Inbox</h2>
+      <Link to={ROUTES.inbox} onClick={closeMenu}>
+        Send Notification
+      </Link>
+      <Link to={ROUTES.inboxList} onClick={closeMenu}>
+        Notifications List
       </Link>
 
       <h2>Other Tasks</h2>
@@ -88,6 +103,8 @@ export const BackOffice: React.FC = () => (
         <Route path={ROUTES.burn} component={BurnPage} />
         <Route path={ROUTES.addressManagement} component={AddressManagementPage} />
         <Route path={ROUTES.transactions} component={TransactionsPage} />
+        <Route path={ROUTES.inbox} component={InboxPage} />
+        <Route path={ROUTES.inboxList} component={InboxListPage} />
         <Route
           exact
           path={ROUTES.admin}

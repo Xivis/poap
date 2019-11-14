@@ -1,3 +1,5 @@
+import queryString from 'query-string';
+
 import { authClient } from './auth';
 
 export type Address = string;
@@ -43,7 +45,7 @@ export interface HashClaim {
   claimed: boolean;
   claimed_date: string;
   created_date: string;
-  tx_status: string
+  tx_status: string;
   secret: string;
 }
 export interface PoapSetting {
@@ -76,14 +78,38 @@ export interface PaginatedTransactions {
   limit: number;
   offset: number;
   total: number;
-  transactions: Transaction[]
+  transactions: Transaction[];
+}
+
+export interface Notification {
+  id: number;
+  title: string;
+  description: string;
+  type: string;
+  event_id: number;
+  event: PoapEvent;
+}
+
+export interface PaginatedNotifications {
+  limit: number;
+  offset: number;
+  total: number;
+  notifications: Notification[];
 }
 
 export type ENSQueryResult = { valid: false } | { valid: true; address: string };
 
 export type AddressQueryResult = { valid: false } | { valid: true; ens: string };
 
-const API_BASE = process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : 'https://api.poap.xyz';
+let API_BASE = 'https://api.poap.xyz';
+
+if (process.env.NODE_ENV === 'development') {
+  if (process.env.REACT_APP_API_ROOT) {
+    API_BASE = process.env.REACT_APP_API_ROOT;
+  } else {
+    API_BASE = 'http://localhost:8080';
+  }
+}
 
 async function fetchJson<A>(input: RequestInfo, init?: RequestInit): Promise<A> {
   const res = await fetch(input, init);
@@ -216,25 +242,52 @@ export function burnToken(tokenId: string): Promise<any> {
   });
 }
 
-export async function mintEventToManyUsers(eventId: number, addresses: string[], signer_address: string): Promise<any> {
-  return secureFetchNoResponse(`${API_BASE}/actions/mintEventToManyUsers`, {
+export async function sendNotification(
+  title: string,
+  description: string,
+  notificationType: string,
+  selectedEventId: number | null
+): Promise<any> {
+  return secureFetchNoResponse(`${API_BASE}/notifications/`, {
+    // TODO: remove / in url
     method: 'POST',
     body: JSON.stringify({
-      eventId,
-      addresses,
-      signer_address
+      title,
+      description,
+      event_id: selectedEventId,
+      type: notificationType,
     }),
     headers: { 'Content-Type': 'application/json' },
   });
 }
 
-export async function mintUserToManyEvents(eventIds: number[], address: string, signer_address: string): Promise<any> {
+export async function mintEventToManyUsers(
+  eventId: number,
+  addresses: string[],
+  signer_address: string
+): Promise<any> {
+  return secureFetchNoResponse(`${API_BASE}/actions/mintEventToManyUsers`, {
+    method: 'POST',
+    body: JSON.stringify({
+      eventId,
+      addresses,
+      signer_address,
+    }),
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+export async function mintUserToManyEvents(
+  eventIds: number[],
+  address: string,
+  signer_address: string
+): Promise<any> {
   return secureFetchNoResponse(`${API_BASE}/actions/mintUserToManyEvents`, {
     method: 'POST',
     body: JSON.stringify({
       eventIds,
       address,
-      signer_address
+      signer_address,
     }),
     headers: { 'Content-Type': 'application/json' },
   });
@@ -264,18 +317,33 @@ export function setSigner(id: number, gasPrice: string): Promise<any> {
   return secureFetchNoResponse(`${API_BASE}/signers/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({gas_price: gasPrice})
+    body: JSON.stringify({ gas_price: gasPrice }),
   });
 }
 
-export function getTransactions(limit: number, offset: number, status: string): Promise<PaginatedTransactions> {
+export function getNotifications(
+  limit?: number,
+  offset?: number,
+  type?: string,
+  event_id?: number
+): Promise<PaginatedNotifications> {
+  const params = queryString.stringify({ limit, offset, type, event_id });
+  return secureFetch(`${API_BASE}/notifications?${params}`);
+}
+
+export function getTransactions(
+  limit: number,
+  offset: number,
+  status: string
+): Promise<PaginatedTransactions> {
+  // TODO: use queryString library to avoid sending empty params
   return secureFetch(`${API_BASE}/transactions?limit=${limit}&offset=${offset}&status=${status}`);
 }
 
 export function bumpTransaction(tx_hash: string, gasPrice: string): Promise<any> {
   return secureFetchNoResponse(`${API_BASE}/actions/bump`, {
     method: 'POST',
-    body: JSON.stringify({txHash: tx_hash, gas_price: gasPrice})
+    body: JSON.stringify({ txHash: tx_hash, gas_price: gasPrice }),
   });
 }
 
@@ -283,7 +351,11 @@ export async function getClaimHash(hash: string): Promise<HashClaim> {
   return fetchJson(`${API_BASE}/actions/claim-qr?qr_hash=${hash}`);
 }
 
-export async function postClaimHash(qr_hash: string, address: string, secret: string): Promise<HashClaim> {
+export async function postClaimHash(
+  qr_hash: string,
+  address: string,
+  secret: string
+): Promise<HashClaim> {
   return fetchJson(`${API_BASE}/actions/claim-qr`, {
     method: 'POST',
     body: JSON.stringify({ qr_hash, address, secret }),
