@@ -11,6 +11,9 @@ export interface EnvVariables {
   secretKey: string;
   infuraNet: string;
   providerStr: string;
+  auth0AppName: string;
+  auth0Kid: string;
+  auth0Audience: string;
 }
 
 export interface PoapHelpers {
@@ -70,6 +73,9 @@ export default function getEnv(): EnvVariables {
     poapHelpers: getHelperWallets(provider),
     secretKey: ensureEnvVariable('SECRET_KEY'),
     infuraNet: ensureEnvVariable('ETH_NETWORK'),
-    providerStr: ensureEnvVariable('PROVIDER')
+    providerStr: ensureEnvVariable('PROVIDER'),
+    auth0AppName: ensureEnvVariable('AUTH0_APP_NAME'),
+    auth0Kid: ensureEnvVariable('AUTH0_KID'),
+    auth0Audience: ensureEnvVariable('AUTH0_AUDIENCE'),
   };
 }
