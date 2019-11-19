@@ -147,9 +147,8 @@
   color: $color-secondary;
 }
 
-.admin-table{
+.admin-table {
   .row {
-
     padding: 10px 2px;
 
     &.table-header {
@@ -162,13 +161,45 @@
     }
   }
 
-  .admin-table-row{
+  .admin-table-row {
     .capitalize {
       text-transform: capitalize;
     }
+
     .row:nth-child(even) {
       background: white;
       border: 1px solid #d2d2d2;
+    }
+
+    .row {
+      .ellipsis {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .description {
+        display: flex;
+        align-items: center;
+        height: 18px;
+        width: 80px;
+
+        @media (max-width: $bp-mw) {
+          width: auto;
+          height: auto;
+        }
+
+        .edit-icon {
+          width: 26px;
+          right: 10px;
+
+          @media (max-width: $bp-mw) {
+            position: absolute;
+            top: -74px;
+            width: 22px;
+          }
+        }
+      }
     }
 
     .edit-icon {
@@ -185,6 +216,65 @@
   .filters {
     display: flex;
     flex-direction: row;
+
+    &.inbox {
+      @media (max-width: $bp-mw) {
+        flex-direction: column;
+
+        > div:last-child {
+          margin-top: 6px;
+        }
+      }
+
+      .filter {
+        flex-direction: column;
+
+        > .filter-option {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+
+          &.select {
+            justify-content: space-between;
+            height: 50px;
+
+            @media (max-width: $bp-m) {
+              flex-direction: column;
+              align-items: flex-start;
+              height: 100px;
+            }
+
+            > div {
+              display: flex;
+              flex-direction: row;
+              align-items: center;
+
+              @media (max-width: $bp-m) {
+                height: 50px;
+              }
+            }
+          }
+
+          &:nth-child(3):not(.select) {
+            height: 50px;
+          }
+
+          label {
+            margin-bottom: 0;
+          }
+
+          input {
+            margin-bottom: 2px;
+          }
+        }
+
+        > label {
+          cursor: default;
+          margin-bottom: 24px;
+        }
+      }
+    }
+
     .filter {
       display: flex;
       margin: 10px 20px 10px 0;
@@ -213,16 +303,16 @@
           cursor: pointer;
         }
 
-        &.active{
+        &.active {
           background: white;
         }
       }
     }
   }
 
+  &.notifications,
   &.transactions,
-  &.addresses{
-
+  &.addresses {
     .no-results {
       text-align: center;
       padding: 50px 0;
@@ -231,7 +321,7 @@
       color: $color-medium-violet;
     }
 
-    .admin-table-row{
+    .admin-table-row {
       .center {
         @media (max-width: $bp-mw) {
           text-align: left;
@@ -244,28 +334,26 @@
         display: none;
       }
     }
-    .visible-sm{
+    .visible-sm {
       display: none;
       @media (max-width: $bp-mw) {
         display: inline;
       }
     }
-    .status-icon{
+    .status-icon {
       @media (max-width: $bp-mw) {
         position: absolute;
         top: -70px;
         right: 10px;
       }
     }
-    span.visible-sm{
+    span.visible-sm {
       font-weight: bold;
     }
   }
 
   &.addresses {
-
   }
-
 }
 
 .price-gas-modal-form {
@@ -293,7 +381,14 @@
   right: auto !important;
   left: auto !important;
 
-  .description{
+  .description {
     padding: 20px 0;
+  }
+
+  .close-modal {
+    font-weight: bold;
+    padding: 10px 0;
+    display: inline-block;
+    cursor: pointer;
   }
 }
