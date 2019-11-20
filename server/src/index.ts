@@ -6,7 +6,8 @@ import fastifyRateLimit from 'fastify-rate-limit';
 // @ts-ignore
 import fastifyCompress from 'fastify-compress';
 
-import authPlugin from './auth';
+import authPlugin from './plugins/auth-decorator';
+import groupsPlugin from './plugins/groups-decorator';
 import routes from './routes';
 import transactionsMonitorCron  from './plugins/tx-monitor';
 import taskMonitorCron  from './plugins/task-monitor';
@@ -31,6 +32,7 @@ fastify.register(fastifyCors, {});
 fastify.register(fastifyCompress, {});
 
 fastify.register(authPlugin);
+fastify.register(groupsPlugin);
 fastify.register(routes);
 fastify.register(transactionsMonitorCron);
 fastify.register(taskMonitorCron);

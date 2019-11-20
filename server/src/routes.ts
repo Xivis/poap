@@ -197,7 +197,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/actions/mintEventToManyUsers',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         body: {
           type: 'object',
@@ -236,7 +236,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/actions/mintUserToManyEvents',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         body: {
           type: 'object',
@@ -427,7 +427,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/actions/bump',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         body: {
           type: 'object',
@@ -466,7 +466,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/burn/:tokenId',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         params: {
           tokenId: { type: 'integer' },
@@ -511,7 +511,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.put(
     '/settings/:name/:value',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         params: {
           name: { type: 'string' },
@@ -668,7 +668,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.get(
     '/transactions',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         querystring: {
           limit: { type: 'number' },
@@ -723,7 +723,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.put(
     '/signers/:id',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         params: {
           id: { type: 'string' },
