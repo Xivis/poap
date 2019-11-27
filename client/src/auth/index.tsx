@@ -7,6 +7,7 @@ const BASE_URI = `${window.location.protocol}//${window.location.host}`;
 export class AuthService {
   private client!: Auth0Client;
   private _isAuthenticated: boolean = false;
+  public user!: Promise<User>;
 
   isAuthenticated() {
     return this._isAuthenticated;
@@ -20,6 +21,7 @@ export class AuthService {
       audience: process.env.REACT_APP_AUTH0_AUDIENCE || '',
     });
     this._isAuthenticated = await this.client.isAuthenticated();
+    this.user = await this.client.getUser();
   }
 
   async login(onSuccessPath = '/') {
@@ -72,3 +74,14 @@ export function withAuth<P>(
     );
   };
 }
+
+type User = {
+  email: string;
+  email_verified: boolean;
+  name: string;
+  nickname: string;
+  picture: string;
+  sub: string;
+  updated_at: string;
+  'https://poap.xyz/roles': string[];
+};

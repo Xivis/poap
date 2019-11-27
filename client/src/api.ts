@@ -19,7 +19,7 @@ export interface PoapEvent {
   city: string;
   country: string;
   event_url: string;
-  image_url: string;
+  image: string;
   year: number;
   start_date: string;
   end_date: string;
@@ -133,7 +133,6 @@ async function fetchJson<A>(input: RequestInfo, init?: RequestInit): Promise<A> 
   if (res.ok) {
     return await res.json();
   } else {
-    console.error(res);
     throw new Error(`Error with request statusCode: ${res.status}`);
   }
 }
@@ -148,7 +147,9 @@ async function secureFetchNoResponse(input: RequestInfo, init?: RequestInit): Pr
     },
   });
   if (!res.ok) {
-    throw new Error(`Request Failed => statusCode: ${res.status} msg: ${res.statusText}`);
+    const data = await res.json();
+    if (data && data.message) throw new Error(data.message);
+    throw new Error(`Request failed => statusCode: ${res.status} msg: ${res.statusText}`);
   }
 }
 
@@ -186,7 +187,9 @@ export function getTokenInfo(tokenId: string): Promise<TokenInfo> {
 }
 
 export async function getEvents(): Promise<PoapEvent[]> {
-  return fetchJson(`${API_BASE}/events`);
+  const user = await authClient.user;
+  const userId = user.sub;
+  return fetchJson(`${API_BASE}/events?user_id=${userId}`);
 }
 
 export async function getEvent(fancyId: string): Promise<null | PoapEvent> {
@@ -312,19 +315,17 @@ export async function mintUserToManyEvents(
   });
 }
 
-export async function updateEvent(event: PoapEvent) {
-  return secureFetchNoResponse(`${API_BASE}/events/${event.fancy_id}`, {
+export async function updateEvent(event: FormData, fancyId: string) {
+  return secureFetchNoResponse(`${API_BASE}/events/${fancyId}`, {
     method: 'PUT',
-    body: JSON.stringify(event),
-    headers: { 'Content-Type': 'application/json' },
+    body: event,
   });
 }
 
-export async function createEvent(event: PoapEvent) {
+export async function createEvent(event: FormData) {
   return secureFetchNoResponse(`${API_BASE}/events`, {
     method: 'POST',
-    body: JSON.stringify(event),
-    headers: { 'Content-Type': 'application/json' },
+    body: event,
   });
 }
 

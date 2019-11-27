@@ -1,7 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, ChangeEvent } from 'react';
 import { Link, Switch, Route, RouteComponentProps } from 'react-router-dom';
 import classNames from 'classnames';
 import { Formik, Form, Field, ErrorMessage, FieldProps } from 'formik';
+import DayPickerInput from 'react-day-picker/DayPickerInput';
+import 'react-day-picker/lib/style.css';
+import { format } from 'date-fns';
+import { useToasts } from 'react-toast-notifications';
 
 // libraries
 import ReactPaginate from 'react-paginate';
@@ -39,20 +43,8 @@ const EditEventForm: React.FC<RouteComponentProps<{
 
   useEffect(() => {
     const fn = async () => {
-      // if (location.state) {
-      //   setEvent(location.state);
-      // } else {
       const event = await getEvent(match.params.eventId);
-      if (event) {
-        if (event.signer == null) {
-          event.signer = '';
-        }
-        if (event.signer_ip == null) {
-          event.signer_ip = '';
-        }
-      }
       setEvent(event);
-      // }
     };
     fn();
   }, [location, match]);
@@ -64,55 +56,109 @@ const EditEventForm: React.FC<RouteComponentProps<{
   return <EventForm event={event} />;
 };
 
+type EventEditValues = {
+  name: string;
+  year: number;
+  id: number;
+  description: string;
+  start_date: string;
+  end_date: string;
+  city: string;
+  country: string;
+  event_url: string;
+  image: Blob;
+  isFile: boolean;
+};
+
+type DatePickerDay = 'start_date' | 'end_date';
+
+type SetFieldValue = (field: string, value: any) => void;
+
 const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, event }) => {
-  const values = useMemo(() => {
+  const startingDate = new Date('1 Jan 1900');
+  const endingDate = new Date('1 Jan 2200');
+  const dateFormatter = (day: Date | number) => format(day, 'MM-dd-yyyy');
+
+  const { addToast } = useToasts();
+
+  const initialValues = useMemo(() => {
     if (event) {
       return {
         ...event,
+        isFile: false,
       };
     } else {
       const now = new Date();
       const year = now.getFullYear();
-      const day = now.getDate() < 10 ? `0${now.getDate()}` : now.getDate().toString();
-      const month = now.getMonth() < 10 ? `0${now.getMonth()}` : now.getMonth().toString();
-      return {
+      const values: EventEditValues = {
         name: '',
-        year: now.getFullYear(),
+        year,
         id: 0,
-        fancy_id: '',
         description: '',
-        start_date: `${year}-${month}-${day}`,
-        end_date: `${year}-${month}-${day}`,
+        start_date: '',
+        end_date: '',
         city: '',
         country: '',
         event_url: '',
-        image_url: '',
-        signer_ip: '',
-        signer: '',
+        image: new Blob(),
+        isFile: true,
       };
+      return values;
     }
   }, [event]);
+
+  const handleFileChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    setFieldValue: SetFieldValue
+  ) => {
+    event.preventDefault();
+    const { files } = event.target;
+
+    if (!files || !files.length) return;
+
+    const firstFile = files[0];
+    setFieldValue('image', firstFile);
+  };
+
+  const handleDayClick = (day: Date, dayToSetup: DatePickerDay, setFieldValue: SetFieldValue) =>
+    setFieldValue(dayToSetup, dateFormatter(day));
+
   return (
     <div className={'bk-container'}>
       <Formik
-        initialValues={values}
+        initialValues={initialValues}
+        validateOnBlur={false}
+        validateOnChange={false}
         validationSchema={PoapEventSchema}
-        onSubmit={async (values, actions) => {
+        onSubmit={async (submittedValues, actions) => {
           try {
             actions.setSubmitting(true);
-            await (create ? createEvent(values!) : updateEvent(values!));
-          } finally {
+            const formData = new FormData();
+
+            const { isFile, ...othersKeys } = submittedValues;
+
+            Object.entries(othersKeys).forEach(([key, value]) => {
+              formData.append(key, typeof value === 'number' ? value.toString() : value);
+            });
+
+            await (create
+              ? createEvent(formData!)
+              : event && updateEvent(formData!, event.fancy_id));
+          } catch (err) {
             actions.setSubmitting(false);
+            addToast(err.message, {
+              appearance: 'error',
+              autoDismiss: true,
+            });
           }
         }}
       >
-        {({ isSubmitting, isValid, dirty }) => (
+        {({ values, errors, isSubmitting, setFieldValue }) => (
           <Form>
             {create ? (
               <>
                 <h2>Create Event</h2>
                 <EventField disabled={!create} title="Name" name="name" />
-                <EventField disabled={!create} title="Year" name="year" />
               </>
             ) : (
               <>
@@ -122,49 +168,134 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
                 <EventField disabled={!create} title="ID" name="id" />
               </>
             )}
-
-            <EventField disabled={!create} title="Fancy ID" name="fancy_id" />
-            <EventField disabled={!create} title="Description" name="description" />
-            <div className="bk-group">
-              <EventField disabled={!create} title="Start Date" name="start_date" />
-              <EventField disabled={!create} title="End Date" name="end_date" />
-            </div>
+            <EventField disabled={!create} title="Description" type="textarea" name="description" />
             <div className="bk-group">
               <EventField disabled={!create} title="City" name="city" />
               <EventField disabled={!create} title="Country" name="country" />
             </div>
+            <div className="bk-group">
+              <DayPickerContainer
+                text="Start Date:"
+                dayToSetup="start_date"
+                handleDayClick={handleDayClick}
+                setFieldValue={setFieldValue}
+                disabledDays={
+                  values.end_date ? { from: new Date(values.end_date), to: endingDate } : undefined
+                }
+              />
+              <DayPickerContainer
+                text="End Date:"
+                dayToSetup="end_date"
+                handleDayClick={handleDayClick}
+                setFieldValue={setFieldValue}
+                disabledDays={
+                  values.start_date
+                    ? { from: startingDate, to: new Date(values.start_date) }
+                    : undefined
+                }
+              />
+            </div>
             <EventField title="Website" name="event_url" />
-            <EventField title="Image Url" name="image_url" />
-            <EventField title="Signer Url" name="signer_ip" />
-            <EventField title="Signer Address" name="signer" />
 
-            <SubmitButton text="Save" isSubmitting={isSubmitting} canSubmit={dirty && isValid} />
+            <ImageContainer
+              text="Upload Image:"
+              handleFileChange={handleFileChange}
+              setFieldValue={setFieldValue}
+              errors={errors}
+            />
+            {event && typeof event.image === 'string' && (
+              <div className={'image-edit-container'}>
+                <img className={'image-edit'} src={event.image} />
+              </div>
+            )}
+            <SubmitButton text="Save" isSubmitting={isSubmitting} canSubmit={true} />
           </Form>
         )}
       </Formik>
-      {!create && <Link to={`/claim/${event!.fancy_id}`}>Go to Claim Page</Link>}
     </div>
   );
 };
+
+type DatePickerContainerProps = {
+  text: string;
+  dayToSetup: DatePickerDay;
+  handleDayClick: (day: Date, dayToSetup: DatePickerDay, setFieldValue: SetFieldValue) => void;
+  setFieldValue: SetFieldValue;
+  disabledDays: RangeModifier | undefined;
+};
+export interface RangeModifier {
+  from: Date;
+  to: Date;
+}
+
+const DayPickerContainer = ({
+  text,
+  dayToSetup,
+  handleDayClick,
+  setFieldValue,
+  disabledDays,
+}: DatePickerContainerProps) => {
+  const handleDayChange = (day: Date) => handleDayClick(day, dayToSetup, setFieldValue);
+
+  return (
+    <div className="date-picker-container">
+      <span>{text}</span>
+      <DayPickerInput
+        dayPickerProps={{ disabledDays: disabledDays }}
+        onDayChange={handleDayChange}
+      />
+    </div>
+  );
+};
+
+type ImageContainerProps = {
+  text: string;
+  handleFileChange: Function;
+  setFieldValue: Function;
+  errors: any;
+};
+
+const ImageContainer = ({ text, handleFileChange, setFieldValue, errors }: ImageContainerProps) => (
+  <div className="date-picker-container">
+    <span>{text}</span>
+    <input
+      type="file"
+      className={classNames(Boolean(errors.image) && 'error')}
+      onChange={(e: ChangeEvent<HTMLInputElement>) => handleFileChange(e, setFieldValue)}
+    />
+    <ErrorMessage name="image" component="p" className="bk-error" />
+  </div>
+);
 
 type EventFieldProps = {
   title: string;
   name: string;
   disabled?: boolean;
+  type?: string;
 };
-const EventField: React.FC<EventFieldProps> = ({ title, name, disabled }) => {
+const EventField: React.FC<EventFieldProps> = ({ title, name, disabled, type }) => {
   return (
     <Field
       name={name}
       render={({ field, form }: FieldProps) => (
         <div className="bk-form-row">
           <label>{title}:</label>
-          <input
-            type="text"
-            {...field}
-            disabled={disabled}
-            className={classNames(!!form.errors[name] && 'error')}
-          />
+          {type === 'textarea' && (
+            <textarea
+              {...field}
+              wrap="soft"
+              disabled={disabled}
+              className={classNames(!!form.errors[name] && 'error')}
+            />
+          )}
+          {type !== 'textarea' && (
+            <input
+              {...field}
+              type={type || 'text'}
+              disabled={disabled}
+              className={classNames(!!form.errors[name] && 'error')}
+            />
+          )}
           <ErrorMessage name={name} component="p" className="bk-error" />
         </div>
       )}
