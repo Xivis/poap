@@ -1,4 +1,5 @@
-import React, { FC, useState, useEffect, ChangeEvent, useRef } from 'react';
+import React, { FC, useState, useEffect, ChangeEvent } from 'react';
+import { useToasts } from 'react-toast-notifications';
 
 /* Libraries */
 import ReactModal from 'react-modal';
@@ -36,13 +37,15 @@ const InboxListPage: FC = () => {
   const [notifications, setNotifications] = useState<null | Notification[]>(null);
   const [events, setEvents] = useState<PoapEvent[]>([]);
 
+  const { addToast } = useToasts();
+
   useEffect(() => {
     fetchEvents();
   }, []);
 
   useEffect(() => {
     page !== 0 ? setPage(0) : fetchNotifications();
-  }, [notificationType]);
+  }, [notificationType]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
     setShouldResetPage(true);
@@ -56,11 +59,11 @@ const InboxListPage: FC = () => {
     setSelectedEvent(undefined);
 
     page !== 0 ? setPage(0) : fetchNotifications();
-  }, [shouldResetPage]);
+  }, [shouldResetPage]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
     fetchNotifications();
-  }, [page]);
+  }, [page]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   const fetchEvents = async () => {
     const events = await getEvents();
@@ -76,12 +79,20 @@ const InboxListPage: FC = () => {
     }
 
     try {
-       const response = await getNotifications(PAGE_SIZE, page * PAGE_SIZE, notificationType, event_id);
-       if (!response) return;
-       setNotifications(response.notifications);
-       setTotal(response.total);
-    } catch(e) {
-      console.log(e)
+      const response = await getNotifications(
+        PAGE_SIZE,
+        page * PAGE_SIZE,
+        notificationType,
+        event_id
+      );
+      if (!response) return;
+      setNotifications(response.notifications);
+      setTotal(response.total);
+    } catch (e) {
+      addToast(e.message, {
+        appearance: 'error',
+        autoDismiss: true,
+      });
     } finally {
       setIsFetchingNotifications(false);
     }
@@ -148,7 +159,7 @@ const InboxListPage: FC = () => {
               <label htmlFor={`everyone`}>Sent to everyone</label>
             </div>
             <div className="filter-option select">
-              <div>
+              <div className="ellipsis">
                 <input
                   type={'radio'}
                   id={`event`}
@@ -192,6 +203,7 @@ const InboxListPage: FC = () => {
         {isFetchingNotifications && <Loading />}
         {notifications &&
           !isFetchingNotifications &&
+          notifications &&
           notifications.map((notification, i) => {
             return (
               <div className={`row ${i % 2 === 0 ? 'even' : 'odd'}`} key={notification.id}>
@@ -212,7 +224,9 @@ const InboxListPage: FC = () => {
 
                 <div className={'col-md-4 ellipsis'}>
                   <span className={'visible-sm'}>Event: </span>
-                  {notification.event.name}
+                  {notification.event && notification.event.name
+                    ? notification.event.name
+                    : 'No name'}
                 </div>
 
                 <div className={'col-md-1 description'}>

@@ -86,6 +86,17 @@
   font-weight: bold;
 }
 
+.cards-container {
+  display: grid;
+  grid-template-columns: auto;
+  grid-row-gap: 40px;
+
+  @media (min-width: $bp-l) {
+    grid-template-columns: repeat(2, 1fr);
+    grid-column-gap: 80px;
+  }
+}
+
 .card {
   width: 100%;
   border-radius: 3px;
@@ -98,6 +109,29 @@
   text-align: left;
   margin-bottom: 16px;
   min-height: 118px;
+
+  &.card-link {
+    flex-direction: column;
+    cursor: pointer;
+    box-shadow: 0 10px 30px -5px rgba(101, 52, 255, 0.1);
+    border-radius: 15px;
+    padding: 40px 0 60px 0;
+    transition: box-shadow 0.2s;
+
+    &:hover {
+      text-decoration: none;
+      box-shadow: 0 10px 30px -5px rgba(101, 52, 255, 0.3);
+    }
+
+    h3 {
+      text-align: center;
+    }
+
+    .icon {
+      height: 90px;
+      margin-top: 20px;
+    }
+  }
 
   .content {
     display: flex;
@@ -172,12 +206,16 @@
     }
 
     .row {
-      .ellipsis {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
+      .status {
+        .status-icon {
+          right: 10px;
 
+          @media (max-width: $bp-mw) {
+            position: absolute;
+            top: -55px;
+          }
+        }
+      }
       .description {
         display: flex;
         align-items: center;
@@ -228,6 +266,7 @@
 
       .filter {
         flex-direction: column;
+        margin: 10px 20px 16px 0;
 
         > .filter-option {
           display: flex;
@@ -265,6 +304,56 @@
 
           input {
             margin-bottom: 2px;
+            cursor: pointer;
+          }
+        }
+
+        > label {
+          cursor: default;
+          margin-bottom: 24px;
+        }
+      }
+    }
+
+    &.qr {
+      @media (max-width: $bp-mw) {
+        flex-direction: column;
+      }
+
+      .filter {
+        flex-direction: column;
+        margin: 10px 20px 16px 0;
+
+        .filter-group {
+          display: flex;
+          flex-direction: row;
+          height: 50px;
+
+          @media (max-width: $bp-mw) {
+            height: 100px;
+            align-items: flex-start;
+          }
+
+          .filter-option {
+            display: flex;
+            align-items: center;
+
+            &:first-child {
+              margin-right: 40px;
+            }
+
+            input {
+              margin-bottom: 2px;
+              cursor: pointer;
+            }
+
+            select {
+              max-width: auto;
+            }
+
+            label {
+              margin-bottom: 0;
+            }
           }
         }
 
@@ -278,6 +367,7 @@
     .filter {
       display: flex;
       margin: 10px 20px 10px 0;
+
       label {
         text-transform: capitalize;
         cursor: pointer;
@@ -310,6 +400,7 @@
     }
   }
 
+  &.qr,
   &.notifications,
   &.transactions,
   &.addresses {
@@ -354,6 +445,12 @@
 
   &.addresses {
   }
+}
+
+.ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .price-gas-modal-form {

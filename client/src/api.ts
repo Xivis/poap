@@ -97,19 +97,36 @@ export interface PaginatedNotifications {
   notifications: Notification[];
 }
 
+export type QrCode = {
+  id: number;
+  qr_hash: string;
+  claimed: boolean;
+  tx_hash: string;
+  event_id: number;
+  event: PoapEvent;
+};
+
+export type PaginatedQrCodes = {
+  limit: number;
+  offset: number;
+  total: number;
+  codes: QrCode[];
+};
+
 export type ENSQueryResult = { valid: false } | { valid: true; address: string };
 
 export type AddressQueryResult = { valid: false } | { valid: true; ens: string };
 
 let API_BASE = 'https://api.poap.xyz';
+// let API_BASE = 'http://10.0.0.146:8080';
 
-if (process.env.NODE_ENV === 'development') {
-  if (process.env.REACT_APP_API_ROOT) {
-    API_BASE = process.env.REACT_APP_API_ROOT;
-  } else {
-    API_BASE = 'http://localhost:8080';
-  }
-}
+// if (process.env.NODE_ENV === 'development') {
+//   if (process.env.REACT_APP_API_ROOT) {
+//     API_BASE = process.env.REACT_APP_API_ROOT;
+//   } else {
+//     API_BASE = 'http://localhost:8080';
+//   }
+// }
 
 async function fetchJson<A>(input: RequestInfo, init?: RequestInit): Promise<A> {
   const res = await fetch(input, init);
@@ -145,6 +162,8 @@ async function secureFetch<A>(input: RequestInfo, init?: RequestInit): Promise<A
     },
   });
   if (!res.ok) {
+    const data = await res.json();
+    if (data && data.message) throw new Error(data.message);
     throw new Error(`Request Failed => statusCode: ${res.status} msg: ${res.statusText}`);
   }
   return await res.json();
@@ -327,8 +346,18 @@ export function getNotifications(
   type?: string,
   event_id?: number
 ): Promise<PaginatedNotifications> {
-  const params = queryString.stringify({ limit, offset, type, event_id });
+  const params = queryString.stringify({ limit, offset, type, event_id }, { sort: false });
   return secureFetch(`${API_BASE}/notifications?${params}`);
+}
+
+export function getQrCodes(
+  limit?: number,
+  offset?: number,
+  status?: boolean,
+  event_id?: number
+): Promise<PaginatedQrCodes> {
+  const params = queryString.stringify({ limit, offset, status, event_id }, { sort: false });
+  return secureFetch(`${API_BASE}/qr?${params}`);
 }
 
 export function getTransactions(
