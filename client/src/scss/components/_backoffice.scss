@@ -31,7 +31,6 @@
 
 .bk-form-row {
   width: 100%;
-  width: 100%;
   margin: 18px 0px;
 
   > label {
@@ -43,6 +42,7 @@
   input,
   textarea {
     max-width: none;
+    color: $color-primary;
 
     &.error {
       border: 2px solid #e13c5d;
@@ -66,6 +66,7 @@
 
 .bk-error {
   color: #e13c5d;
+  text-align: center;
 
   // margin-top: 5px;
   // @include x-rem(font-size, 14px);
@@ -189,11 +190,10 @@
 
 .admin-table {
   .row {
-    padding: 10px 2px;
+    padding: 15px;
 
     &.table-header {
       font-weight: bold;
-      border-bottom: 1px solid #d2d2d2;
     }
 
     .center {
@@ -202,16 +202,41 @@
   }
 
   .admin-table-row {
+    border-top: 1px solid #d2d2d2;
+    border-right: 1px solid #d2d2d2;
+    border-left: 1px solid #d2d2d2;
+
     .capitalize {
       text-transform: capitalize;
     }
 
     .row:nth-child(even) {
       background: white;
-      border: 1px solid #d2d2d2;
+
+      @media (max-width: $bp-sw) {
+        position: relative;
+
+        .checkbox {
+          position: absolute;
+          bottom: 15px;
+          right: 25px;
+        }
+      }
     }
 
     .row {
+      border-bottom: 1px solid #d2d2d2;
+
+      @media (max-width: $bp-sw) {
+        position: relative;
+
+        .checkbox {
+          position: absolute;
+          bottom: 15px;
+          right: 25px;
+        }
+      }
+
       .status {
         .status-icon {
           right: 10px;
@@ -224,7 +249,14 @@
       }
 
       .logo-image-container {
-        height: 60px;
+        height: 20px;
+        position: absolute;
+        top: 15px;
+        right: 15px;
+
+        @media (min-width: $bp-l) {
+          position: static;
+        }
       }
 
       .logo-image {
@@ -242,9 +274,10 @@
           height: auto;
         }
 
-        .edit-icon {
+        .plus-edit-icon {
           width: 26px;
           right: 10px;
+          color: $color-primary;
 
           @media (max-width: $bp-mw) {
             position: absolute;
@@ -262,14 +295,29 @@
       width: 20px;
     }
     .status-icon {
-      width: 20px;
+      height: 20px;
     }
   }
 
   .filters-container {
     display: flex;
     flex-direction: row;
-    margin-bottom: 35px;
+
+    @media (min-width: $bp-l) {
+      margin-bottom: 35px;
+    }
+
+    &.notifications-filters {
+      padding: 0;
+
+      > div {
+        margin-bottom: 15px;
+
+        @media (min-width: $bp-l) {
+          margin-right: 16px;
+        }
+      }
+    }
 
     &.inbox {
       @media (max-width: $bp-mw) {
@@ -331,23 +379,40 @@
       }
     }
 
+    &.transactions {
+      margin-bottom: 15px;
+
+      @media (min-width: $bp-l) {
+        margin-bottom: 0;
+      }
+    }
+
     &.qr {
       @media (max-width: $bp-mw) {
         flex-direction: column;
+        margin-bottom: 15px;
       }
 
       .filter {
         flex-direction: column;
-        margin: 10px 20px 16px 0;
+        margin: 0 0 15px 0;
+
+        @media (min-width: $bp-l) {
+          margin: 10px 20px 16px 0;
+        }
 
         .filter-group {
           display: flex;
           flex-direction: column;
-          height: 50px;
+          // height: 50px;
 
-          @media (max-width: $bp-mw) {
+          @media (min-width: $bp-mw) {
             height: 100px;
             align-items: flex-start;
+          }
+
+          @media (min-width: $bp-l) {
+            height: auto;
           }
 
           .filter-option {
@@ -383,6 +448,13 @@
         display: flex;
         justify-content: flex-end;
         align-items: center;
+
+        height: 50px;
+
+        @media (min-width: $bp-l) {
+          margin-top: 10px;
+          margin-top: 10px;
+        }
 
         .action-button {
           cursor: pointer;
@@ -543,7 +615,10 @@
 .filter-chip {
   color: $color-primary;
   background-color: white;
-  margin-right: 8px;
+
+  @media (min-width: $bp-l) {
+    margin-right: 8px;
+  }
 
   &.active {
     background-color: $color-light-violet;
@@ -553,15 +628,56 @@
 .filter-button {
   color: white;
   background-color: $color-primary;
+  width: 100%;
+
+  @media (min-width: $bp-l) {
+    width: auto;
+  }
 }
 
 .event-top-bar-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 35px;
+  margin-bottom: 15px;
+
+  @media (min-width: $bp-l) {
+    margin-bottom: 35px;
+  }
 
   > * {
     max-width: 250px;
   }
+}
+
+.event-edit-icon-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 20px;
+  position: absolute;
+  bottom: 15px;
+  right: 15px;
+
+  @media (min-width: $bp-l) {
+    position: static;
+  }
+
+  a {
+    width: 100%;
+    height: 100%;
+
+    svg {
+      width: 100%;
+      height: 100%;
+    }
+  }
+}
+
+.row-qr-claimed {
+  background-color: $color-light-violet;
+}
+
+.relative {
+  position: relative;
 }

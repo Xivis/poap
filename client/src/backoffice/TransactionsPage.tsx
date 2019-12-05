@@ -44,8 +44,16 @@ const TransactionsPage: FC = () => {
   const [isPendingSelected, setIsPendingSelected] = useState<boolean>(false);
 
   useEffect(() => {
+    console.log(total);
+  }, [total]);
+
+  useEffect(() => {
     fetchTransactions();
   }, [page, statusList]); /* eslint-disable-line react-hooks/exhaustive-deps */
+
+  useEffect(() => {
+    setPage(0);
+  }, [statusList]);
 
   const txStatus = {
     [TX_STATUS.pending]: clock,
@@ -131,7 +139,7 @@ const TransactionsPage: FC = () => {
     <div className={'admin-table transactions'}>
       <h2>Transactions</h2>
       <div>
-        <div className={'filters-container'}>
+        <div className={'filters-container transactions'}>
           <FilterChip text="Failed" isActive={isFailedSelected} handleOnClick={handleFailedClick} />
           <FilterChip text="Passed" isActive={isPassedSelected} handleOnClick={handlePassedClick} />
           <FilterChip
@@ -149,11 +157,9 @@ const TransactionsPage: FC = () => {
         <div className={'col-md-1 center'}>Status</div>
         <div className={'col-md-2 center'}>Gas Price (GWei)</div>
       </div>
-      <div className={'row table-header visible-sm'}>
-        <div className={'center'}>Transactions</div>
-      </div>
       <div className={'admin-table-row'}>
         {isFetchingTx && <Loading />}
+
         {transactions &&
           transactions.map((tx, i) => {
             return (
@@ -196,16 +202,18 @@ const TransactionsPage: FC = () => {
               </div>
             );
           })}
+
         {transactions && transactions.length === 0 && !isFetchingTx && (
           <div className={'no-results'}>No transactions found</div>
         )}
       </div>
-      {total > 0 && (
+      {total > 10 && (
         <div className={'pagination'}>
           <ReactPaginate
             pageCount={Math.ceil(total / PAGE_SIZE)}
             marginPagesDisplayed={2}
             pageRangeDisplayed={5}
+            forcePage={page}
             activeClassName={'active'}
             onPageChange={handlePageChange}
           />

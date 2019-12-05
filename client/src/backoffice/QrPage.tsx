@@ -249,89 +249,96 @@ const QrPage: FC = () => {
           />
         </ReactModal>
       </div>
-      <div className={'row table-header visible-md'}>
-        <div className={'col-md-1 center'}>-</div>
-        <div className={'col-md-1 center'}>#</div>
-        <div className={'col-md-2'}>QR Hash</div>
-        <div className={'col-md-4'}>Event</div>
-        <div className={'col-md-2 center'}>Status</div>
-        <div className={'col-md-2'}>Tx Hash</div>
-      </div>
-      <div className={'row table-header visible-sm'}>
-        <div className={'center'}>QR Codes</div>
-      </div>
-      <div className={'admin-table-row'}>
-        {isFetchingQrCodes && <Loading />}
-        {qrCodes &&
-          !isFetchingQrCodes &&
-          qrCodes.map((qr, i) => {
-            return (
-              <div className={`row ${i % 2 === 0 ? 'even' : 'odd'}`} key={qr.id}>
-                <div className={'col-md-1 center'}>
-                  <input
-                    type="checkbox"
-                    onChange={handleQrCheckboxChange}
-                    checked={selectedQrs.includes(String(qr.id))}
-                    id={String(qr.id)}
-                  />
-                </div>
 
-                <div className={'col-md-1 center'}>
-                  <span className={'visible-sm'}>#</span>
-                  {qr.id}
-                </div>
+      {isFetchingQrCodes && <Loading />}
 
-                <div className={'col-md-2'}>
-                  <span className={'visible-sm'}>QR Hash</span>
-                  {qr.qr_hash}
-                </div>
+      {qrCodes && qrCodes.length !== 0 && !isFetchingQrCodes && (
+        <div>
+          <div className={'row table-header visible-md'}>
+            <div className={'col-md-1 center'}>-</div>
+            <div className={'col-md-1 center'}>#</div>
+            <div className={'col-md-2'}>QR Hash</div>
+            <div className={'col-md-4'}>Event</div>
+            <div className={'col-md-2 center'}>Status</div>
+            <div className={'col-md-2'}>Tx Hash</div>
+          </div>
+          <div className={'admin-table-row'}>
+            {qrCodes.map((qr, i) => {
+              return (
+                <div className={`row ${i % 2 === 0 ? 'even' : 'odd'}`} key={qr.id}>
+                  <div className={'col-md-1 center checkbox'}>
+                    {!qr.claimed && (
+                      <input
+                        type="checkbox"
+                        disabled={qr.claimed}
+                        onChange={handleQrCheckboxChange}
+                        checked={selectedQrs.includes(String(qr.id))}
+                        id={String(qr.id)}
+                      />
+                    )}
+                  </div>
 
-                <div className={'col-md-4 elipsis'}>
-                  <span className={'visible-sm'}>Event: </span>
-                  {(!qr.event || !qr.event.name) && <span>-</span>}
+                  <div className={'col-md-1 center'}>
+                    <span className={'visible-sm'}>#</span>
+                    {qr.id}
+                  </div>
 
-                  {qr.event && qr.event.event_url && qr.event.name && (
-                    <a href={qr.event.event_url} target="_blank" rel="noopener noreferrer">
-                      {qr.event.name}
+                  <div className={'col-md-2'}>
+                    <span className={'visible-sm'}>QR Hash</span>
+                    {qr.qr_hash}
+                  </div>
+
+                  <div className={'col-md-4 elipsis'}>
+                    <span className={'visible-sm'}>Event: </span>
+                    {(!qr.event || !qr.event.name) && <span>-</span>}
+
+                    {qr.event && qr.event.event_url && qr.event.name && (
+                      <a href={qr.event.event_url} target="_blank" rel="noopener noreferrer">
+                        {qr.event.name}
+                      </a>
+                    )}
+
+                    {qr.event && qr.event.name && !qr.event.event_url && (
+                      <span>{qr.event.name}</span>
+                    )}
+                  </div>
+
+                  <div className={'col-md-2 center status'}>
+                    <span className={'visible-sm'}>Status: </span>
+                    <img
+                      src={qr.claimed ? checked : error}
+                      alt={qr.event && qr.event.name ? `${qr.event.name} status` : 'qr status'}
+                      className={'status-icon'}
+                    />
+                  </div>
+
+                  <div className={'col-md-2'}>
+                    <span className={'visible-sm'}>Tx Hash: </span>
+                    <a href={etherscanLinks.tx(qr.tx_hash)} target={'_blank'}>
+                      {qr.tx_hash && reduceAddress(qr.tx_hash)}
                     </a>
-                  )}
-
-                  {qr.event && qr.event.name && !qr.event.event_url && <span>{qr.event.name}</span>}
+                  </div>
                 </div>
-
-                <div className={'col-md-2 center status'}>
-                  <span className={'visible-sm'}>Status: </span>
-                  <img
-                    src={qr.claimed ? checked : error}
-                    alt={qr.event && qr.event.name ? `${qr.event.name} status` : 'qr status'}
-                    className={'status-icon'}
-                  />
-                </div>
-
-                <div className={'col-md-2'}>
-                  <span className={'visible-sm'}>Tx Hash: </span>
-                  <a href={etherscanLinks.tx(qr.tx_hash)} target={'_blank'}>
-                    {qr.tx_hash && reduceAddress(qr.tx_hash)}
-                  </a>
-                </div>
-              </div>
-            );
-          })}
-        {qrCodes && qrCodes.length === 0 && !isFetchingQrCodes && (
-          <div className={'no-results'}>No QR codes found</div>
-        )}
-      </div>
-      {total > 0 && (
-        <div className={'pagination'}>
-          <ReactPaginate
-            pageCount={Math.ceil(total / PAGE_SIZE)}
-            marginPagesDisplayed={2}
-            pageRangeDisplayed={5}
-            activeClassName={'active'}
-            onPageChange={handlePageChange}
-            forcePage={page}
-          />
+              );
+            })}
+          </div>
+          {total > 10 && (
+            <div className={'pagination'}>
+              <ReactPaginate
+                pageCount={Math.ceil(total / PAGE_SIZE)}
+                marginPagesDisplayed={2}
+                pageRangeDisplayed={5}
+                activeClassName={'active'}
+                onPageChange={handlePageChange}
+                forcePage={page}
+              />
+            </div>
+          )}
         </div>
+      )}
+
+      {qrCodes && qrCodes.length === 0 && !isFetchingQrCodes && (
+        <div className={'no-results'}>No QR codes found</div>
       )}
     </div>
   );
@@ -345,8 +352,8 @@ type UpdateByRangeModalProps = {
 };
 
 type UpdateModalFormikValues = {
-  from: number;
-  to: number;
+  from: number | string;
+  to: number | string;
   event: number;
   isUnassigning: boolean;
 };
@@ -372,22 +379,24 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
     const _event = isUnassigning ? null : event;
 
     if (isRangeActive) {
-      qrCodesRangeAssign(from, to, _event)
-        .then(_ => {
-          addToast('Qrs assignment was performed correctly', {
-            appearance: 'success',
-            autoDismiss: true,
-          });
+      if (typeof from === 'number' && typeof to === 'number') {
+        qrCodesRangeAssign(from, to, _event)
+          .then(_ => {
+            addToast('Qrs assignment was performed correctly', {
+              appearance: 'success',
+              autoDismiss: true,
+            });
 
-          refreshQrs();
-          handleUpdateModalClosing();
-        })
-        .catch(e =>
-          addToast(e.message, {
-            appearance: 'error',
-            autoDismiss: true,
+            refreshQrs();
+            handleUpdateModalClosing();
           })
-        );
+          .catch(e =>
+            addToast(e.message, {
+              appearance: 'error',
+              autoDismiss: true,
+            })
+          );
+      }
     }
 
     if (isSelectionActive) {
@@ -434,16 +443,25 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
         isUnassigning: false,
       }}
       validationSchema={UpdateModalWithFormikSchema}
+      validateOnBlur={false}
+      validateOnChange={false}
       onSubmit={handleUpdateModalSubmit}
     >
-      {({ values, handleChange, handleSubmit, setFieldValue }) => {
+      {({ values, errors, handleChange, handleSubmit, setFieldValue }) => {
         const { isUnassigning } = values;
         const isPlaceholderValue = Boolean(values.event);
 
         const resolveSelectClass = () => {
           if (isUnassigning) return '';
+          if (errors.event && !Boolean(values.event)) return 'modal-select-error';
           if (!isPlaceholderValue) return 'placeholder-option';
           return '';
+        };
+
+        const resolveSelectText = () => {
+          if (values.isUnassigning) return 'You are unassigning the QRs';
+          if (errors.event && !Boolean(values.event)) return 'The selection is required';
+          return 'Select an event';
         };
 
         const handleFormSubmitClick = () => {
@@ -483,8 +501,28 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
                   <span>Range</span>
                 </div>
                 <div className="content-container">
-                  <input type="text" placeholder="From" name="from" onChange={handleChange} />
-                  <input type="text" placeholder="To" name="to" onChange={handleChange} />
+                  <input
+                    className={errors.from && !Boolean(values.from) ? 'modal-input-error' : ''}
+                    type="number"
+                    placeholder={
+                      errors.from && !Boolean(values.from)
+                        ? 'This field should be a positive number'
+                        : 'From'
+                    }
+                    name="from"
+                    onChange={handleChange}
+                  />
+                  <input
+                    className={errors.to && !Boolean(values.to) ? 'modal-input-error' : ''}
+                    type="number"
+                    placeholder={
+                      errors.to && !Boolean(values.to)
+                        ? 'This field should be a positive number'
+                        : 'To'
+                    }
+                    name="to"
+                    onChange={handleChange}
+                  />
                 </div>
               </div>
               <select
@@ -493,7 +531,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
                 name="event"
                 onChange={handleChange}
               >
-                <option value="">Select an event</option>
+                <option value="">{resolveSelectText()}</option>
                 {events &&
                   events.map(event => {
                     const label = `${event.name ? event.name : 'No name'} (${event.fancy_id}) - ${
