@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, ChangeEvent } from 'react';
-import { Link, Switch, Route, RouteComponentProps } from 'react-router-dom';
+import { Link, Route, RouteComponentProps, Switch } from 'react-router-dom';
 import classNames from 'classnames';
 import { Formik, Form, Field, ErrorMessage, FieldProps } from 'formik';
 import DayPickerInput from 'react-day-picker/DayPickerInput';
@@ -7,54 +7,35 @@ import 'react-day-picker/lib/style.css';
 import { format } from 'date-fns';
 import { useToasts } from 'react-toast-notifications';
 
+import { authClient } from '../auth';
+
 // libraries
 import ReactPaginate from 'react-paginate';
 
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
 import { Loading } from '../components/Loading';
+import FilterButton from '../components/FilterButton';
+
+// constants
+import { ROLES, ROUTES } from '../lib/constants';
+
+// assets
+import { ReactComponent as EditIcon } from '../images/edit.svg';
 
 /* Helpers */
 import { useAsync } from '../react-helpers';
 import { PoapEventSchema } from '../lib/schemas';
-import { getEvents, PoapEvent, getEvent, updateEvent, createEvent } from '../api';
-import { ROUTES } from '../lib/constants';
-
-export const EventsPage: React.FC = () => {
-  return (
-    <Switch>
-      <Route exact path={ROUTES.events.path} component={EventList} />
-      <Route exact path={ROUTES.eventsNew.path} component={CreateEventForm} />
-      <Route exact path={ROUTES.event.path} component={EditEventForm} />
-    </Switch>
-  );
-};
+import {
+  getEventsForSpecificUser,
+  PoapEvent,
+  getEvent,
+  getEvents,
+  updateEvent,
+  createEvent,
+} from '../api';
 
 const PAGE_SIZE = 10;
-
-const CreateEventForm: React.FC = () => {
-  return <EventForm create />;
-};
-
-const EditEventForm: React.FC<RouteComponentProps<{
-  eventId: string;
-}>> = ({ location, match }) => {
-  const [event, setEvent] = useState<null | PoapEvent>(null);
-
-  useEffect(() => {
-    const fn = async () => {
-      const event = await getEvent(match.params.eventId);
-      setEvent(event);
-    };
-    fn();
-  }, [location, match]);
-
-  if (!event) {
-    return <div>Loading...</div>;
-  }
-
-  return <EventForm event={event} />;
-};
 
 type EventEditValues = {
   name: string;
@@ -73,6 +54,73 @@ type EventEditValues = {
 type DatePickerDay = 'start_date' | 'end_date';
 
 type SetFieldValue = (field: string, value: any) => void;
+
+type DatePickerContainerProps = {
+  text: string;
+  dayToSetup: DatePickerDay;
+  handleDayClick: (day: Date, dayToSetup: DatePickerDay, setFieldValue: SetFieldValue) => void;
+  setFieldValue: SetFieldValue;
+  disabledDays: RangeModifier | undefined;
+};
+
+type PaginateAction = {
+  selected: number;
+};
+
+type EventTableProps = {
+  initialEvents: PoapEvent[];
+  criteria: string;
+};
+
+type EventFieldProps = {
+  title: string;
+  name: string;
+  disabled?: boolean;
+  type?: string;
+};
+
+type ImageContainerProps = {
+  text: string;
+  handleFileChange: Function;
+  setFieldValue: Function;
+  errors: any;
+};
+export interface RangeModifier {
+  from: Date;
+  to: Date;
+}
+
+export const EventsPage = () => (
+  <Switch>
+    <Route exact path={ROUTES.events.path} component={EventList} />
+
+    <Route exact path={ROUTES.eventsNew.path} component={CreateEventForm} />
+
+    <Route exact path={ROUTES.event.path} component={EditEventForm} />
+  </Switch>
+);
+
+export const CreateEventForm: React.FC = () => <EventForm create />;
+
+export const EditEventForm: React.FC<RouteComponentProps<{
+  eventId: string;
+}>> = ({ location, match }) => {
+  const [event, setEvent] = useState<null | PoapEvent>(null);
+
+  useEffect(() => {
+    const fn = async () => {
+      const event = await getEvent(match.params.eventId);
+      setEvent(event);
+    };
+    fn();
+  }, [location, match]);
+
+  if (!event) {
+    return <div>Loading...</div>;
+  }
+
+  return <EventForm event={event} />;
+};
 
 const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, event }) => {
   const startingDate = new Date('1 Jan 1900');
@@ -203,9 +251,9 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
               setFieldValue={setFieldValue}
               errors={errors}
             />
-            {event && typeof event.image === 'string' && (
+            {event && typeof event.image_url === 'string' && (
               <div className={'image-edit-container'}>
-                <img className={'image-edit'} src={event.image} />
+                <img alt={event.image_url} className={'image-edit'} src={event.image_url} />
               </div>
             )}
             <SubmitButton text="Save" isSubmitting={isSubmitting} canSubmit={true} />
@@ -215,18 +263,6 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
     </div>
   );
 };
-
-type DatePickerContainerProps = {
-  text: string;
-  dayToSetup: DatePickerDay;
-  handleDayClick: (day: Date, dayToSetup: DatePickerDay, setFieldValue: SetFieldValue) => void;
-  setFieldValue: SetFieldValue;
-  disabledDays: RangeModifier | undefined;
-};
-export interface RangeModifier {
-  from: Date;
-  to: Date;
-}
 
 const DayPickerContainer = ({
   text,
@@ -239,7 +275,7 @@ const DayPickerContainer = ({
 
   return (
     <div className="date-picker-container">
-      <span>{text}</span>
+      <label>{text}</label>
       <DayPickerInput
         dayPickerProps={{ disabledDays: disabledDays }}
         onDayChange={handleDayChange}
@@ -248,16 +284,9 @@ const DayPickerContainer = ({
   );
 };
 
-type ImageContainerProps = {
-  text: string;
-  handleFileChange: Function;
-  setFieldValue: Function;
-  errors: any;
-};
-
 const ImageContainer = ({ text, handleFileChange, setFieldValue, errors }: ImageContainerProps) => (
   <div className="date-picker-container">
-    <span>{text}</span>
+    <label>{text}</label>
     <input
       type="file"
       className={classNames(Boolean(errors.image) && 'error')}
@@ -267,12 +296,6 @@ const ImageContainer = ({ text, handleFileChange, setFieldValue, errors }: Image
   </div>
 );
 
-type EventFieldProps = {
-  title: string;
-  name: string;
-  disabled?: boolean;
-  type?: string;
-};
 const EventField: React.FC<EventFieldProps> = ({ title, name, disabled, type }) => {
   return (
     <Field
@@ -303,9 +326,15 @@ const EventField: React.FC<EventFieldProps> = ({ title, name, disabled, type }) 
   );
 };
 
-const EventList: React.FC = () => {
-  const [events, fetchingEvents, fetchEventsError] = useAsync(getEvents);
+export const EventList: React.FC = () => {
   const [criteria, setCriteria] = useState<string>('');
+
+  const userRole = authClient.getRole();
+  const isAdmin = userRole === ROLES.administrator;
+
+  const [events, fetchingEvents, fetchEventsError] = useAsync(
+    isAdmin ? getEvents : getEventsForSpecificUser
+  );
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const { value } = e.target;
@@ -316,40 +345,46 @@ const EventList: React.FC = () => {
   return (
     <div className={'bk-container'}>
       <h2>Events</h2>
-      <Link to="/admin/events/new">
-        <button className="bk-btn" style={{ margin: '30px 0px' }}>
-          Create New
-        </button>
-      </Link>
-      <input type="text" placeholder="Search by name" onChange={handleNameChange} />
+      <div className="event-top-bar-container">
+        <Link to="/admin/events/new">
+          <FilterButton text="Create New" />
+        </Link>
+        <input type="text" placeholder="Search by name" onChange={handleNameChange} />
+      </div>
       {fetchingEvents && <Loading />}
 
-      {(fetchEventsError || events === null) && <div>There was a problem fetching events</div>}
+      {fetchEventsError && <div>There was a problem fetching events</div>}
 
-      {events !== null && <EventTable criteria={criteria} events={events} />}
+      {events && <EventTable criteria={criteria} initialEvents={events} />}
     </div>
   );
 };
 
-type PaginateAction = {
-  selected: number;
-};
+const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria }) => {
+  const [events, setEvents] = useState<PoapEvent[]>(initialEvents);
+  const [total, setTotal] = useState<number>(events.length);
+  const [page, setPage] = useState<number>(0);
 
-type EventTableProps = {
-  events: PoapEvent[];
-  criteria: string;
-};
+  useEffect(() => {
+    setEvents(initialEvents.filter(handleCriteriaFilter));
+  }, [criteria]);
 
-const EventTable: React.FC<EventTableProps> = ({ events, criteria }) => {
-  const total = events.length;
-  const [page, setPage] = useState<number>(1);
+  useEffect(() => {
+    setTotal(events.length);
+  }, [events]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [total]);
 
   const handlePageChange = (obj: PaginateAction) => {
     setPage(obj.selected);
   };
 
-  const eventsToShowManager = (events: PoapEvent[]): PoapEvent[] =>
-    events.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+  const eventsToShowManager = (events: PoapEvent[]): PoapEvent[] => {
+    if (events.length <= 10) return events;
+    return events.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+  };
 
   const handleCriteriaFilter = (event: PoapEvent): boolean =>
     event.name.toLowerCase().includes(criteria);
@@ -360,46 +395,54 @@ const EventTable: React.FC<EventTableProps> = ({ events, criteria }) => {
         <div className={'row table-header visible-md'}>
           <div className={'col-md-1 center'}>#</div>
           <div className={'col-md-4'}>Name</div>
-          <div className={'col-md-3'}>Start Date</div>
-          <div className={'col-md-3'}>End Date</div>
-          <div className={'col-md-1 center'}>Image</div>
+          <div className={'col-md-2 center'}>Start Date</div>
+          <div className={'col-md-2 center'}>End Date</div>
+          <div className={'col-md-2 center'}>Image</div>
+          <div className={'col-md-1 center'}>Edit</div>
         </div>
         <div className={'admin-table-row'}>
-          {eventsToShowManager(events)
-            .filter(handleCriteriaFilter)
-            .map((event, i) => (
-              <div className={`row ${i % 2 === 0 ? 'even' : 'odd'}`} key={event.id}>
-                <div className={'col-md-1 center'}>
-                  <span className={'visible-sm visible-md'}>#</span>
-                  {event.id}
-                </div>
-                <div className={'col-md-4'}>
-                  <span>
-                    <a href={event.event_url} target="_blank" rel="noopener noreferrer">
-                      {event.name}
-                    </a>
-                  </span>
-                </div>
-                <div className={'col-md-3'}>
-                  <span>{event.start_date}</span>
-                </div>
-                <div className={'col-md-3'}>
-                  <span>{event.end_date}</span>
-                </div>
-                <div className={'col-md-1 center logo-image-container'}>
-                  <img alt={event.image_url} className={'logo-image'} src={event.image_url} />
-                </div>
+          {eventsToShowManager(events).map((event, i) => (
+            <div className={`row ${i % 2 === 0 ? 'even' : 'odd'} relative`} key={event.id}>
+              <div className={'col-md-1 center'}>
+                <span className={'visible-sm visible-md'}>#</span>
+                {event.id}
               </div>
-            ))}
+              <div className={'col-md-4'}>
+                <span className={'visible-sm'}>Name: </span>
+                <a href={event.event_url} target="_blank" rel="noopener noreferrer">
+                  {event.name}
+                </a>
+              </div>
+              <div className={'col-md-2 center'}>
+                <span className={'visible-sm'}>Start date: </span>
+                <span>{event.start_date}</span>
+              </div>
+              <div className={'col-md-2 center'}>
+                <span className={'visible-sm'}>End date: </span>
+                <span>{event.end_date}</span>
+              </div>
+              <div className={'col-md-2 center logo-image-container'}>
+                <img alt={event.image_url} className={'logo-image'} src={event.image_url} />
+              </div>
+              <div className={'col-md-1 center event-edit-icon-container'}>
+                <Link to={`/admin/events/${event.fancy_id}`}>
+                  <EditIcon />
+                </Link>
+              </div>
+            </div>
+          ))}
         </div>
         <div className={'pagination'}>
-          <ReactPaginate
-            pageCount={Math.ceil(total / PAGE_SIZE)}
-            marginPagesDisplayed={2}
-            pageRangeDisplayed={PAGE_SIZE}
-            activeClassName={'active'}
-            onPageChange={handlePageChange}
-          />
+          {events && events.length > 10 && (
+            <ReactPaginate
+              pageCount={Math.ceil(total / PAGE_SIZE)}
+              marginPagesDisplayed={2}
+              pageRangeDisplayed={PAGE_SIZE}
+              forcePage={page}
+              activeClassName={'active'}
+              onPageChange={handlePageChange}
+            />
+          )}
         </div>
       </div>
     </div>

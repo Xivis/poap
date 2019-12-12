@@ -7,10 +7,23 @@ const BASE_URI = `${window.location.protocol}//${window.location.host}`;
 export class AuthService {
   private client!: Auth0Client;
   private _isAuthenticated: boolean = false;
-  public user!: Promise<User>;
+  public user: User; /* eslint-disable-line */
 
   isAuthenticated() {
     return this._isAuthenticated;
+  }
+
+  constructor() {
+    this.user = {
+      email: 'none',
+      email_verified: false,
+      name: 'none',
+      nickname: 'none',
+      picture: 'none',
+      sub: 'none',
+      updated_at: 'none',
+      'https://poap.xyz/roles': ['none'],
+    };
   }
 
   async init() {
@@ -21,7 +34,10 @@ export class AuthService {
       audience: process.env.REACT_APP_AUTH0_AUDIENCE || '',
     });
     this._isAuthenticated = await this.client.isAuthenticated();
-    this.user = await this.client.getUser();
+
+    if (this._isAuthenticated) {
+      this.user = await this.client.getUser();
+    }
   }
 
   async login(onSuccessPath = '/') {
@@ -36,9 +52,20 @@ export class AuthService {
     });
   }
 
+  getRole() {
+    // REVIEW CHECK IF YOU ARE GOING TO NEED MORE THAN ONE ROLE
+    const [userRole] = this.user['https://poap.xyz/roles'];
+
+    return userRole;
+  }
+
   async handleCallback() {
     const result = await this.client.handleRedirectCallback();
     this._isAuthenticated = await this.client.isAuthenticated();
+
+    if (this._isAuthenticated) {
+      this.user = await this.client.getUser();
+    }
 
     if (result.appState) {
       const resultPath = localStorage.getItem(result.appState) || '/';
@@ -59,6 +86,17 @@ export class AuthService {
   }
 }
 
+type User = {
+  email: string;
+  email_verified: boolean;
+  name: string;
+  nickname: string;
+  picture: string;
+  sub: string;
+  updated_at: string;
+  'https://poap.xyz/roles': string[];
+};
+
 export const authClient = new AuthService();
 
 export const AuthContext: React.Context<AuthService> = React.createContext<any>(undefined);
@@ -74,14 +112,3 @@ export function withAuth<P>(
     );
   };
 }
-
-type User = {
-  email: string;
-  email_verified: boolean;
-  name: string;
-  nickname: string;
-  picture: string;
-  sub: string;
-  updated_at: string;
-  'https://poap.xyz/roles': string[];
-};

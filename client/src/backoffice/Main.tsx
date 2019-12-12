@@ -1,15 +1,20 @@
 /* eslint jsx-a11y/anchor-is-valid: 0 */
 import React, { useCallback, useContext, useState, useEffect } from 'react';
-import { Link, Route, withRouter, Redirect, Switch } from 'react-router-dom';
+import { Link, Redirect, Route, withRouter, Switch } from 'react-router-dom';
 import { slide as Menu } from 'react-burger-menu';
+
+// lib
+import { AuthContext, authClient } from '../auth';
 
 /* Assets */
 import PoapLogo from '../images/POAP.svg';
+import Calendar from '../images/calendar.svg';
+import Qr from '../images/qr-code.svg';
+
 /* Constants */
 import { ROUTES, ROLES, LABELS } from '../lib/constants';
+
 /* Components */
-import { AuthContext } from '../auth';
-import { EventsPage } from './EventsPage';
 import { BurnPage } from './BurnPage';
 import { IssueForEventPage, IssueForUserPage } from './IssuePage';
 import { AddressManagementPage } from './AddressManagementPage';
@@ -17,8 +22,8 @@ import { TransactionsPage } from './TransactionsPage';
 import { InboxPage } from './InboxPage';
 import { InboxListPage } from './InboxListPage';
 import { QrPage } from './QrPage';
-import Calendar from '../images/calendar.svg';
-import Qr from '../images/qr-code.svg';
+import { EventsPage } from './EventsPage';
+// import { EventList, CreateEventForm, EditEventForm } from './EventsPage';
 
 export const MintersPage = () => <div> This is a MintersPage </div>;
 
@@ -58,12 +63,11 @@ type Roles = {
   roles: string[];
 };
 
-const withRole = <T extends Object>(
+export const withRole = <T extends Object>(
   WrappedComponent: React.ComponentType<T>
 ): React.FC<T & Roles> => {
   return (props: Roles & T) => {
-    // TODO: Get user role (Backend WIP)
-    const userRole = 'super';
+    const userRole = authClient.getRole();
 
     if (!props.roles.includes(userRole)) return null;
 
@@ -80,10 +84,9 @@ const NavigationMenu = withRouter(({ history }) => {
   const closeMenu = useCallback(() => setIsOpen(false), []);
 
   useEffect(() => {
-    // TODO: Get user role (Backend WIP)
-    const userRole = 'super';
+    const userRole = authClient.getRole();
 
-    if (userRole === ROLES.eventAdmin) return;
+    if (userRole === ROLES.eventHost) return;
 
     const { pathname } = history.location;
     if (pathname === '/admin' || pathname === '/admin/') setIsOpen(true);
@@ -141,7 +144,7 @@ const NavigationMenu = withRouter(({ history }) => {
         href=""
         onClick={() => {
           auth.logout();
-          history.push('/');
+          // history.push('/');
         }}
       >
         Logout
@@ -150,29 +153,22 @@ const NavigationMenu = withRouter(({ history }) => {
   );
 });
 
-const Landing = () => {
-  // TODO: Get user role (Backend WIP)
-  const userRole = 'super';
-
-  if (userRole === ROLES.super) return <div>Choose an option from the right side menu</div>;
-
-  return (
-    <div className={'cards-container'}>
-      <Link to={ROUTES.events.path} className={'card card-link'}>
-        <h3>Manage Events</h3>
-        <img className={'icon'} src={Calendar} alt={'Manage Events'} />
-      </Link>
-      <Link to={ROUTES.qr.path} className={'card card-link'}>
-        <h3>Manage QR Codes</h3>
-        <img className={'icon'} src={Qr} alt={'Manage QR Codes'} />
-      </Link>
-    </div>
-  );
-};
+const Landing = () => (
+  <div className={'cards-container'}>
+    <Link to={ROUTES.events.path} className={'card card-link'}>
+      <h3>Manage Events</h3>
+      <img className={'icon'} src={Calendar} alt={'Manage Events'} />
+    </Link>
+    <Link to={ROUTES.qr.path} className={'card card-link'}>
+      <h3>Manage QR Codes</h3>
+      <img className={'icon'} src={Qr} alt={'Manage QR Codes'} />
+    </Link>
+  </div>
+);
 
 const IssueForEventPageWithRole = withRole(IssueForEventPage);
 const IssueForUserPageWithRole = withRole(IssueForUserPage);
-const EventsPageWithRole = withRole(EventsPage);
+// const EventsPageWithRole = withRole(EventsPage);
 const QrPageWithRole = withRole(QrPage);
 const InboxListPageWithRole = withRole(InboxListPage);
 const TransactionsPageWithRole = withRole(TransactionsPage);
@@ -214,11 +210,7 @@ export const BackOffice: React.FC = () => (
             render={() => <IssueForUserPageWithRole roles={ROUTES.issueForUser.roles} />}
           />
 
-          <Route
-            exact
-            path={ROUTES.events.path}
-            render={() => <EventsPageWithRole roles={ROUTES.events.roles} />}
-          />
+          <Route path={ROUTES.events.path} component={EventsPage} />
 
           <Route
             exact
@@ -262,7 +254,7 @@ export const BackOffice: React.FC = () => (
             render={() => <QrPageWithRole roles={ROUTES.qr.roles} />}
           />
 
-          <Route exact path={'*'} render={() => <Redirect to="/admin" />} />
+          <Route path="*" render={() => <Redirect to="/admin" />} />
         </Switch>
       </div>
     </main>

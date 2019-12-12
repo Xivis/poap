@@ -49,11 +49,12 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
   };
 
   let body = <QRHashForm loading={isClaimLoading} checkClaim={fetchClaim} error={claimError} />;
+
   if (claim) {
     body = <ClaimForm enabledWeb3={web3} claim={claim} checkClaim={fetchClaim} />;
     title = claim.event.name;
-    if (typeof claim.event.image === 'string') {
-      image = claim.event.image;
+    if (typeof claim.event.image_url === 'string') {
+      image = claim.event.image_url;
     }
     if (claim.tx_status) {
       if (claim.tx_status === TX_STATUS.pending) {
