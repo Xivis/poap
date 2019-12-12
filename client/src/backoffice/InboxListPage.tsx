@@ -1,4 +1,5 @@
-import React, { FC, useState, useEffect, ChangeEvent, useRef } from 'react';
+import React, { FC, useState, useEffect, ChangeEvent } from 'react';
+import { useToasts } from 'react-toast-notifications';
 
 /* Libraries */
 import ReactModal from 'react-modal';
@@ -9,12 +10,13 @@ import { Notification, getNotifications, getEvents, PoapEvent } from '../api';
 
 /* Components */
 import { Loading } from '../components/Loading';
+import FilterSelect from '../components/FilterSelect';
 
 /* Assets */
-import plus from '../images/plus.svg';
+import { ReactComponent as PlusIcon } from '../images/plus.svg';
 
 /* Typings */
-import { Name, Value } from '../types';
+import { Name, NotificationType, RecipientType } from '../types';
 
 const PAGE_SIZE = 10;
 
@@ -26,8 +28,8 @@ const InboxListPage: FC = () => {
   const [page, setPage] = useState<number>(0);
   const [total, setTotal] = useState<number>(0);
   const [shouldResetPage, setShouldResetPage] = useState<boolean>(false);
-  const [notificationType, setNotificationType] = useState<string>('inbox');
-  const [recipientFilter, setRecipientFilter] = useState<string>('everyone');
+  const [notificationType, setNotificationType] = useState<string>('');
+  const [recipientFilter, setRecipientFilter] = useState<string>('');
   const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [selectedEvent, setSelectedEvent] = useState<number | undefined>(undefined);
   const [modalText, setModalText] = useState<string>('');
@@ -36,13 +38,23 @@ const InboxListPage: FC = () => {
   const [notifications, setNotifications] = useState<null | Notification[]>(null);
   const [events, setEvents] = useState<PoapEvent[]>([]);
 
+  const { addToast } = useToasts();
+
+  useEffect(() => {
+    console.log(notificationType);
+  }, [notificationType]);
+
+  useEffect(() => {
+    console.log(recipientFilter);
+  }, [recipientFilter]);
+
   useEffect(() => {
     fetchEvents();
   }, []);
 
   useEffect(() => {
     page !== 0 ? setPage(0) : fetchNotifications();
-  }, [notificationType]);
+  }, [notificationType]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
     setShouldResetPage(true);
@@ -56,11 +68,11 @@ const InboxListPage: FC = () => {
     setSelectedEvent(undefined);
 
     page !== 0 ? setPage(0) : fetchNotifications();
-  }, [shouldResetPage]);
+  }, [shouldResetPage]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
     fetchNotifications();
-  }, [page]);
+  }, [page]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   const fetchEvents = async () => {
     const events = await getEvents();
@@ -70,18 +82,22 @@ const InboxListPage: FC = () => {
   const fetchNotifications = async () => {
     setIsFetchingNotifications(true);
 
-    let event_id = undefined;
-    if (recipientFilter === 'event' && selectedEvent !== undefined) {
-      event_id = selectedEvent > -1 ? selectedEvent : undefined;
-    }
-
     try {
-       const response = await getNotifications(PAGE_SIZE, page * PAGE_SIZE, notificationType, event_id);
-       if (!response) return;
-       setNotifications(response.notifications);
-       setTotal(response.total);
-    } catch(e) {
-      console.log(e)
+      const response = await getNotifications(
+        PAGE_SIZE,
+        page * PAGE_SIZE,
+        notificationType,
+        recipientFilter,
+        selectedEvent
+      );
+      if (!response) return;
+      setNotifications(response.notifications);
+      setTotal(response.total);
+    } catch (e) {
+      addToast(e.message, {
+        appearance: 'error',
+        autoDismiss: true,
+      });
     } finally {
       setIsFetchingNotifications(false);
     }
@@ -91,12 +107,12 @@ const InboxListPage: FC = () => {
     setPage(obj.selected);
   };
 
-  const handleRadio = (name: Name, value: Value) => {
+  const handleRadio = (name: Name, value: NotificationType | RecipientType) => {
     if (name === 'notificationType') setNotificationType(value);
     if (name === 'recipientFilter') setRecipientFilter(value);
   };
 
-  const handleSelect = (e: ChangeEvent<HTMLSelectElement>) => {
+  const handleEventSelect = (e: ChangeEvent<HTMLSelectElement>) => {
     setSelectedEvent(Number(e.target.value));
   };
 
@@ -108,133 +124,120 @@ const InboxListPage: FC = () => {
     setModalOpen(!modalOpen);
   };
 
+  const handleNotificationTypeSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const { value } = e.target;
+
+    if (value === '') handleRadio('notificationType', value);
+    if (value === 'inbox') handleRadio('notificationType', value);
+    if (value === 'push') handleRadio('notificationType', value);
+  };
+
+  const handleRecipientSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const { value } = e.target;
+
+    if (value === '') handleRadio('recipientFilter', value);
+    if (value === 'everyone') handleRadio('recipientFilter', value);
+    if (value === 'event') handleRadio('recipientFilter', value);
+  };
+
   return (
-    <div className={'admin-table notifications'}>
+    <div className="admin-table notifications">
       <h2>Notifications</h2>
       <div>
-        <h4>Filters</h4>
-        <div className={'filters inbox'}>
-          <div className={'filter col-md-3'}>
-            <label>Notification type:</label>
-            <div className="filter-option">
-              <input
-                type={'radio'}
-                id={`inbox`}
-                onChange={() => handleRadio('notificationType', 'inbox')}
-                checked={notificationType === 'inbox'}
-              />
-              <label htmlFor={`inbox`}>Inbox</label>
-            </div>
-            <div className="filter-option">
-              <input
-                type={'radio'}
-                id={`push`}
-                onChange={() => handleRadio('notificationType', 'push')}
-                checked={notificationType === 'push'}
-              />
-              <label htmlFor={`push`}>Push notification</label>
-            </div>
+        <div className="filters-container inbox row notifications-filters">
+          <div className="col-md-3 ">
+            <FilterSelect handleChange={handleNotificationTypeSelect}>
+              <option value="">Select a type</option>
+              <option value="inbox">Inbox</option>
+              <option value="push">Push</option>
+            </FilterSelect>
           </div>
 
-          <div className={'filter col-md-9'}>
-            <label>Filter recipient:</label>
-            <div className="filter-option">
-              <input
-                type={'radio'}
-                id={`everyone`}
-                onChange={() => handleRadio('recipientFilter', 'everyone')}
-                checked={recipientFilter === 'everyone'}
-              />
-              <label htmlFor={`everyone`}>Sent to everyone</label>
-            </div>
-            <div className="filter-option select">
-              <div>
-                <input
-                  type={'radio'}
-                  id={`event`}
-                  onChange={() => handleRadio('recipientFilter', 'event')}
-                  checked={recipientFilter === 'event'}
-                />
-                <label htmlFor={`event`}>Sent to the attendees of a an event</label>
-              </div>
+          <div className="col-md-3">
+            <FilterSelect handleChange={handleRecipientSelect}>
+              <option value="">Select the recipient</option>
+              <option value="everyone">Sent to everyone</option>
+              <option value="event">Filter recipient</option>
+            </FilterSelect>
+          </div>
 
-              {recipientFilter === 'event' && (
-                <select onChange={handleSelect}>
-                  <option key={'initialValue'} value={-1}>
-                    Select an option
-                  </option>
-                  {events &&
-                    events.map(event => {
-                      const label = `${event.name} (${event.fancy_id}) - ${event.year}`;
-                      return (
-                        <option key={event.id} value={event.id}>
-                          {label}
-                        </option>
-                      );
-                    })}
-                </select>
-              )}
-            </div>
+          <div className="col-md-3">
+            {recipientFilter === 'event' && (
+              <FilterSelect handleChange={handleEventSelect}>
+                <option value="">Select an option</option>
+                {events &&
+                  events.map((event: PoapEvent) => {
+                    const label = `${event.name} (${event.fancy_id}) - ${event.year}`;
+                    return (
+                      <option key={event.id} value={event.id}>
+                        {label}
+                      </option>
+                    );
+                  })}
+              </FilterSelect>
+            )}
           </div>
         </div>
       </div>
-      <div className={'row table-header visible-md'}>
-        <div className={'col-md-1 center'}>#</div>
-        <div className={'col-md-4'}>Title</div>
-        <div className={'col-md-2'}>Type</div>
-        <div className={'col-md-4'}>Event</div>
-        <div className={'col-md-1'} />
-      </div>
-      <div className={'row table-header visible-sm'}>
-        <div className={'center'}>Notifications</div>
-      </div>
-      <div className={'admin-table-row'}>
-        {isFetchingNotifications && <Loading />}
-        {notifications &&
-          !isFetchingNotifications &&
-          notifications.map((notification, i) => {
-            return (
-              <div className={`row ${i % 2 === 0 ? 'even' : 'odd'}`} key={notification.id}>
-                <div className={'col-md-1 center'}>
-                  <span className={'visible-sm'}>#</span>
-                  {notification.id}
-                </div>
+      {isFetchingNotifications && <Loading />}
 
-                <div className={'col-md-4 ellipsis'}>
-                  <span className={'visible-sm'}>Title: </span>
-                  {notification.title}
-                </div>
+      {notifications && notifications.length !== 0 && !isFetchingNotifications && (
+        <div>
+          <div className={'row table-header visible-md'}>
+            <div className={'col-md-1 center'}>#</div>
+            <div className={'col-md-4'}>Title</div>
+            <div className={'col-md-2'}>Type</div>
+            <div className={'col-md-4'}>Event</div>
+            <div className={'col-md-1'} />
+          </div>
+          <div className={'admin-table-row'}>
+            {notifications.map((notification, i) => {
+              return (
+                <div className={`row ${i % 2 === 0 ? 'even' : 'odd'}`} key={notification.id}>
+                  <div className={'col-md-1 center'}>
+                    <span className={'visible-sm'}>#</span>
+                    {notification.id}
+                  </div>
 
-                <div className={'col-md-2'}>
-                  <span className={'visible-sm'}>Type: </span>
-                  {notification.type}
-                </div>
+                  <div className={'col-md-4 ellipsis'}>
+                    <span className={'visible-sm'}>Title: </span>
+                    {notification.title}
+                  </div>
 
-                <div className={'col-md-4 ellipsis'}>
-                  <span className={'visible-sm'}>Event: </span>
-                  {notification.event.name}
-                </div>
+                  <div className={'col-md-2'}>
+                    <span className={'visible-sm'}>Type: </span>
+                    {notification.type}
+                  </div>
 
-                <div className={'col-md-1 description'}>
-                  <img
-                    src={plus}
-                    alt={'Edit'}
-                    className={'edit-icon'}
-                    onClick={() =>
-                      handleModal({
-                        title: notification.title,
-                        description: notification.description,
-                      })
-                    }
-                  />
+                  <div className={'col-md-4 ellipsis'}>
+                    <span className={'visible-sm'}>Event: </span>
+                    {notification.event && notification.event.name
+                      ? notification.event.name
+                      : 'No name'}
+                  </div>
+
+                  <div className={'col-md-1 description'}>
+                    <PlusIcon
+                      className={'plus-edit-icon'}
+                      onClick={() =>
+                        handleModal({
+                          title: notification.title,
+                          description: notification.description,
+                        })
+                      }
+                    />
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        {notifications && notifications.length === 0 && !isFetchingNotifications && (
-          <div className={'no-results'}>No notifications found</div>
-        )}
-      </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {notifications && notifications.length === 0 && !isFetchingNotifications && (
+        <div className={'no-results'}>No notifications found</div>
+      )}
+
       {total > 0 && (
         <div className={'pagination'}>
           <ReactPaginate

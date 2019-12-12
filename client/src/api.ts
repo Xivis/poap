@@ -97,28 +97,48 @@ export interface PaginatedNotifications {
   notifications: Notification[];
 }
 
+export type QrCode = {
+  beneficiary: string;
+  claimed: boolean;
+  claimed_date: string;
+  created_date: string;
+  event_id: number;
+  id: number;
+  is_active: boolean;
+  numeric_id: number;
+  qr_hash: string;
+  qr_roll_id: number;
+  tx_hash: string;
+  event: PoapEvent;
+};
+
+export type PaginatedQrCodes = {
+  limit: number;
+  offset: number;
+  total: number;
+  qr_claims: QrCode[];
+};
+
 export type ENSQueryResult = { valid: false } | { valid: true; address: string };
 
 export type AddressQueryResult = { valid: false } | { valid: true; ens: string };
 
-let API_BASE = 'https://api.poap.xyz';
-
-if (process.env.NODE_ENV === 'development') {
-  if (process.env.REACT_APP_API_ROOT) {
-    API_BASE = process.env.REACT_APP_API_ROOT;
-  } else {
-    API_BASE = 'http://localhost:8080';
-  }
-}
+const API_BASE =
+  process.env.NODE_ENV === 'development'
+    ? `${process.env.REACT_APP_TEST_API_ROOT}`
+    : `${process.env.REACT_APP_API_ROOT}`;
 
 async function fetchJson<A>(input: RequestInfo, init?: RequestInit): Promise<A> {
   const res = await fetch(input, init);
   if (res.ok) {
     return await res.json();
-  } else {
-    console.error(res);
-    throw new Error(`Error with request statusCode: ${res.status}`);
   }
+  if (!res.ok) {
+    const data = await res.json();
+    if (data && data.message) throw new Error(data.message);
+  }
+
+  return await res.json();
 }
 
 async function secureFetchNoResponse(input: RequestInfo, init?: RequestInit): Promise<void> {
@@ -131,7 +151,9 @@ async function secureFetchNoResponse(input: RequestInfo, init?: RequestInit): Pr
     },
   });
   if (!res.ok) {
-    throw new Error(`Request Failed => statusCode: ${res.status} msg: ${res.statusText}`);
+    const data = await res.json();
+    if (data && data.message) throw new Error(data.message);
+    throw new Error(`Request failed => statusCode: ${res.status} msg: ${res.statusText}`);
   }
 }
 
@@ -145,6 +167,8 @@ async function secureFetch<A>(input: RequestInfo, init?: RequestInit): Promise<A
     },
   });
   if (!res.ok) {
+    const data = await res.json();
+    if (data && data.message) throw new Error(data.message);
     throw new Error(`Request Failed => statusCode: ${res.status} msg: ${res.statusText}`);
   }
   return await res.json();
@@ -168,6 +192,12 @@ export function getTokenInfo(tokenId: string): Promise<TokenInfo> {
 
 export async function getEvents(): Promise<PoapEvent[]> {
   return fetchJson(`${API_BASE}/events`);
+}
+
+export async function getEventsForSpecificUser(): Promise<PoapEvent[]> {
+  const user = await authClient.user;
+  const userId = user.sub;
+  return fetchJson(`${API_BASE}/events?user_id=${userId}`);
 }
 
 export async function getEvent(fancyId: string): Promise<null | PoapEvent> {
@@ -248,8 +278,7 @@ export async function sendNotification(
   notificationType: string,
   selectedEventId: number | null
 ): Promise<any> {
-  return secureFetchNoResponse(`${API_BASE}/notifications/`, {
-    // TODO: remove / in url
+  return secureFetchNoResponse(`${API_BASE}/notifications`, {
     method: 'POST',
     body: JSON.stringify({
       title,
@@ -293,24 +322,22 @@ export async function mintUserToManyEvents(
   });
 }
 
-export async function updateEvent(event: PoapEvent) {
-  return secureFetchNoResponse(`${API_BASE}/events/${event.fancy_id}`, {
+export async function updateEvent(event: FormData, fancyId: string) {
+  return secureFetchNoResponse(`${API_BASE}/events/${fancyId}`, {
     method: 'PUT',
-    body: JSON.stringify(event),
-    headers: { 'Content-Type': 'application/json' },
+    body: event,
   });
 }
 
-export async function createEvent(event: PoapEvent) {
+export async function createEvent(event: FormData) {
   return secureFetchNoResponse(`${API_BASE}/events`, {
     method: 'POST',
-    body: JSON.stringify(event),
-    headers: { 'Content-Type': 'application/json' },
+    body: event,
   });
 }
 
 export async function getSigners(): Promise<AdminAddress[]> {
-  return fetchJson(`${API_BASE}/signers`);
+  return secureFetch(`${API_BASE}/signers`);
 }
 
 export function setSigner(id: number, gasPrice: string): Promise<any> {
@@ -322,13 +349,64 @@ export function setSigner(id: number, gasPrice: string): Promise<any> {
 }
 
 export function getNotifications(
-  limit?: number,
-  offset?: number,
+  limit: number,
+  offset: number,
   type?: string,
-  event_id?: number
+  recipientFilter?: string,
+  eventId?: number
 ): Promise<PaginatedNotifications> {
-  const params = queryString.stringify({ limit, offset, type, event_id });
+  let paramsObject = { limit, offset };
+
+  if (type) Object.assign(paramsObject, { type });
+
+  if (recipientFilter === 'everyone') {
+    Object.assign(paramsObject, { eventId: 'null' });
+  }
+
+  if (recipientFilter === 'event') {
+    Object.assign(paramsObject, { eventId });
+  }
+
+  const params = queryString.stringify(paramsObject);
+
   return secureFetch(`${API_BASE}/notifications?${params}`);
+}
+
+export async function getQrCodes(
+  limit: number,
+  offset: number,
+  status?: boolean,
+  event_id?: number
+): Promise<PaginatedQrCodes> {
+  const params = queryString.stringify({ limit, offset, status, event_id }, { sort: false });
+  return secureFetch(`${API_BASE}/qr-code?${params}`);
+}
+
+export async function qrCodesRangeAssign(
+  from: number,
+  to: number,
+  eventId: number | null
+): Promise<void> {
+  return secureFetchNoResponse(`${API_BASE}/qr-code/range-assign`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      numeric_id_min: from,
+      numeric_id_max: to,
+      event_id: eventId,
+    }),
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+export async function qrCodesUpdate(qrCodesIds: string[], eventId: number): Promise<void> {
+  return secureFetchNoResponse(`${API_BASE}/qr-code/update`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      qr_code_ids: qrCodesIds,
+      event_id: eventId,
+    }),
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
 
 export function getTransactions(

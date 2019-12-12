@@ -1,202 +1,208 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+
+// libraries
 import classNames from 'classnames';
 import { Formik, Form, Field, ErrorMessage, FieldProps, FormikActions } from 'formik';
-import { InboxFormSchema } from '../lib/schemas';
+import { useToasts } from 'react-toast-notifications';
 
 /* Helpers */
 import { getEvents, PoapEvent, sendNotification } from '../api';
 
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
+import FilterSelect from '../components/FilterSelect';
+
+// schema
+import { InboxFormSchema } from '../lib/schemas';
 
 /* Typings */
-import { Value } from '../types';
+import { Name, NotificationType, RecipientType } from '../types';
 
-interface IInboxState {
-  events: PoapEvent[];
-  initialValues: IInboxFormValues;
-}
-
-interface IInboxFormValues {
+type IInboxFormValues = {
   title: string;
   description: string;
-  recipientFilter: Exclude<Value, 'inbox' | 'push'>;
-  selectedEventId: number | null;
-  notificationType: Exclude<Value, 'everyone' | 'event'>;
-}
+  recipientFilter: RecipientType;
+  notificationType: NotificationType;
+  selectedEvent: number | null;
+};
 
-export class InboxPage extends React.Component<{}, IInboxState> {
-  state: IInboxState = {
-    events: [],
-    initialValues: {
-      title: '',
-      description: '',
-      recipientFilter: 'everyone',
-      selectedEventId: null,
-      notificationType: 'inbox',
-    },
+export const InboxPage: React.FC = () => {
+  const [events, setEvents] = useState<PoapEvent[]>([]);
+  const [notificationType, setNotificationType] = useState<string>('');
+  const [recipientFilter, setRecipientFilter] = useState<string>('');
+  const [selectedEvent, setSelectedEvent] = useState<number | null>();
+
+  const { addToast } = useToasts();
+
+  useEffect(() => {
+    const async = async () => {
+      const events = await getEvents();
+      setEvents(events);
+    };
+    async();
+  }, []);
+
+  const initialValues: IInboxFormValues = {
+    title: '',
+    description: '',
+    notificationType: '',
+    recipientFilter: '',
+    selectedEvent: null,
   };
 
-  async componentDidMount() {
-    const events = await getEvents();
-
-    this.setState({ events });
-  }
-
-  onSubmit = async (values: IInboxFormValues, actions: FormikActions<IInboxFormValues>) => {
+  const handleSubmit = async (values: IInboxFormValues) => {
     const { title, description, notificationType } = values;
-    let { selectedEventId } = values;
-    if (typeof selectedEventId === 'string') selectedEventId = Number(selectedEventId);
 
     try {
-      actions.setStatus(null);
-      await sendNotification(title, description, notificationType, selectedEventId);
-      actions.setStatus({
-        ok: true,
-        msg: `Notification sent`,
+      await sendNotification(title, description, notificationType, Number(selectedEvent));
+
+      addToast('Notification created successfully', {
+        appearance: 'success',
       });
     } catch (err) {
-      actions.setStatus({
-        ok: false,
-        msg: `Failed to send notification: ${err.message}`,
+      addToast(err.message, {
+        appearance: 'error',
       });
-    } finally {
-      actions.setSubmitting(false);
     }
   };
 
-  render() {
-    return (
-      <div className="bk-container">
-        <Formik
-          enableReinitialize
-          initialValues={this.state.initialValues}
-          onSubmit={this.onSubmit}
-          validationSchema={InboxFormSchema}
-          render={({ dirty, isValid, isSubmitting, status, values }) => {
-            return (
-              <Form>
-                <Field
-                  name="title"
-                  render={({ field, form }: FieldProps) => (
-                    <div className="bk-form-row">
-                      <label htmlFor="title">Title</label>
-                      <input
-                        type="text"
-                        {...field}
-                        className={classNames(!!form.errors[field.name] && 'error')}
-                      />
-                      <ErrorMessage name={'title'} component="p" className="bk-error" />
-                    </div>
-                  )}
-                />
+  const handleRadio = (name: Name, value: RecipientType | NotificationType) => {
+    if (name === 'notificationType') setNotificationType(value);
+    if (name === 'recipientFilter') setRecipientFilter(value);
+  };
 
-                <div className="bk-form-row">
-                  <label htmlFor="description">Description</label>
-                  <Field
-                    name="description"
-                    render={({ field, form }: FieldProps) => (
-                      <textarea
-                        rows={10}
-                        cols={24}
-                        placeholder=""
-                        className={classNames(!!form.errors[field.name] && 'error')}
-                        {...field}
-                      />
-                    )}
-                  />
-                  <ErrorMessage name="description" component="p" className="bk-error" />
-                  <br />
-                </div>
+  const handleEventSelect = (e: React.ChangeEvent<HTMLSelectElement>, setFieldValue: any) => {
+    setSelectedEvent(Number(e.target.value));
+    setFieldValue('selectedEvent', Number(e.target.value));
+  };
 
-                <div className="bk-form-row">
-                  <label>Filter recipient:</label>
-                  <div>
-                    <Radio name="recipientFilter" value={'everyone'} label={'Send to everyone'} />
-                    <Radio
-                      name="recipientFilter"
-                      value={'event'}
-                      label={'Send to the attendees of a an event'}
-                      events={this.state.events}
-                    />
-                  </div>
-                  <ErrorMessage name="recipientFilter" component="p" className="bk-error" />
-                </div>
+  const handleNotificationTypeSelect = (
+    e: React.ChangeEvent<HTMLSelectElement>,
+    setFieldValue: any
+  ) => {
+    const { value } = e.target;
 
-                {values.recipientFilter === 'event' && (
+    if (value === '') {
+      handleRadio('notificationType', value);
+      setFieldValue('notificationType', value);
+    }
+    if (value === 'inbox') {
+      handleRadio('notificationType', value);
+      setFieldValue('notificationType', value);
+    }
+    if (value === 'push') {
+      handleRadio('notificationType', value);
+      setFieldValue('notificationType', value);
+    }
+  };
+
+  const handleRecipientSelect = (e: React.ChangeEvent<HTMLSelectElement>, setFieldValue: any) => {
+    const { value } = e.target;
+
+    if (value === '') {
+      handleRadio('recipientFilter', value);
+      setFieldValue('recipientFilter', value);
+    }
+    if (value === 'everyone') {
+      handleRadio('recipientFilter', value);
+      setFieldValue('recipientFilter', value);
+    }
+    if (value === 'event') {
+      handleRadio('recipientFilter', value);
+      setFieldValue('recipientFilter', value);
+    }
+  };
+
+  return (
+    <div className="bk-container">
+      <Formik
+        enableReinitialize
+        initialValues={initialValues}
+        validationSchema={InboxFormSchema}
+        onSubmit={handleSubmit}
+        render={({ status, setFieldValue }) => {
+          return (
+            <Form>
+              <Field
+                name="title"
+                render={({ field, form }: FieldProps) => (
                   <div className="bk-form-row">
-                    <label htmlFor="selectedEventId">Choose Event:</label>
-                    <Field name="selectedEventId" component="select">
-                      {this.state.events.map(event => {
-                        const label = `${event.name} (${event.fancy_id}) - ${event.year}`;
-                        return (
-                          <option key={event.id} value={event.id}>
-                            {label}
-                          </option>
-                        );
-                      })}
-                    </Field>
-                    <ErrorMessage name="selectedEventId" component="p" className="bk-error" />
+                    <label htmlFor="title">Title</label>
+                    <input
+                      type="text"
+                      name="title"
+                      {...field}
+                      className={classNames(!!form.errors[field.name] && 'error')}
+                    />
+                    <ErrorMessage name={'title'} component="p" className="bk-error" />
                   </div>
                 )}
+              />
 
-                <div className="bk-form-row">
-                  <label>Notification type:</label>
-                  <div>
-                    <Radio name="notificationType" value={'inbox'} label={'Inbox'} />
-                    <Radio name="notificationType" value={'push'} label={'Push notification'} />
-                  </div>
+              <div className="bk-form-row">
+                <label htmlFor="description">Description</label>
+                <Field
+                  name="description"
+                  render={({ field, form }: FieldProps) => (
+                    <textarea
+                      rows={10}
+                      cols={24}
+                      placeholder=""
+                      className={classNames(!!form.errors[field.name] && 'error')}
+                      {...field}
+                    />
+                  )}
+                />
+                <ErrorMessage name="description" component="p" className="bk-error" />
+                <br />
+              </div>
+
+              <div className="row">
+                <div className="col-md-3">
+                  <FilterSelect handleChange={e => handleNotificationTypeSelect(e, setFieldValue)}>
+                    <option value="">Select a type</option>
+                    <option value="inbox">Inbox</option>
+                    <option value="push">Push</option>
+                  </FilterSelect>
                   <ErrorMessage name="notificationType" component="p" className="bk-error" />
                 </div>
 
-                {status && (
-                  <div className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</div>
-                )}
+                <div className="col-md-3">
+                  <FilterSelect handleChange={e => handleRecipientSelect(e, setFieldValue)}>
+                    <option value="">Select the recipient</option>
+                    <option value="everyone">Send to everyone</option>
+                    <option value="event">Send to specific event</option>
+                  </FilterSelect>
+                  <ErrorMessage name="recipientFilter" component="p" className="bk-error" />
+                </div>
 
-                <SubmitButton
-                  text="Send"
-                  isSubmitting={isSubmitting}
-                  canSubmit={isValid && dirty}
-                />
-              </Form>
-            );
-          }}
-        />
-      </div>
-    );
-  }
-}
+                <div className="col-md-3">
+                  {recipientFilter === 'event' && events && (
+                    <FilterSelect handleChange={e => handleEventSelect(e, setFieldValue)}>
+                      <option value="">Select an event</option>
+                      {events &&
+                        events.map((event: PoapEvent) => {
+                          const label = `${event.name} (${event.fancy_id}) - ${event.year}`;
+                          return (
+                            <option key={event.id} value={event.id}>
+                              {label}
+                            </option>
+                          );
+                        })}
+                    </FilterSelect>
+                  )}
+                </div>
+              </div>
 
-type RadioProps = {
-  name: string;
-  value: any;
-  label: string;
-  events?: PoapEvent[];
-};
+              <SubmitButton text="Send" isSubmitting={false} canSubmit={true} />
 
-const Radio: React.FC<RadioProps> = props => {
-  return (
-    <Field name={props.name}>
-      {({ field, form }: FieldProps) => (
-        <label>
-          <input
-            type={'radio'}
-            checked={field.value === props.value}
-            onChange={() => {
-              if (field.value !== props.value) {
-                form.setFieldValue(props.name, props.value);
-
-                if (props.name === 'notificationType') return;
-
-                props.events
-                  ? form.setFieldValue('selectedEventId', props.events[0].id)
-                  : form.setFieldValue('selectedEventId', null);
-              }
-            }}
-          />
-          {props.label}
-        </label>
-      )}
-    </Field>
+              {status && (
+                <div className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</div>
+              )}
+            </Form>
+          );
+        }}
+      />
+    </div>
   );
 };

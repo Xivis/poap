@@ -19,6 +19,7 @@ import gas from '../images/gas-station.svg';
 import checked from '../images/checked.svg';
 import error from '../images/error.svg';
 import clock from '../images/clock.svg';
+import FilterChip from '../components/FilterChip';
 
 const PAGE_SIZE = 10;
 
@@ -38,10 +39,21 @@ const TransactionsPage: FC = () => {
   const [selectedTx, setSelectedTx] = useState<null | Transaction>(null);
   const [isFetchingTx, setIsFetchingTx] = useState<null | boolean>(null);
   const [transactions, setTransactions] = useState<null | Transaction[]>(null);
+  const [isFailedSelected, setIsFailedSelected] = useState<boolean>(false);
+  const [isPassedSelected, setIsPassedSelected] = useState<boolean>(false);
+  const [isPendingSelected, setIsPendingSelected] = useState<boolean>(false);
+
+  useEffect(() => {
+    console.log(total);
+  }, [total]);
 
   useEffect(() => {
     fetchTransactions();
-  }, [page, statusList]);
+  }, [page, statusList]); /* eslint-disable-line react-hooks/exhaustive-deps */
+
+  useEffect(() => {
+    setPage(0);
+  }, [statusList]);
 
   const txStatus = {
     [TX_STATUS.pending]: clock,
@@ -88,14 +100,16 @@ const TransactionsPage: FC = () => {
   };
 
   const handleFilterToggle = (status: string) => {
-    let newStatusList = [...statusList];
-    let index = newStatusList.indexOf(status);
-    if (index > -1) {
-      newStatusList.splice(index, 1);
+    const _statusList = [...statusList];
+    const isStatusInStatusList = _statusList.indexOf(status) > -1;
+    const indexOfStatus = _statusList.indexOf(status);
+
+    if (isStatusInStatusList) {
+      _statusList.splice(indexOfStatus, 1);
     } else {
-      newStatusList.push(status);
+      _statusList.push(status);
     }
-    setStatusList(newStatusList);
+    setStatusList(_statusList);
   };
 
   const openEditModal = (transaction: Transaction) => {
@@ -108,25 +122,31 @@ const TransactionsPage: FC = () => {
     setSelectedTx(null);
   };
 
+  const handleFailedClick = () => {
+    handleFilterToggle('failed');
+    setIsFailedSelected(!isFailedSelected);
+  };
+  const handlePassedClick = () => {
+    handleFilterToggle('passed');
+    setIsPassedSelected(!isPassedSelected);
+  };
+  const handlePendingClick = () => {
+    handleFilterToggle('pending');
+    setIsPendingSelected(!isPendingSelected);
+  };
+
   return (
     <div className={'admin-table transactions'}>
       <h2>Transactions</h2>
       <div>
-        <h4>Filters</h4>
-        <div className={'filters'}>
-          {Object.entries(TX_STATUS).map((entry, index) => {
-            let status = entry[1];
-            return (
-              <div key={index} className={'filter'}>
-                <input
-                  type={'checkbox'}
-                  id={`id_${status}`}
-                  onChange={() => handleFilterToggle(status)}
-                />
-                <label htmlFor={`id_${status}`}>{status}</label>
-              </div>
-            );
-          })}
+        <div className={'filters-container transactions'}>
+          <FilterChip text="Failed" isActive={isFailedSelected} handleOnClick={handleFailedClick} />
+          <FilterChip text="Passed" isActive={isPassedSelected} handleOnClick={handlePassedClick} />
+          <FilterChip
+            text="Pending"
+            isActive={isPendingSelected}
+            handleOnClick={handlePendingClick}
+          />
         </div>
       </div>
       <div className={'row table-header visible-md'}>
@@ -137,11 +157,9 @@ const TransactionsPage: FC = () => {
         <div className={'col-md-1 center'}>Status</div>
         <div className={'col-md-2 center'}>Gas Price (GWei)</div>
       </div>
-      <div className={'row table-header visible-sm'}>
-        <div className={'center'}>Transactions</div>
-      </div>
       <div className={'admin-table-row'}>
         {isFetchingTx && <Loading />}
+
         {transactions &&
           transactions.map((tx, i) => {
             return (
@@ -153,13 +171,13 @@ const TransactionsPage: FC = () => {
                 <div className={'col-md-3'}>
                   <span className={'visible-sm'}>Tx: </span>
                   <a href={etherscanLinks.tx(tx.tx_hash)} target={'_blank'}>
-                    {reduceAddress(tx.tx_hash)}
+                    {tx.tx_hash && reduceAddress(tx.tx_hash)}
                   </a>
                 </div>
                 <div className={'col-md-3'}>
                   <span className={'visible-sm'}>Signer: </span>
                   <a href={etherscanLinks.address(tx.signer)} target={'_blank'}>
-                    {reduceAddress(tx.signer)}
+                    {tx.signer && reduceAddress(tx.signer)}
                   </a>
                 </div>
                 <div className={'col-md-2 capitalize'}>
@@ -171,7 +189,7 @@ const TransactionsPage: FC = () => {
                 </div>
                 <div className={'col-md-2 center'}>
                   <span className={'visible-sm'}>Gas Price (GWei): </span>
-                  {convertToGWEI(tx.gas_price)}
+                  {tx.gas_price && convertToGWEI(tx.gas_price)}
                   {tx.status === TX_STATUS.pending && (
                     <img
                       src={gas}
@@ -184,16 +202,18 @@ const TransactionsPage: FC = () => {
               </div>
             );
           })}
+
         {transactions && transactions.length === 0 && !isFetchingTx && (
           <div className={'no-results'}>No transactions found</div>
         )}
       </div>
-      {total > 0 && (
+      {total > 10 && (
         <div className={'pagination'}>
           <ReactPaginate
             pageCount={Math.ceil(total / PAGE_SIZE)}
             marginPagesDisplayed={2}
             pageRangeDisplayed={5}
+            forcePage={page}
             activeClassName={'active'}
             onPageChange={handlePageChange}
           />
