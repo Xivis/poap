@@ -1,10 +1,6 @@
 import queryString from 'query-string';
 
-import { API_URLS } from './lib/constants';
-
 import { authClient } from './auth';
-
-const API_BASE = process.env.NODE_ENV === 'development' ? API_URLS.local : API_URLS.prod;
 
 export type Address = string;
 export interface TokenInfo {
@@ -127,13 +123,22 @@ export type ENSQueryResult = { valid: false } | { valid: true; address: string }
 
 export type AddressQueryResult = { valid: false } | { valid: true; ens: string };
 
+const API_BASE =
+  process.env.NODE_ENV === 'development'
+    ? `${process.env.REACT_APP_TEST_API_ROOT}`
+    : `${process.env.REACT_APP_API_ROOT}`;
+
 async function fetchJson<A>(input: RequestInfo, init?: RequestInit): Promise<A> {
   const res = await fetch(input, init);
   if (res.ok) {
     return await res.json();
-  } else {
-    throw new Error(`Error with request statusCode: ${res.status}`);
   }
+  if (!res.ok) {
+    const data = await res.json();
+    if (data && data.message) throw new Error(data.message);
+  }
+
+  return await res.json();
 }
 
 async function secureFetchNoResponse(input: RequestInfo, init?: RequestInit): Promise<void> {
@@ -273,8 +278,7 @@ export async function sendNotification(
   notificationType: string,
   selectedEventId: number | null
 ): Promise<any> {
-  return secureFetchNoResponse(`${API_BASE}/notifications/`, {
-    // TODO: remove / in url
+  return secureFetchNoResponse(`${API_BASE}/notifications`, {
     method: 'POST',
     body: JSON.stringify({
       title,
@@ -345,18 +349,32 @@ export function setSigner(id: number, gasPrice: string): Promise<any> {
 }
 
 export function getNotifications(
-  limit?: number,
-  offset?: number,
+  limit: number,
+  offset: number,
   type?: string,
-  event_id?: number
+  recipientFilter?: string,
+  eventId?: number
 ): Promise<PaginatedNotifications> {
-  const params = queryString.stringify({ limit, offset, type, event_id }, { sort: false });
+  let paramsObject = { limit, offset };
+
+  if (type) Object.assign(paramsObject, { type });
+
+  if (recipientFilter === 'everyone') {
+    Object.assign(paramsObject, { eventId: 'null' });
+  }
+
+  if (recipientFilter === 'event') {
+    Object.assign(paramsObject, { eventId });
+  }
+
+  const params = queryString.stringify(paramsObject);
+
   return secureFetch(`${API_BASE}/notifications?${params}`);
 }
 
 export async function getQrCodes(
-  limit?: number,
-  offset?: number,
+  limit: number,
+  offset: number,
   status?: boolean,
   event_id?: number
 ): Promise<PaginatedQrCodes> {
