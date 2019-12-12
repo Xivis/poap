@@ -32,6 +32,11 @@ export enum SignerRole {
   standard = 'standard',
 }
 
+export enum UserRole {
+  administrator = 'administrator',
+  event_host = 'event_host',
+}
+
 export interface TokenInfo {
   tokenId: string;
   owner: Address;
@@ -41,8 +46,6 @@ export interface TokenInfo {
 export interface PoapEvent {
   id: number;
   fancy_id: string;
-  signer: Address;
-  signer_ip: string;
   name: string;
   description: string;
   city: string;
@@ -52,6 +55,7 @@ export interface PoapEvent {
   year: number;
   start_date: string;
   end_date: string;
+  event_host_id: number;
 }
 
 export interface PoapSetting {
@@ -144,6 +148,28 @@ export interface Notification {
   event_id: number;
   event: PoapEvent | null;
   created_date: Date;
+}
+
+export interface eventHost {
+  id: number;
+  user_id: string;
+}
+
+export interface qrRoll {
+  id: number;
+  event_host_id: number;
+  is_active: boolean;
+}
+
+export interface Auth0User {
+  'https://poap.xyz/roles': string[],
+  iss: number;
+  sub: number;
+  aud: string[],
+  iat: number;
+  exp: number;
+  azp: string;
+  scope: string;
 }
 
 export interface UnlockTask extends Task{

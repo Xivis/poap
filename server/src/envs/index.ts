@@ -13,6 +13,10 @@ export interface EnvVariables {
   providerStr: string;
   swaggerHost: string;
   swaggerUrl: string;
+  auth0AppName: string;
+  auth0Kid: string;
+  auth0Audience: string;
+  googleStorageBucket: string;
 }
 
 export interface PoapHelpers {
@@ -74,6 +78,10 @@ export default function getEnv(): EnvVariables {
     infuraNet: ensureEnvVariable('ETH_NETWORK'),
     providerStr: ensureEnvVariable('PROVIDER'),
     swaggerHost: ensureEnvVariable('SWAGGER_HOST'),
-    swaggerUrl: ensureEnvVariable('SWAGGER_URL')
+    swaggerUrl: ensureEnvVariable('SWAGGER_URL'),
+    auth0AppName: ensureEnvVariable('AUTH0_APP_NAME'),
+    auth0Kid: ensureEnvVariable('AUTH0_KID'),
+    auth0Audience: ensureEnvVariable('AUTH0_AUDIENCE'),
+    googleStorageBucket: ensureEnvVariable('GOOGLE_STORAGE_BUCKET'),
   };
 }

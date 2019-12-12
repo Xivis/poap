@@ -12,6 +12,7 @@ CREATE TABLE events (
   "year" smallint not null,
   "start_date" date not null,
   "end_date" date not null,
+  "event_host_id" integer,
   "created_date" timestamp with time zone not null default now()
 );
 
@@ -48,12 +49,14 @@ CREATE TABLE qr_claims (
   "id" SERIAL PRIMARY KEY,
   "qr_hash" varchar(256) UNIQUE not null,
   "tx_hash" varchar(256) UNIQUE,
-  "event_id" integer not null,
+  "event_id" integer,
   "beneficiary" varchar(256),
   "signer" varchar(256),
   "claimed" boolean default false,
   "claimed_date" timestamp with time zone,
   "created_date" timestamp with time zone not null default now(),
+  "qr_roll_id": integer,
+  "numeric_id": integer,
   "is_active" boolean default true
 );
 
@@ -88,4 +91,16 @@ CREATE TABLE notifications (
     "event_id" integer,
     "created_date" timestamp with time zone not null default now()
     CONSTRAINT chk_type CHECK (type IN ('inbox', 'push'))
+);
+
+CREATE TABLE event_host (
+    "id" SERIAL PRIMARY KEY,
+    "user_id" varchar(256) UNIQUE,
+    "is_active" boolean default true
+)
+
+CREATE TABLE qr_roll (
+    "id" SERIAL PRIMARY KEY,
+    "event_host_id" varchar(256) UNIQUE,
+    "is_active" boolean default true
 );

@@ -24,7 +24,20 @@ import {
   getTaskCreator,
   getNotifications,
   getTotalNotifications,
-  createNotification
+  createNotification,
+  getEventHost,
+  getUserEvents,
+  getRangeClaimedQr,
+  updateEventOnQrRange,
+  getEventHostQrRolls,
+  getRangeNotOwnedQr,
+  getQrRoll,
+  getTotalQrClaims,
+  getPaginatedQrClaims,
+  getQrRolls,
+  getClaimedQrsList,
+  getNotOwnedQrList,
+  updateQrClaims,
 } from './db';
 
 import {
@@ -45,23 +58,19 @@ import {
   getAllEventIds
 } from './eth/helpers';
 
-import { Claim, PoapEvent, TransactionStatus, Address, NotificationType, Notification } from './types';
+import { Omit, Claim, PoapEvent, TransactionStatus, Address, NotificationType, Notification, ClaimQR, UserRole, qrRoll } from './types';
 import crypto from 'crypto';
 import getEnv from './envs';
 import * as admin from 'firebase-admin';
-
-function sleep(ms: number){
-  return new Promise(resolve=>{
-      setTimeout(resolve,ms)
-  })
-}
+import { uploadFile } from './plugins/google-storage-utils';
+import { getUserRoles } from './plugins/groups-decorator';
+import { sleep } from './utils';
 
 function buildMetadataJson(tokenUrl: string, ev: PoapEvent) {
   return {
     description: ev.description,
     external_url: tokenUrl,
     home_url: tokenUrl,
-    image: ev.image_url,
     image_url: ev.image_url,
     name: ev.name,
     year: ev.year,
@@ -127,25 +136,24 @@ export default async function routes(fastify: FastifyInstance) {
           200: { 
             type: 'object',
             properties: {
-              "description": { type: 'string' },
-              "external_url": { type: 'string' },
-              "home_url": { type: 'string' },
-              "image": { type: 'string' },
-              "image_url": { type: 'string' },
-              "name": { type: 'string' },
-              "year": { type: 'number' },
-              "tags":  { type: 'array', items: { type: 'string' }},
-              "attributes": { 
+              description: { type: 'string' },
+              external_url: { type: 'string' },
+              home_url: { type: 'string' },
+              image_url: { type: 'string' },
+              name: { type: 'string' },
+              year: { type: 'number' },
+              tags:  { type: 'array', items: { type: 'string' }},
+              attributes: { 
                 type: 'array',
                 items: { 
                   type: 'object',
                   properties: {
-                    "trait_type": { type: 'string' },
-                    "value": { type: 'string' }
+                    trait_type: { type: 'string' },
+                    value: { type: 'string' }
                   }
                 }
               },
-              "properties": { 
+              properties: { 
                 type: 'array',
                 items: { 
                   type: 'number',
@@ -272,8 +280,6 @@ export default async function routes(fastify: FastifyInstance) {
                   properties: {
                     id: { type: 'number'},
                     fancy_id: { type: 'string'},
-                    signer_ip: { type: 'string'},
-                    signer: { type: 'string'},
                     name: { type: 'string'},
                     event_url: { type: 'string'},
                     image_url: { type: 'string'},
@@ -304,7 +310,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/actions/mintEventToManyUsers',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'Endpoint to mint a event to several users',
         tags: ['Actions', ],
@@ -352,7 +358,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/actions/mintUserToManyEvents',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'Endpoint to mint a user several events',
         tags: ['Actions', ],
@@ -645,7 +651,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/actions/bump',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'Endpoint to bump a transaction',
         tags: ['Actions', ],
@@ -726,7 +732,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.post(
     '/burn/:tokenId',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'Burn Token ID',
         tags: ['Token', ],
@@ -820,7 +826,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.put(
     '/settings/:name/:value',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'Endpoint to edit a poap settings',
         tags: ['Settings', ],
@@ -869,6 +875,9 @@ export default async function routes(fastify: FastifyInstance) {
       schema: {
         description: 'Endpoint to get all events',
         tags: ['Events', ],
+        querystring: {
+          user_id: { type: 'string' },
+        },
         response: {
           200: {
             type: 'array',
@@ -877,8 +886,6 @@ export default async function routes(fastify: FastifyInstance) {
               properties: {
                 id: { type: 'number' },
                 fancy_id: { type: 'string' },
-                signer_ip: { type: 'string' },
-                signer: { type: 'string' },
                 name: { type: 'string' },
                 event_url: { type: 'string' },
                 image_url: { type: 'string' },
@@ -896,11 +903,21 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req, res) => {
-      const events = await getEvents();
+      let events = []
+      const user_id = req.query.user_id || null;
+      if(user_id) {
+        const eventHost = await getEventHost(user_id);
+        if (!eventHost) {
+          return new createError.NotFound('You are not registered as an event host');
+        }
+        events = await getUserEvents(eventHost.id);
+      } else {
+        events = await getEvents();
+      }
+
       return events;
     }
   );
-
 
   fastify.get(
     '/events/:fancyid',
@@ -917,8 +934,6 @@ export default async function routes(fastify: FastifyInstance) {
             properties: {
               id: { type: 'number' },
               fancy_id: { type: 'string' },
-              signer_ip: { type: 'string' },
-              signer: { type: 'string' },
               name: { type: 'string' },
               event_url: { type: 'string' },
               image_url: { type: 'string' },
@@ -943,17 +958,22 @@ export default async function routes(fastify: FastifyInstance) {
     }
   );
 
+  async function validate_file(req: any) {
+    const image = {...req.body.image};
+    req.body.image = '@image';
+    req.body[Symbol.for('image')] = image;
+  }
+
   fastify.post(
     '/events',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate, validate_file],
       schema: {
         description: 'Endpoint to create new events',
         tags: ['Events', ],
         body: {
           type: 'object',
           required: [
-            'fancy_id',
             'name',
             'description',
             'city',
@@ -962,12 +982,9 @@ export default async function routes(fastify: FastifyInstance) {
             'end_date',
             'year',
             'event_url',
-            'image_url',
-            'signer',
-            'signer_ip',
+            'image'
           ],
           properties: {
-            fancy_id: { type: 'string' },
             name: { type: 'string' },
             description: { type: 'string' },
             city: { type: 'string' },
@@ -976,15 +993,14 @@ export default async function routes(fastify: FastifyInstance) {
             end_date: { type: 'string' },
             year: { type: 'integer' },
             event_url: { type: 'string' },
-            image_url: { type: 'string' },
-            signer: { type: 'string' },
-            signer_ip: { type: 'string' },
+            image: { type: 'string', format: 'binary' },
           },
         },
         response: {
           200: { 
             type: 'object',
             properties: {
+              id: { type: 'number' },
               fancy_id: { type: 'string' },
               name: { type: 'string' },
               description: { type: 'string' },
@@ -995,9 +1011,7 @@ export default async function routes(fastify: FastifyInstance) {
               year: { type: 'number' },
               event_url: { type: 'string' },
               image_url: { type: 'string' },
-              signer: { type: 'string' },
-              signer_ip: { type: 'string' },
-              id: { type: 'number' }
+              event_host_id: { type: 'number' },
             },
           }
         },
@@ -1008,14 +1022,37 @@ export default async function routes(fastify: FastifyInstance) {
         ]
       },
     },
-    async (req, res) => {
-      const signer_parsed_address = await checkAddress(req.body.signer);
-      if (!signer_parsed_address) {
-        return new createError.BadRequest('Signer address is not valid');
+    async (req:any, res) => {
+      const parsed_fancy_id = req.body.name.trim().replace(/\s+/g, '-').toLowerCase() + '-' + req.body.year;
+
+      const user_id = req.user.sub;
+      const eventHost = await getEventHost(user_id);
+      if (!eventHost) {
+        return new createError.NotFound('You are not registered as an event host');
       }
 
-      const newEvent = {
-        fancy_id: req.body.fancy_id,
+      const image = req.body[Symbol.for('image')][0];
+      if (!image) {
+        return new createError.BadRequest('You have to send an image');
+      }
+
+      if(image.mimetype != 'image/png'){
+        return new createError.BadRequest('Image mimetype must be image/png');
+      }
+
+      const exists_event = await getEventByFancyId(parsed_fancy_id);
+      if (exists_event) {
+        return new createError.BadRequest('Event with this fancy id already exists');
+      }
+
+      const filename = parsed_fancy_id + '-' + eventHost.id + '-logo.png'
+      const google_image_url = await uploadFile(filename, image.mimetype, image.data);
+      if (!google_image_url) {
+        return new createError.InternalServerError('Error uploading image');
+      }
+
+      let newEvent: Omit<PoapEvent, 'id'> = {
+        fancy_id: parsed_fancy_id,
         name: req.body.name,
         description: req.body.description,
         city: req.body.city,
@@ -1024,10 +1061,9 @@ export default async function routes(fastify: FastifyInstance) {
         end_date: req.body.end_date,
         year: req.body.year,
         event_url: req.body.event_url,
-        image_url: req.body.image_url,
-        signer: signer_parsed_address,
-        signer_ip: req.body.signer_ip,
-      };
+        image_url: google_image_url,
+        event_host_id: eventHost.id
+      }
 
       const event = await createEvent(newEvent);
       if (event == null) {
@@ -1040,7 +1076,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.put(
     '/events/:fancyid',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate, validate_file],
       schema: {
         description: 'Endpoint to modify several atributes of selected event',
         tags: ['Events', ],
@@ -1049,12 +1085,10 @@ export default async function routes(fastify: FastifyInstance) {
         },
         body: {
           type: 'object',
-          required: ['signer', 'signer_ip', 'event_url', 'image_url'],
+          required: ['event_url', ],
           properties: {
-            signer: { type: 'string' },
-            signer_ip: { type: 'string' },
             event_url: { type: 'string' },
-            image_url: { type: 'string' },
+            image: { type: 'string', format: 'binary' }
           },
         },
         response: {
@@ -1067,17 +1101,34 @@ export default async function routes(fastify: FastifyInstance) {
         ]
       },
     },
-    async (req, res) => {
-      const signer_parsed_address = await checkAddress(req.body.signer);
-      if (!signer_parsed_address) {
-        return new createError.BadRequest('Signer address is not valid');
+    async (req: any, res) => {
+      const user_id = req.user.sub;
+      const eventHost = await getEventHost(user_id);
+      if (!eventHost) {
+        return new createError.NotFound('You are not registered as an event host');
       }
 
-      const isOk = await updateEvent(req.params.fancyid, {
-        signer: signer_parsed_address,
-        signer_ip: req.body.signer_ip,
+      const event = await getEventByFancyId(req.params.fancyid );
+      if (!event) {
+        return new createError.NotFound('Invalid Event');
+      }
+
+      const image = req.body[Symbol.for('image')][0];
+      let google_image_url:null|string = null;
+      if (image) {
+        if(image.mimetype != 'image/png'){
+          return new createError.BadRequest('Image mimetype must be image/png');
+        }
+        const filename = req.params.fancyid + '-' + eventHost.id + '-logo.png'
+        google_image_url = await uploadFile(filename, image.mimetype, image.data);
+        if (!google_image_url) {
+          return new createError.InternalServerError('Error uploading image');
+        }
+      }
+
+      const isOk = await updateEvent(req.params.fancyid, eventHost.id, {
         event_url: req.body.event_url,
-        image_url: req.body.image_url,
+        image_url: ((google_image_url === null) ? event.image_url : google_image_url)
       });
       if (!isOk) {
         return new createError.NotFound('Invalid event');
@@ -1094,7 +1145,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.get(
     '/transactions',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate,], // fastify.isAdmin
       schema: {
         description: 'Paginates endpoint of transactions, you can filter by status',
         tags: ['Transactions', ],
@@ -1116,24 +1167,14 @@ export default async function routes(fastify: FastifyInstance) {
                   type: 'object',
                   properties: {
                     id: { type: 'number'},
-                    title: { type: 'string'},
-                    description: { type: 'string'},
-                    type: { type: 'string'},
-                    event_id: { type: 'number'},
-                    event: {
-                      type: 'object',
-                      properties: {
-                        id: { type: 'number' },
-                        tx_hash: { type: 'string' },
-                        nonce: { type: 'number' },
-                        signer: { type: 'string' },
-                        operation: { type: 'string' },
-                        arguments: { type: 'string' },
-                        status: { type: 'string' },
-                        gas_price: { type: 'string' },
-                        created_date: { type: 'string' }
-                      }
-                    },
+                    tx_hash: { type: 'string'},
+                    nonce: { type: 'number'},
+                    signer: { type: 'string'},
+                    operation: { type: 'string'},
+                    arguments: { type: 'string'},
+                    status: { type: 'string'},
+                    gas_price: { type: 'string'},
+                    created_date: { type: 'string'}
                   }
                 }
               },
@@ -1163,6 +1204,7 @@ export default async function routes(fastify: FastifyInstance) {
       if (!transactions) {
         return new createError.NotFound('Transactions not found');
       }
+
       return {
         limit: limit,
         offset: offset,
@@ -1221,7 +1263,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.put(
     '/signers/:id',
     {
-      preValidation: [fastify.authenticate],
+      preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'In this endpoint you can modify the signer gas_price',
         tags: ['Signers', ],
@@ -1539,6 +1581,253 @@ export default async function routes(fastify: FastifyInstance) {
       });
 
       return notification
+    }
+  );
+
+  fastify.get(
+    '/qr-code',
+    {
+      preValidation: [fastify.authenticate],
+      schema: {
+        description: 'List paginated qr codes, you can filter by event_id, qr_roll_id, claimed',
+        tags: ['Qr-claims', ],
+        querystring: {
+          limit: { type: 'number' },
+          offset: { type: 'number' },
+          event_id: { type: 'number' },
+          qr_roll_id: { type: 'number' },
+          claimed: { type: 'string' },
+        },
+
+      },
+    },
+    async (req: any, res) => {
+      const limit = req.query.limit || 10;
+      const offset = req.query.offset || 0;
+      const eventId = req.query.event_id || null;
+      const qrRollId = req.query.qr_roll_id || null;
+      const claimed = req.query.claimed || null;
+      
+      const user_id = req.user.sub;
+      let eventHostQrRolls:null | qrRoll[]
+
+      if(getUserRoles(req.user).indexOf(UserRole.administrator) == -1){
+        const eventHost = await getEventHost(user_id);
+        if (!eventHost) {
+          return new createError.NotFound('You are not registered as an event host');
+        }
+        eventHostQrRolls = await getEventHostQrRolls(eventHost.id);
+      } else {
+        eventHostQrRolls = await getQrRolls();
+      }
+
+      if (!eventHostQrRolls || eventHostQrRolls && !eventHostQrRolls[0]) {
+        return new createError.NotFound('You dont have any QrRoll asigned');
+      }
+
+      if(eventId) {
+        const event = await getEvent(eventId);
+        if (!event) {
+          return new createError.BadRequest('event does not exist');
+        }
+      }
+
+      if(qrRollId) {
+        const qrRoll = await getQrRoll(qrRollId);
+        if (!qrRoll) {
+          return new createError.BadRequest('Qr Roll does not exist');
+        }
+      }
+
+      let qrClaims = await getPaginatedQrClaims(limit, offset, eventId, qrRollId, claimed);
+      const totalQrClaims = await getTotalQrClaims(eventId, qrRollId, claimed) || 0;
+
+      const allEvents = await getEvents();
+
+      let indexedEvents: { [id: number] : PoapEvent; } = {}
+      for (let event of allEvents) {
+        indexedEvents[event.id] = event;
+      }
+
+      qrClaims = qrClaims.map((qrclaim: ClaimQR) => {
+        return {...qrclaim, event:indexedEvents[qrclaim.event_id]};
+      });
+
+      return {
+        limit: limit,
+        offset: offset,
+        total: totalQrClaims,
+        qr_claims: qrClaims,
+      };
+    }
+  );
+
+  fastify.put(
+    '/qr-code/range-assign',
+    {
+      preValidation: [fastify.authenticate, ],
+      schema: {
+        description: 'Endpoint to assign event to several qr from a range of numeric_id',
+        tags: ['Qr-claims', ],
+        body: {
+          type: 'object',
+          required: ['numeric_id_min', 'numeric_id_max'],
+          properties: {
+            numeric_id_min: { type: 'number' },
+            numeric_id_max: { type: 'number' },
+            event_id: { type: 'number' },
+          },
+        },
+        response: {
+          204: { type: 'string'},
+        },
+        security: [
+          {
+            "authorization": []
+          }
+        ]
+      },
+    },
+    async (req: any, res) => {
+      const numericIdMin = parseInt(req.body.numeric_id_min);
+      const numericIdMax = parseInt(req.body.numeric_id_max);
+      let eventId = req.body.event_id || null;
+
+      const user_id = req.user.sub;
+      const eventHost = await getEventHost(user_id);
+
+      if(eventId) {
+        eventId = parseInt(eventId)
+        const event = await getEvent(eventId);
+        if (!event) {
+          return new createError.BadRequest('event does not exist');
+        }
+        if(getUserRoles(req.user).indexOf(UserRole.administrator) == -1){
+          if (!eventHost) {
+            return new createError.NotFound('You are not registered as an event host');
+          }
+          if(event.event_host_id != eventHost.id) {
+            return new createError.BadRequest('You cant assign an event that does not belongs to you');
+          }
+        }
+      }
+
+      if (numericIdMin >= numericIdMax) {
+        return new createError.BadRequest('numeric_id_min is greater or equal than numeric_id_max');
+      }
+
+      if (numericIdMin <= 0 || numericIdMax <= 0) {
+        return new createError.BadRequest('numeric_id must be greater than 0');
+      }
+
+      const claimedQrs = await getRangeClaimedQr(numericIdMax, numericIdMin);
+      if (claimedQrs && claimedQrs[0]) {
+        let ids = [];
+        for (let claimedQr of claimedQrs) {
+          ids.push(claimedQr.qr_hash)
+        }
+        return new createError.BadRequest('this qr ids are already claimed: [ ' + ids.toString() + ' ]');
+      }
+
+      if(getUserRoles(req.user).indexOf(UserRole.administrator) == -1){
+        if (!eventHost) {
+          return new createError.NotFound('You are not registered as an event host');
+        }
+        const eventHostQrRolls = await getEventHostQrRolls(eventHost.id);
+        if (!eventHostQrRolls || eventHostQrRolls && !eventHostQrRolls[0]) {
+          return new createError.NotFound('You dont have any QrRoll asigned');
+        }
+
+        const notOwnedQrs = await getRangeNotOwnedQr(numericIdMax, numericIdMin, eventHostQrRolls);
+        if (notOwnedQrs && notOwnedQrs[0]) {
+          let ids = [];
+          for (let notOwnedQr of notOwnedQrs) {
+            ids.push(notOwnedQr.qr_hash)
+          }
+          return new createError.BadRequest('this qr ids arent in your rols: [ ' + ids.toString() + ' ]');
+        }
+      }
+
+      await updateEventOnQrRange(numericIdMax, numericIdMin, eventId);
+
+      res.status(204);
+      return;
+    }
+  );
+
+  fastify.put(
+    '/qr-code/update',
+    {
+      preValidation: [fastify.authenticate, ],
+      schema: {
+        description: 'Endpoint to assign event to several qr from a range of numeric_id',
+        tags: ['Qr-claims', ],
+        body: {
+          type: 'object',
+          required: ['qr_code_ids', 'event_id'],
+          properties: {
+            event_ids: { type: 'array', items: { type: 'number' }},
+            event_id: { type: 'number' },
+          },
+        },
+        response: {
+          204: { type: 'string'},
+        },
+        security: [
+          {
+            "authorization": []
+          }
+        ]
+      },
+    },
+    async (req: any, res) => {
+      const qrCodeIds:number[] = req.body.qr_code_ids;
+      const eventId = parseInt(req.body.event_id);
+
+      const user_id = req.user.sub;
+      const eventHost = await getEventHost(user_id);
+
+      const event = await getEvent(eventId);
+      if (!event) {
+        return new createError.BadRequest('event does not exist');
+      }
+      if(getUserRoles(req.user).indexOf(UserRole.administrator) == -1){
+        if (!eventHost) {
+          return new createError.NotFound('You are not registered as an event host');
+        }
+        if(event.event_host_id != eventHost.id) {
+          return new createError.BadRequest('You cant assign an event that does not belongs to you');
+        }
+      }
+
+      const claimedQrs = await getClaimedQrsList(qrCodeIds);
+      if (claimedQrs && claimedQrs[0]) {
+        return new createError.BadRequest('some qr ids of the range are already claimed');
+      }
+
+      if(getUserRoles(req.user).indexOf(UserRole.administrator) == -1){
+        if (!eventHost) {
+          return new createError.NotFound('You are not registered as an event host');
+        }
+        const eventHostQrRolls = await getEventHostQrRolls(eventHost.id);
+        if (!eventHostQrRolls || eventHostQrRolls && !eventHostQrRolls[0]) {
+          return new createError.NotFound('You dont have any QrRoll asigned');
+        }
+
+        const notOwnedQrs = await getNotOwnedQrList(qrCodeIds, eventHostQrRolls);
+        if (notOwnedQrs && notOwnedQrs[0]) {
+          let ids = [];
+          for (let notOwnedQr of notOwnedQrs) {
+            ids.push(notOwnedQr.qr_hash)
+          }
+          return new createError.BadRequest('this qr ids arent in your rols: [ ' + ids.toString() + ' ]');
+        }
+      }
+
+      await updateQrClaims(qrCodeIds, eventId);
+
+      res.status(204);
+      return;
     }
   );
 

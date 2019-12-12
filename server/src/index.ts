@@ -3,10 +3,13 @@ import fastifyHelmet from 'fastify-helmet';
 import fastifyCors from 'fastify-cors';
 import fastifyRateLimit from 'fastify-rate-limit';
 import fastifySwagger from 'fastify-swagger';
+import fastifyMultipart from 'fastify-multipart';
+import Ajv from 'ajv';
 // @ts-ignore
 import fastifyCompress from 'fastify-compress';
 
-import authPlugin from './auth';
+import authPlugin from './plugins/auth-decorator';
+import groupsPlugin from './plugins/groups-decorator';
 import routes from './routes';
 import transactionsMonitorCron  from './plugins/tx-monitor';
 import taskMonitorCron  from './plugins/task-monitor';
@@ -31,8 +34,12 @@ fastify.register(fastifyRateLimit, {
 
 fastify.register(fastifyCors, {});
 fastify.register(fastifyCompress, {});
+fastify.register(fastifyMultipart, {
+  addToBody: true,
+  sharedSchemaId: 'MultipartFileType'
+});
 
-const env = getEnv()
+const env = getEnv();
 
 fastify.register(fastifySwagger, {
   swagger: {
@@ -73,9 +80,27 @@ fastify.register(fastifySwagger, {
 })
 
 fastify.register(authPlugin);
+fastify.register(groupsPlugin);
 fastify.register(routes);
 fastify.register(transactionsMonitorCron);
 fastify.register(taskMonitorCron);
+
+const ajv = new Ajv({
+  // the fastify defaults (if needed)
+  removeAdditional: true,
+  useDefaults: true,
+  coerceTypes: true,
+  allErrors: true,
+  nullable: true,
+});
+fastify.setSchemaCompiler(function(schema) {
+  ajv.addFormat('binary', () => {
+    // here you can do some additional checks
+    return true;
+  });
+
+  return ajv.compile(schema);
+});
 
 const start = async () => {
   try {
