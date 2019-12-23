@@ -36,18 +36,16 @@ const PoapEventSchema = yup.object().shape({
     .max(new Date().getFullYear() + 1),
   id: yup.number(),
   description: yup.string(),
-  start_date: yup.date(),
-  end_date: yup.date(),
+  start_date: yup.string(),
+  end_date: yup.string(),
   city: yup.string(),
   country: yup.string(),
   event_url: yup.string().url(),
-  image: yup
-    .mixed()
-    .when('isFile', {
-      is: value => value,
-      then: fileSchema,
-      otherwise: yup.string(),
-    })
+  image: yup.mixed().when('isFile', {
+    is: value => value,
+    then: fileSchema,
+    otherwise: yup.string(),
+  }),
 });
 
 const IssueForEventFormValueSchema = yup.object().shape({
@@ -98,7 +96,7 @@ const UpdateModalWithFormikRangeSchema = yup.object().shape({
   to: yup
     .number()
     .positive()
-    .required()
+    .required(),
 });
 
 const UpdateModalWithFormikSelectedQrsSchema = yup.object().shape({});
