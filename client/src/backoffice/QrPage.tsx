@@ -372,7 +372,6 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
       if (!hasIncorrectHashes) {
         qrCodesListAssign(qrHashList, selectedEvent)
           .then(res => {
-            console.log(res);
             const hasAlreadyClaimedHashes = res.alreadyclaimedQrs.length > 0;
 
             if (hasAlreadyClaimedHashes) {
