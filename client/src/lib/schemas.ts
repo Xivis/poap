@@ -99,6 +99,14 @@ const UpdateModalWithFormikRangeSchema = yup.object().shape({
     .required(),
 });
 
+const UpdateModalWithFormikListSchema = yup.object().shape({
+  hashesList: yup.string().required(),
+  event: yup
+    .string()
+    .matches(/^[0-9]{1,}$/)
+    .required(),
+});
+
 const UpdateModalWithFormikSelectedQrsSchema = yup.object().shape({});
 
 export {
@@ -112,4 +120,5 @@ export {
   InboxFormSchema,
   UpdateModalWithFormikRangeSchema,
   UpdateModalWithFormikSelectedQrsSchema,
+  UpdateModalWithFormikListSchema,
 };
