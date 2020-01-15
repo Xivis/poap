@@ -20,6 +20,10 @@ const LABELS = {
     roles: [ROLES.eventHost],
     title: 'Quick Links',
   },
+  menu: {
+    roles: [ROLES.eventHost],
+    title: 'Menu',
+  },
 };
 
 const ROUTES = {
@@ -31,6 +35,10 @@ const ROUTES = {
   codeClaimPageHash: '/claim/:hash',
   codeClaimPage: '/claim',
   admin: '/admin',
+  adminLogin: {
+    path: '/admin/login',
+    title: 'Login',
+  },
   issueForEvent: {
     path: '/admin/issue-for-event',
     roles: [ROLES.administrator],

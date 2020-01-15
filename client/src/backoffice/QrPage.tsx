@@ -1,10 +1,11 @@
 import React, { FC, useState, useEffect } from 'react';
 import { useToasts } from 'react-toast-notifications';
+import { isAfter } from 'date-fns';
 
 /* Libraries */
 import ReactPaginate from 'react-paginate';
 import ReactModal from 'react-modal';
-import { Formik, FormikActions } from 'formik';
+import { Formik, FormikActions, Form } from 'formik';
 
 /* Components */
 import { Loading } from '../components/Loading';
@@ -15,13 +16,13 @@ import FilterChip from '../components/FilterChip';
 /* Helpers */
 import {
   getQrCodes,
-  getEventsForSpecificUser,
   PoapEvent,
   getEvents,
   qrCodesRangeAssign,
   qrCodesSelectionUpdate,
   QrCode,
   qrCodesListAssign,
+  qrCreateMassive,
 } from '../api';
 
 // lib
@@ -46,6 +47,47 @@ type PaginateAction = {
   selected: number;
 };
 
+// update modal types
+type UpdateByRangeModalProps = {
+  events: PoapEvent[];
+  selectedQrs: string[];
+  refreshQrs: () => void;
+  onSuccessAction: () => void;
+  handleUpdateModalClosing: () => void;
+  passphrase: string;
+};
+
+type UpdateModalFormikValues = {
+  from: number | string;
+  to: number | string;
+  event: number;
+  hashesList: string;
+  isUnassigning: boolean;
+};
+
+// authentication modal types
+type AuthenticationModalProps = {
+  setPassphrase: (passphrase: string) => void;
+  passphraseError: boolean;
+};
+
+type AuthenticationModalFormikValues = {
+  passphrase: string;
+};
+
+// creation modal types
+type CreationModalProps = {
+  handleCreationModalRequestClose: () => void;
+  refreshQrs: () => void;
+  events: PoapEvent[];
+};
+
+type CreationModalFormikValues = {
+  ids: string;
+  hashes: string;
+  event: string;
+};
+
 const QrPage: FC = () => {
   const [page, setPage] = useState<number>(0);
   const [total, setTotal] = useState<number>(0);
@@ -57,26 +99,32 @@ const QrPage: FC = () => {
   const [events, setEvents] = useState<PoapEvent[]>([]);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<boolean>(false);
   const [selectedQrs, setSelectedQrs] = useState<string[]>([]);
-  const [initialFetch, setInitialFetch] = useState<boolean>(false);
+  const [initialFetch, setInitialFetch] = useState<boolean>(true);
+  const [passphrase, setPassphrase] = useState<string>('');
+  const [passphraseError, setPassphraseError] = useState<boolean>(false);
+  const [isAuthenticationModalOpen, setIsAuthenticationModalOpen] = useState<boolean>(true);
+  const [isCreationModalOpen, setIsCreationModalOpen] = useState<boolean>(false);
 
   const { addToast } = useToasts();
 
-  const isAdmin = authClient.getRole() === 'administrator';
+  const isAdmin = authClient.isAuthenticated();
 
   useEffect(() => {
     fetchEvents();
-    if (!initialFetch) {
+    setInitialFetch(false);
+
+    if (isAdmin) {
+      setIsAuthenticationModalOpen(false);
       fetchQrCodes();
-      setInitialFetch(true);
     }
   }, []); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
-    if (initialFetch) fetchQrCodes();
-  }, [page]); /* eslint-disable-line react-hooks/exhaustive-deps */
+    if (passphrase) fetchQrCodes();
+  }, [passphrase]);
 
   useEffect(() => {
-    if (initialFetch) {
+    if (!initialFetch) {
       cleanQrSelection();
       setPage(0);
       fetchQrCodes();
@@ -90,8 +138,15 @@ const QrPage: FC = () => {
   const cleanQrSelection = () => setSelectedQrs([]);
 
   const fetchEvents = async () => {
-    const events = isAdmin ? await getEvents() : await getEventsForSpecificUser();
-    setEvents(events);
+    const events = await getEvents();
+
+    if (isAdmin) {
+      setEvents(events);
+    } else {
+      const eventsForCommunity = events.filter(event => !event.from_admin);
+
+      setEvents(eventsForCommunity);
+    }
   };
 
   const fetchQrCodes = async () => {
@@ -107,15 +162,23 @@ const QrPage: FC = () => {
     if (claimScanned) _scanned = claimScanned === 'true';
 
     try {
-      const response = await getQrCodes(PAGE_SIZE, page * PAGE_SIZE, _status, _scanned, event_id);
-      if (!response) return;
+      const response = await getQrCodes(
+        PAGE_SIZE,
+        page * PAGE_SIZE,
+        passphrase,
+        _status,
+        _scanned,
+        event_id
+      );
       setQrCodes(response.qr_claims);
       setTotal(response.total);
+      setIsAuthenticationModalOpen(false);
     } catch (e) {
       addToast(e.message, {
         appearance: 'error',
-        autoDismiss: true,
+        autoDismiss: false,
       });
+      setPassphraseError(true);
     } finally {
       setIsFetchingQrCodes(false);
     }
@@ -154,7 +217,11 @@ const QrPage: FC = () => {
 
   const handleUpdateModalClick = (): void => setIsUpdateModalOpen(true);
 
+  const handleCreationModalClick = (): void => setIsCreationModalOpen(true);
+
   const handleUpdateModalRequestClose = (): void => setIsUpdateModalOpen(false);
+
+  const handleCreationModalRequestClose = (): void => setIsCreationModalOpen(false);
 
   return (
     <div className={'admin-table qr'}>
@@ -202,9 +269,15 @@ const QrPage: FC = () => {
           </div>
         </div>
 
-        <div className={'action-button-container col-md-5'}>
+        <div className={`action-button-container col-md-${isAdmin ? 2 : 5}`}>
           <FilterButton text="Update" handleClick={handleUpdateModalClick} />
         </div>
+
+        {isAdmin && (
+          <div className={'action-button-container col-md-2'}>
+            <FilterButton text="Create" handleClick={handleCreationModalClick} />
+          </div>
+        )}
 
         <ReactModal
           isOpen={isUpdateModalOpen}
@@ -218,7 +291,29 @@ const QrPage: FC = () => {
             selectedQrs={selectedQrs}
             refreshQrs={fetchQrCodes}
             onSuccessAction={cleanQrSelection}
+            passphrase={passphrase}
             events={events}
+          />
+        </ReactModal>
+        <ReactModal
+          isOpen={isAuthenticationModalOpen}
+          shouldFocusAfterRender={true}
+          shouldCloseOnEsc={false}
+          shouldCloseOnOverlayClick={false}
+        >
+          <AuthenticationModal setPassphrase={setPassphrase} passphraseError={passphraseError} />
+        </ReactModal>
+        <ReactModal
+          isOpen={isCreationModalOpen}
+          onRequestClose={handleCreationModalRequestClose}
+          shouldFocusAfterRender={true}
+          shouldCloseOnEsc={true}
+          shouldCloseOnOverlayClick={true}
+        >
+          <CreationModal
+            events={events}
+            refreshQrs={fetchQrCodes}
+            handleCreationModalRequestClose={handleCreationModalRequestClose}
           />
         </ReactModal>
       </div>
@@ -321,20 +416,226 @@ const QrPage: FC = () => {
   );
 };
 
-type UpdateByRangeModalProps = {
-  events: PoapEvent[];
-  selectedQrs: string[];
-  refreshQrs: () => void;
-  onSuccessAction: () => void;
-  handleUpdateModalClosing: () => void;
+const CreationModal: React.FC<CreationModalProps> = ({
+  handleCreationModalRequestClose,
+  refreshQrs,
+  events,
+}) => {
+  const [incorrectQrHashes, setIncorrectQrHashes] = useState<string[]>([]);
+  const [incorrectQrIds, setIncorrectQrIds] = useState<string[]>([]);
+  const [qrIds, setQrsIds] = useState<string[]>([]);
+  const [qrHashes, setQrsHashes] = useState<string[]>([]);
+
+  const { addToast } = useToasts();
+
+  const hasSameQrsQuantity =
+    qrHashes.length === qrIds.length && qrHashes.length > 0 && qrIds.length > 0;
+  const hasNoIncorrectQrs =
+    incorrectQrHashes.length === 0 &&
+    incorrectQrIds.length === 0 &&
+    (qrIds.length > 0 || qrHashes.length > 0);
+  const hasHashesButNoIds = qrHashes.length > 0 && qrIds.length === 0;
+
+  const shouldShowMatchErrorMessage =
+    (!hasSameQrsQuantity || !hasHashesButNoIds) && hasNoIncorrectQrs;
+
+  const handleCreationModalSubmit = (values: CreationModalFormikValues) => {
+    const { hashes, ids, event } = values;
+
+    const hashRegex = /^[a-zA-Z0-9]{6}$/;
+    const idRegex = /^[0-9]+$/;
+
+    const _incorrectQrHashes: string[] = [];
+    const _incorrectQrIds: string[] = [];
+
+    const qrHashesFormatted = hashes
+      .trim()
+      .split('\n')
+      .map(hash => hash.trim())
+      .filter(hash => {
+        if (!hash.match(hashRegex) && hash !== '') _incorrectQrHashes.push(hash);
+
+        return hash.match(hashRegex);
+      });
+
+    const qrIdsFormatted = ids
+      .trim()
+      .split('\n')
+      .map(id => id.trim())
+      .filter(id => {
+        if (!id.match(idRegex) && id !== '') _incorrectQrIds.push(id);
+
+        return id.match(idRegex);
+      });
+
+    const _hasSameQrsQuantity =
+      qrHashesFormatted.length === qrIdsFormatted.length &&
+      qrHashesFormatted.length > 0 &&
+      qrIdsFormatted.length > 0;
+    const _hasNoIncorrectQrs = _incorrectQrHashes.length === 0 && _incorrectQrIds.length === 0;
+    const _hasHashesButNoIds = qrHashesFormatted.length > 0 && qrIdsFormatted.length === 0;
+
+    setIncorrectQrHashes(_incorrectQrHashes);
+    setIncorrectQrIds(_incorrectQrIds);
+
+    if (!_incorrectQrHashes && !_incorrectQrIds) {
+      setQrsHashes(qrHashesFormatted);
+      setQrsIds(qrIdsFormatted);
+    }
+
+    if (_hasNoIncorrectQrs) {
+      if (_hasHashesButNoIds || _hasSameQrsQuantity) {
+        qrCreateMassive(qrHashesFormatted, qrIdsFormatted, event)
+          .then(_ => {
+            addToast('QR codes updated correctly', {
+              appearance: 'success',
+              autoDismiss: true,
+            });
+            refreshQrs();
+            handleCreationModalClosing();
+          })
+          .catch(e => {
+            console.log(e);
+            addToast(e.message, {
+              appearance: 'error',
+              autoDismiss: false,
+            });
+          });
+      }
+    }
+  };
+
+  const handleCreationModalClosing = () => handleCreationModalRequestClose();
+
+  return (
+    <Formik
+      initialValues={{
+        hashes: '',
+        ids: '',
+        event: '',
+      }}
+      validateOnBlur={false}
+      validateOnChange={false}
+      onSubmit={handleCreationModalSubmit}
+    >
+      {({ values, handleChange, handleSubmit }) => {
+        const isEventPlaceholder = !Boolean(values.event);
+
+        return (
+          <div className={'update-modal-container'}>
+            <div className={'modal-top-bar'}>
+              <h3>QR Create</h3>
+            </div>
+            <div className="creation-modal-content">
+              <div>
+                <textarea
+                  className="modal-textarea"
+                  name="hashes"
+                  value={values.hashes}
+                  onChange={handleChange}
+                  placeholder="QRs hashes list"
+                />
+                {incorrectQrHashes.length > 0 && (
+                  <span>
+                    The following hashes are not valid, please fix them or remove them to submit
+                    again: {`${incorrectQrHashes.join(', ')}`}
+                  </span>
+                )}
+              </div>
+
+              <div>
+                <textarea
+                  className="modal-textarea"
+                  value={values.ids}
+                  name="ids"
+                  onChange={handleChange}
+                  placeholder="QRs IDs list"
+                />
+                {incorrectQrIds.length > 0 && (
+                  <span>
+                    The following IDs are not valid, please fix them or remove them to submit again:{' '}
+                    {`${incorrectQrIds.join(', ')}`}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="select-container">
+              <select
+                value={values.event}
+                onChange={handleChange}
+                name="event"
+                className={`select ${isEventPlaceholder ? 'placeholder-option' : ''}`}
+              >
+                <option value="">Select an event</option>
+                {events &&
+                  events.map((event: PoapEvent) => {
+                    const label = `${event.name ? event.name : 'No name'} (${event.fancy_id}) - ${
+                      event.year
+                    }`;
+                    return (
+                      <option key={event.id} value={event.id}>
+                        {label}
+                      </option>
+                    );
+                  })}
+              </select>
+              {shouldShowMatchErrorMessage && (
+                <span>Quantity of IDs and hashes must match or send hashes with none IDs</span>
+              )}
+            </div>
+            <div className="modal-content">
+              <div className="modal-buttons-container creation-modal">
+                <div className="modal-action-buttons-container">
+                  <FilterButton text="Cancel" handleClick={handleCreationModalClosing} />
+                  <FilterButton text="Create" handleClick={handleSubmit} />
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }}
+    </Formik>
+  );
 };
 
-type UpdateModalFormikValues = {
-  from: number | string;
-  to: number | string;
-  event: number;
-  hashesList: string;
-  isUnassigning: boolean;
+const AuthenticationModal: React.FC<AuthenticationModalProps> = ({
+  setPassphrase,
+  passphraseError,
+}) => {
+  const handleAuthenticationModalSubmit = (values: AuthenticationModalFormikValues, props: any) => {
+    setPassphrase(values.passphrase);
+    props.resetForm();
+  };
+
+  return (
+    <Formik
+      initialValues={{
+        passphrase: '',
+      }}
+      validateOnBlur={false}
+      validateOnChange={false}
+      onSubmit={handleAuthenticationModalSubmit}
+    >
+      {({ values, handleChange }) => {
+        return (
+          <Form className="authentication_modal_container">
+            <input
+              className={passphraseError ? 'modal-input-error' : ''}
+              placeholder={
+                passphraseError ? 'The passphrase you entered is incorrect' : 'Passphrase'
+              }
+              name="passphrase"
+              value={values.passphrase}
+              onChange={handleChange}
+            />
+            <button className="filter-base filter-button" type="submit">
+              Submit passphrase
+            </button>
+          </Form>
+        );
+      }}
+    </Formik>
+  );
 };
 
 const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
@@ -343,6 +644,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
   refreshQrs,
   onSuccessAction,
   handleUpdateModalClosing,
+  passphrase,
 }) => {
   const [isSelectionActive, setIsSelectionActive] = useState<boolean>(false);
   const [isRangeActive, setIsRangeActive] = useState<boolean>(false);
@@ -353,7 +655,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
   const [qrHashList, setQrHashList] = useState<string[]>([]);
   const { addToast } = useToasts();
 
-  const isAdmin = authClient.getRole() === 'administrator';
+  const isAdmin = authClient.isAuthenticated();
 
   const hasSelectedQrs = selectedQrs.length > 0;
   const hasIncorrectHashes = incorrectQrHashes.length > 0;
@@ -400,7 +702,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
           .catch(e =>
             addToast(e.message, {
               appearance: 'error',
-              autoDismiss: true,
+              autoDismiss: false,
             })
           );
       }
@@ -440,7 +742,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
 
     if (isRangeActive) {
       if (typeof from === 'number' && typeof to === 'number') {
-        qrCodesRangeAssign(from, to, _event)
+        qrCodesRangeAssign(from, to, _event, passphrase)
           .then(_ => {
             addToast('QR codes updated correctly', {
               appearance: 'success',
@@ -453,14 +755,14 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
           .catch(e =>
             addToast(e.message, {
               appearance: 'error',
-              autoDismiss: true,
+              autoDismiss: false,
             })
           );
       }
     }
 
     if (isSelectionActive) {
-      qrCodesSelectionUpdate(selectedQrs, _event)
+      qrCodesSelectionUpdate(selectedQrs, _event, passphrase)
         .then(_ => {
           addToast('QR codes updated correctly', {
             appearance: 'success',
@@ -470,12 +772,13 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
           refreshQrs();
           handleUpdateModalClosing();
         })
-        .catch(e =>
+        .catch(e => {
+          console.log(e);
           addToast(e.message, {
             appearance: 'error',
-            autoDismiss: true,
-          })
-        );
+            autoDismiss: false,
+          });
+        });
     }
 
     if (isListActive) {
@@ -638,16 +941,26 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
               >
                 <option value="">{resolveSelectText()}</option>
                 {events &&
-                  events.map(event => {
-                    const label = `${event.name ? event.name : 'No name'} (${event.fancy_id}) - ${
-                      event.year
-                    }`;
-                    return (
-                      <option key={event.id} value={event.id}>
-                        {label}
-                      </option>
-                    );
-                  })}
+                  events
+                    .filter(event => {
+                      if (!isAdmin) {
+                        const todayDate = new Date();
+                        const eventDate = new Date(event.start_date);
+                        return isAfter(eventDate, todayDate);
+                      }
+
+                      return event;
+                    })
+                    .map(event => {
+                      const label = `${event.name ? event.name : 'No name'} (${event.fancy_id}) - ${
+                        event.year
+                      }`;
+                      return (
+                        <option key={event.id} value={event.id}>
+                          {label}
+                        </option>
+                      );
+                    })}
               </select>
               <div className="modal-buttons-container">
                 <FilterChip

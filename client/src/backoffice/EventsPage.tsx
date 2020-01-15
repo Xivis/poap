@@ -6,6 +6,7 @@ import DayPickerInput from 'react-day-picker/DayPickerInput';
 import 'react-day-picker/lib/style.css';
 import { format } from 'date-fns';
 import { useToasts } from 'react-toast-notifications';
+import { useHistory } from 'react-router-dom';
 
 import { authClient } from '../auth';
 
@@ -16,9 +17,10 @@ import ReactPaginate from 'react-paginate';
 import { SubmitButton } from '../components/SubmitButton';
 import { Loading } from '../components/Loading';
 import FilterButton from '../components/FilterButton';
+import FilterSelect from '../components/FilterSelect';
 
 // constants
-import { ROLES, ROUTES } from '../lib/constants';
+import { ROUTES } from '../lib/constants';
 
 // assets
 import { ReactComponent as EditIcon } from '../images/edit.svg';
@@ -26,14 +28,7 @@ import { ReactComponent as EditIcon } from '../images/edit.svg';
 /* Helpers */
 import { useAsync } from '../react-helpers';
 import { PoapEventSchema } from '../lib/schemas';
-import {
-  getEventsForSpecificUser,
-  PoapEvent,
-  getEvent,
-  getEvents,
-  updateEvent,
-  createEvent,
-} from '../api';
+import { PoapEvent, getEvent, getEvents, updateEvent, createEvent } from '../api';
 
 const PAGE_SIZE = 10;
 
@@ -71,6 +66,7 @@ type PaginateAction = {
 type EventTableProps = {
   initialEvents: PoapEvent[];
   criteria: string;
+  createdBy: string;
 };
 
 type EventFieldProps = {
@@ -124,6 +120,7 @@ export const EditEventForm: React.FC<RouteComponentProps<{
 };
 
 const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, event }) => {
+  const history = useHistory();
   const veryOldDate = new Date('1900-01-01');
   const veryFutureDate = new Date('2200-01-01');
   const dateFormatter = (day: Date | number) => format(day, 'MM-dd-yyyy');
@@ -202,16 +199,17 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
               actions.setErrors({ isFile: 'An image is required' });
             }
 
-            Object.entries(othersKeys).forEach(([key, value]) => {
-              formData.append(key, typeof value === 'number' ? value.toString() : value);
-            });
+            Object.entries(othersKeys).forEach(([key, value]) =>
+              formData.append(key, typeof value === 'number' ? String(value) : value)
+            );
 
             if (create) {
               await createEvent(formData!);
             } else if (event) {
               await updateEvent(formData!, event.fancy_id);
             }
-            window.location.reload();
+
+            history.push('/admin/events');
           } catch (err) {
             actions.setSubmitting(false);
             addToast(err.message, {
@@ -251,7 +249,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
                 disabledDays={
                   values.end_date
                     ? {
-                        from: new Date(dateFormatterString(values.end_date).getTime() + day),
+                        from: new Date(dateFormatterString(values.end_date).getTime() + day * 2),
                         to: veryFutureDate,
                       }
                     : undefined
@@ -267,7 +265,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
                   values.start_date
                     ? {
                         from: veryOldDate,
-                        to: new Date(dateFormatterString(values.start_date).getTime() + day),
+                        to: new Date(dateFormatterString(values.start_date).getTime()),
                       }
                     : undefined
                 }
@@ -362,13 +360,9 @@ const EventField: React.FC<EventFieldProps> = ({ title, name, disabled, type }) 
 
 export const EventList: React.FC = () => {
   const [criteria, setCriteria] = useState<string>('');
+  const [createdBy, setCreatedBy] = useState<string>('all');
 
-  const userRole = authClient.getRole();
-  const isAdmin = userRole === ROLES.administrator;
-
-  const [events, fetchingEvents, fetchEventsError] = useAsync(
-    isAdmin ? getEvents : getEventsForSpecificUser
-  );
+  const [events, fetchingEvents, fetchEventsError] = useAsync(getEvents);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const { value } = e.target;
@@ -376,28 +370,57 @@ export const EventList: React.FC = () => {
     setCriteria(value.toLowerCase());
   };
 
+  const handleCreatedByChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
+    const { value } = e.target;
+
+    setCreatedBy(value);
+  };
+
+  const isAdmin = authClient.isAuthenticated();
+
   return (
     <div className={'bk-container'}>
       <h2>Events</h2>
       <div className="event-top-bar-container">
-        <Link to="/admin/events/new">
-          <FilterButton text="Create New" />
-        </Link>
-        <input type="text" placeholder="Search by name" onChange={handleNameChange} />
+        <div className="left_content">
+          <input type="text" placeholder="Search by name" onChange={handleNameChange} />
+          {isAdmin && (
+            <FilterSelect handleChange={handleCreatedByChange}>
+              <option value="all">All events</option>
+              <option value="admin">Created by admin</option>
+              <option value="community">Created by community</option>
+            </FilterSelect>
+          )}
+        </div>
+        <div className="right_content">
+          <Link to="/admin/events/new">
+            <FilterButton text="Create New" />
+          </Link>
+        </div>
       </div>
       {fetchingEvents && <Loading />}
 
       {fetchEventsError && <div>There was a problem fetching events</div>}
 
-      {events && <EventTable criteria={criteria} initialEvents={events} />}
+      {events && <EventTable createdBy={createdBy} criteria={criteria} initialEvents={events} />}
     </div>
   );
 };
 
-const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria }) => {
+const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, createdBy }) => {
   const [events, setEvents] = useState<PoapEvent[]>(initialEvents);
   const [total, setTotal] = useState<number>(events.length);
   const [page, setPage] = useState<number>(0);
+
+  useEffect(() => {
+    const eventsByCreator = initialEvents.filter(event =>
+      createdBy === 'admin' ? event.from_admin : !event.from_admin
+    );
+
+    setEvents(eventsByCreator);
+
+    if (createdBy === 'all') setEvents(initialEvents);
+  }, [createdBy]);
 
   useEffect(() => {
     setEvents(initialEvents.filter(handleCriteriaFilter));
@@ -411,6 +434,8 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria }) => {
     setPage(0);
   }, [total]);
 
+  const isAdmin = authClient.isAuthenticated();
+
   const handlePageChange = (obj: PaginateAction) => {
     setPage(obj.selected);
   };
@@ -423,16 +448,18 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria }) => {
   const handleCriteriaFilter = (event: PoapEvent): boolean =>
     event.name.toLowerCase().includes(criteria);
 
+  const nameColumnLength = isAdmin ? 4 : 5;
+
   return (
     <div>
       <div className={'admin-table transactions'}>
         <div className={'row table-header visible-md'}>
           <div className={'col-md-1 center'}>#</div>
-          <div className={'col-md-4'}>Name</div>
+          <div className={`col-md-${nameColumnLength}`}>Name</div>
           <div className={'col-md-2 center'}>Start Date</div>
           <div className={'col-md-2 center'}>End Date</div>
           <div className={'col-md-2 center'}>Image</div>
-          <div className={'col-md-1 center'}>Edit</div>
+          {isAdmin && <div className={'col-md-1 center'}>Edit</div>}
         </div>
         <div className={'admin-table-row'}>
           {eventsToShowManager(events).map((event, i) => (
@@ -441,7 +468,7 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria }) => {
                 <span className={'visible-sm visible-md'}>#</span>
                 {event.id}
               </div>
-              <div className={'col-md-4'}>
+              <div className={`col-md-${nameColumnLength}`}>
                 <span className={'visible-sm'}>Name: </span>
                 <a href={event.event_url} target="_blank" rel="noopener noreferrer">
                   {event.name}
@@ -458,11 +485,13 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria }) => {
               <div className={'col-md-2 center logo-image-container'}>
                 <img alt={event.image_url} className={'logo-image'} src={event.image_url} />
               </div>
-              <div className={'col-md-1 center event-edit-icon-container'}>
-                <Link to={`/admin/events/${event.fancy_id}`}>
-                  <EditIcon />
-                </Link>
-              </div>
+              {isAdmin && (
+                <div className={'col-md-1 center event-edit-icon-container'}>
+                  <Link to={`/admin/events/${event.fancy_id}`}>
+                    <EditIcon />
+                  </Link>
+                </div>
+              )}
             </div>
           ))}
         </div>

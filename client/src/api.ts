@@ -24,6 +24,7 @@ export interface PoapEvent {
   city: string;
   country: string;
   event_url: string;
+  from_admin: boolean;
   image_url: string;
   year: number;
   start_date: string;
@@ -136,15 +137,20 @@ const API_BASE =
 
 async function fetchJson<A>(input: RequestInfo, init?: RequestInit): Promise<A> {
   const res = await fetch(input, init);
-  if (res.ok) {
-    return await res.json();
-  }
   if (!res.ok) {
     const data = await res.json();
     if (data && data.message) throw new Error(data.message);
   }
 
   return await res.json();
+}
+
+async function fetchJsonNoResponse<A>(input: RequestInfo, init?: RequestInit): Promise<void> {
+  const res = await fetch(input, init);
+  if (!res.ok) {
+    const data = await res.json();
+    if (data && data.message) throw new Error(data.message);
+  }
 }
 
 async function secureFetchNoResponse(input: RequestInfo, init?: RequestInit): Promise<void> {
@@ -197,13 +203,9 @@ export function getTokenInfo(tokenId: string): Promise<TokenInfo> {
 }
 
 export async function getEvents(): Promise<PoapEvent[]> {
-  return fetchJson(`${API_BASE}/events`);
-}
-
-export async function getEventsForSpecificUser(): Promise<PoapEvent[]> {
-  const user = await authClient.user;
-  const userId = user.sub;
-  return fetchJson(`${API_BASE}/events?user_id=${userId}`);
+  return authClient.isAuthenticated()
+    ? secureFetch(`${API_BASE}/events`)
+    : fetchJson(`${API_BASE}/events`);
 }
 
 export async function getEvent(fancyId: string): Promise<null | PoapEvent> {
@@ -336,7 +338,7 @@ export async function updateEvent(event: FormData, fancyId: string) {
 }
 
 export async function createEvent(event: FormData) {
-  return secureFetchNoResponse(`${API_BASE}/events`, {
+  return fetchJson(`${API_BASE}/events`, {
     method: 'POST',
     body: event,
   });
@@ -381,31 +383,49 @@ export function getNotifications(
 export async function getQrCodes(
   limit: number,
   offset: number,
+  passphrase: string,
   claimed?: boolean,
   scanned?: boolean,
   event_id?: number
 ): Promise<PaginatedQrCodes> {
+  const isAdmin = authClient.isAuthenticated();
   const params = queryString.stringify(
-    { limit, offset, claimed, event_id, scanned },
+    { limit, offset, claimed, event_id, scanned, passphrase },
     { sort: false }
   );
-  return secureFetch(`${API_BASE}/qr-code?${params}`);
+  return isAdmin
+    ? secureFetch(`${API_BASE}/qr-code?${params}`)
+    : fetchJson(`${API_BASE}/qr-code?${params}`);
 }
 
 export async function qrCodesRangeAssign(
   from: number,
   to: number,
-  eventId: number | null
+  eventId: number | null,
+  passphrase?: string
 ): Promise<void> {
-  return secureFetchNoResponse(`${API_BASE}/qr-code/range-assign`, {
-    method: 'PUT',
-    body: JSON.stringify({
-      numeric_id_min: from,
-      numeric_id_max: to,
-      event_id: eventId,
-    }),
-    headers: { 'Content-Type': 'application/json' },
-  });
+  const isAdmin = authClient.isAuthenticated();
+
+  return isAdmin
+    ? secureFetchNoResponse(`${API_BASE}/qr-code/range-assign`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          numeric_id_min: from,
+          numeric_id_max: to,
+          event_id: eventId,
+        }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+    : fetchJsonNoResponse(`${API_BASE}/qr-code/range-assign`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          numeric_id_min: from,
+          numeric_id_max: to,
+          event_id: eventId,
+          passphrase,
+        }),
+        headers: { 'Content-Type': 'application/json' },
+      });
 }
 
 export async function qrCodesListAssign(
@@ -423,18 +443,52 @@ export async function qrCodesListAssign(
   });
 }
 
-export async function qrCodesSelectionUpdate(
-  qrCodesIds: string[],
-  eventId: number | null
+export async function qrCreateMassive(
+  qrHashes: string[],
+  qrIds: string[],
+  event?: string
 ): Promise<void> {
-  return secureFetchNoResponse(`${API_BASE}/qr-code/update`, {
-    method: 'PUT',
-    body: JSON.stringify({
-      qr_code_ids: qrCodesIds,
-      event_id: eventId,
-    }),
+  let unstringifiedBody = {
+    qr_list: qrHashes,
+    numeric_list: qrIds,
+  };
+
+  if (Number(event) !== 0) Object.assign(unstringifiedBody, { event_id: Number(event) });
+
+  const body = JSON.stringify(unstringifiedBody);
+
+  return secureFetchNoResponse(`${API_BASE}/qr-code/list-create`, {
+    method: 'POST',
+    body,
     headers: { 'Content-Type': 'application/json' },
   });
+}
+
+export async function qrCodesSelectionUpdate(
+  qrCodesIds: string[],
+  eventId: number | null,
+  passphrase?: string
+): Promise<void> {
+  const isAdmin = authClient.isAuthenticated();
+
+  return isAdmin
+    ? secureFetchNoResponse(`${API_BASE}/qr-code/update`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          qr_code_ids: qrCodesIds,
+          event_id: eventId,
+        }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+    : fetchJsonNoResponse(`${API_BASE}/qr-code/update`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          qr_code_ids: qrCodesIds,
+          event_id: eventId,
+          passphrase,
+        }),
+        headers: { 'Content-Type': 'application/json' },
+      });
 }
 
 export function getTransactions(
