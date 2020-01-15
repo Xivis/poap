@@ -22,6 +22,12 @@ export async function getEvents(): Promise<PoapEvent[]> {
   return res.map(replaceDates);
 }
 
+export async function getPublicEvents(): Promise<PoapEvent[]> {
+  const res = await db.manyOrNone<PoapEvent>('SELECT * FROM events WHERE from_admin = false ORDER BY start_date DESC');
+
+  return res.map(replaceDates);
+}
+
 export async function getUserEvents(event_host_id: number): Promise<PoapEvent[]> {
   const res = await db.manyOrNone<PoapEvent>('SELECT * FROM events WHERE event_host_id  = $1 ORDER BY start_date DESC', [event_host_id]);
 
@@ -207,6 +213,20 @@ export async function checkDualQrClaim(eventId: number, address: string): Promis
   return res === null;
 }
 
+export async function checkQrHashExists(qrHash: string): Promise<boolean> {
+  const res = await db.oneOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE qr_hash = ${qrHash}', {
+    qrHash,
+  });
+  return res != null;
+}
+
+export async function checkNumericIdExists(numericId: number): Promise<boolean> {
+  const res = await db.oneOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE numeric_id = ${numericId}', {
+    numericId,
+  });
+  return res != null;
+}
+
 export async function claimQrClaim(qrHash: string) {
   const res = await db.result('update qr_claims set claimed=true, claimed_date=current_timestamp where qr_hash = $1', [qrHash]);
   return res.rowCount === 1;
@@ -351,6 +371,11 @@ export async function getEventHost(userId: string): Promise<null | eventHost> {
   return res;
 }
 
+export async function getEventHostByPassphrase(passphrase: string): Promise<null | eventHost> {
+  const res = await db.oneOrNone<eventHost>('SELECT * FROM event_host WHERE passphrase=${passphrase} AND is_active = true', {passphrase});
+  return res;
+}
+
 export async function getRangeClaimedQr(numericIdMax: number, numericIdMin: number): Promise<null | ClaimQR[]> {
   const res = await db.manyOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE numeric_id<=${numericIdMax} AND numeric_id>=${numericIdMin} AND is_active = true AND claimed = true', {
     numericIdMax,
@@ -371,6 +396,19 @@ export async function getClaimedQrsList(qrCodeIds: number[]): Promise<null | Cla
 export async function getClaimedQrsHashList(qrHashIds: string[]): Promise<null | ClaimQR[]> {
   const res = await db.manyOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE qr_hash IN (${qrHashIds:csv}) AND is_active = true AND claimed = true', {
     qrHashIds
+  });
+
+  return res;
+}
+
+export async function createQrClaims(hashesToAdd:any[]){
+  // https://stackoverflow.com/questions/36233566/inserting-multiple-records-with-pg-promise
+
+  const res = await db.tx(t => {
+    const queries = hashesToAdd.map(qr_claim => {
+        return t.one('INSERT INTO qr_claims(qr_hash, numeric_id, event_id) VALUES(${qr_hash}, ${numeric_id}, ${event_id}) RETURNING id', qr_claim, a => +a.id);
+    });
+    return t.batch(queries);
   });
 
   return res;
