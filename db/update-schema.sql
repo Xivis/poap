@@ -124,3 +124,48 @@ alter table event_host
 
 create unique index event_host_passphrase_uindex_2
 	on event_host (passphrase);
+
+/* CREATE TABLE subscriptions*/
+CREATE TABLE subscriptions (
+    "id" SERIAL PRIMARY KEY,
+    "total" integer not null CHECK(total >= 0),
+    "remaining" integer not null CHECK(remaining >= 0),
+    "beneficiary" varchar(256) not null,
+    "created_at" timestamp with time zone not null default now(),
+    "updated_at" timestamp with time zone not null default now()
+);
+
+/* CREATE TABLE subscription_bumps */
+CREATE TABLE subscription_bumps (
+    "id" SERIAL PRIMARY KEY,
+    "subscription_id" integer not null REFERENCES subscriptions (id),
+    "original_tx" integer REFERENCES server_transactions (id),
+    "bump_tx" integer not null REFERENCES server_transactions (id),
+    "gas_price" varchar(100) not null,
+    "created_at" timestamp with time zone not null default now()
+);
+
+/* CREATE TABLE subscription_addresses */
+CREATE TABLE subscription_addresses (
+  "id" SERIAL PRIMARY KEY,
+  "address" varchar(256) UNIQUE not null,
+  "name" varchar(256) UNIQUE not null,
+  "qr_code_image" varchar(256) not null
+ );
+
+ /* CREATE TABLE subscription_address_locks */
+CREATE TABLE subscription_address_locks (
+  "id" SERIAL PRIMARY KEY,
+  "subscription_address_id" integer not null REFERENCES subscription_addresses (id),
+  "is_active" boolean default true,
+  "beneficiary" varchar(256) not null,
+  "created_at" timestamp with time zone not null default now(),
+  "unlocked_at" timestamp with time zone,
+  "expires_at" timestamp with time zone not null
+ );
+
+ALTER TABLE qr_claims ADD COLUMN "bumped" boolean default false
+
+
+INSERT INTO poap_settings (name, type, value) VALUES ('bump-gas-price', 'integer', '15000000000');
+INSERT INTO poap_settings (name, type, value) VALUES ('lock-time', 'integer', '60');
