@@ -164,8 +164,12 @@ CREATE TABLE subscription_address_locks (
   "expires_at" timestamp with time zone not null
  );
 
-ALTER TABLE qr_claims ADD COLUMN "bumped" boolean default false
+ALTER TABLE qr_claims ADD COLUMN "bumped" boolean default false;
+ALTER TABLE poap_settings ADD COLUMN "key" VARCHAR(50) UNIQUE NULL;
+ALTER TABLE poap_settings ADD COLUMN "description" VARCHAR(500) NULL;
 
 
-INSERT INTO poap_settings (name, type, value) VALUES ('bump-gas-price', 'integer', '15000000000');
-INSERT INTO poap_settings (name, type, value) VALUES ('lock-time', 'integer', '60');
+INSERT INTO poap_settings (name, key, description, type, value) VALUES
+    ('Subscription gas price', 'subscription-gas_price', 'Gas price  for the transactions of subscribed users', 'integer', 60);
+INSERT INTO poap_settings (name, key, description, type, value) VALUES
+    ('Subscription gas price', 'subscription-gas_price', 'Gas price in GWei for the transactions of subscribed users', 'integer', 15);

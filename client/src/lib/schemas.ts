@@ -13,6 +13,12 @@ const GasPriceSchema = yup.object().shape({
     .positive(),
 });
 
+const PoapSettingSchema = yup.object().shape({
+  setting: yup
+    .string()
+    .required(),
+});
+
 const BurnFormSchema = yup.object().shape({
   tokenId: yup
     .number()
@@ -112,6 +118,7 @@ const UpdateModalWithFormikSelectedQrsSchema = yup.object().shape({});
 export {
   AddressSchema,
   GasPriceSchema,
+  PoapSettingSchema,
   BurnFormSchema,
   PoapEventSchema,
   ClaimHashSchema,

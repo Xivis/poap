@@ -27,7 +27,9 @@ CREATE TABLE signers (
 
 CREATE TABLE poap_settings (
   "id" SERIAL PRIMARY KEY,
+  "key" varchar(50) UNIQUE not null,
   "name" varchar(256) UNIQUE not null,
+  "description" varchar(500) UNIQUE not null,
   "type" varchar not null,
   "value" varchar(1000) not null,
   "created_date" timestamp with time zone not null default now()

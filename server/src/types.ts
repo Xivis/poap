@@ -57,6 +57,8 @@ export interface PoapEvent {
 export interface PoapSetting {
   id: number;
   name: string;
+  key: string;
+  description: string;
   type: string;
   value: string;
 }

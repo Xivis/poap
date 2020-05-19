@@ -530,6 +530,7 @@
   }
 
   &.qr,
+  &.settings,
   &.notifications,
   &.transactions,
   &.addresses {
@@ -586,7 +587,8 @@
   text-overflow: ellipsis;
 }
 
-.price-gas-modal-form {
+.price-gas-modal-form,
+.settings-modal-form {
   text-align: center;
   input {
     text-align: center;

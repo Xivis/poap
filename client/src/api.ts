@@ -57,6 +57,8 @@ export interface HashClaim {
 export interface PoapSetting {
   id: number;
   name: string;
+  key: string;
+  description: string;
   type: string;
   value: string;
 }
@@ -213,8 +215,8 @@ export async function getEvent(fancyId: string): Promise<null | PoapEvent> {
   return fetchJson(`${API_BASE}/events/${fancyId}`);
 }
 
-export async function getSetting(settingName: string): Promise<null | PoapSetting> {
-  return fetchJson(`${API_BASE}/settings/${settingName}`);
+export async function getSettings(): Promise<null | PoapSetting[]> {
+  return fetchJson(`${API_BASE}/settings`);
 }
 
 export async function getTokenInfoWithENS(tokenId: string): Promise<TokenInfo> {
@@ -269,9 +271,11 @@ export async function requestProof(
   });
 }
 
-export function setSetting(settingName: string, settingValue: string): Promise<any> {
-  return secureFetchNoResponse(`${API_BASE}/settings/${settingName}/${settingValue}`, {
+export function setSetting(settingId: number, settingValue: string): Promise<any> {
+  return secureFetchNoResponse(`${API_BASE}/settings/${settingId}`, {
     method: 'PUT',
+    body: JSON.stringify({ value: settingValue }),
+    headers: { 'Content-Type': 'application/json' }
   });
 }
 

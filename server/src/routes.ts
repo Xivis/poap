@@ -7,9 +7,8 @@ import {
   getEvents,
   updateEvent,
   createEvent,
-  getPoapSettingByName,
   getPoapSettings,
-  updatePoapSettingByName,
+  updatePoapSetting,
   getTransactions,
   getTotalTransactions,
   getSigners,
@@ -813,6 +812,8 @@ export default async function routes(fastify: FastifyInstance) {
               properties: {
                 id: { type: 'number' },
                 name: { type: 'string' },
+                key: { type: 'string' },
+                description: { type: 'string' },
                 type: { type: 'string' },
                 value: { type: 'string' },
                 created_date: { type: 'string' }
@@ -827,49 +828,24 @@ export default async function routes(fastify: FastifyInstance) {
     }
   );
 
-  fastify.get(
-    '/settings/:name',
-    {
-      schema: {
-        description: 'Endpoint to get an specific poap setting',
-        tags: ['Settings',],
-        params: {
-          name: { type: 'string' },
-        },
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              id: { type: 'number' },
-              name: { type: 'string' },
-              type: { type: 'string' },
-              value: { type: 'string' },
-              created_date: { type: 'string' }
-            }
-          },
-        }
-      },
-    },
-    async (req, res) => {
-      const value = await getPoapSettingByName(req.params.name);
-      if (!value) {
-        return new createError.NotFound('poap setting variable not found');
-      }
-      return value;
-    }
-  );
-
-  // TODO Update this endpoint to use value as body parameter
   fastify.put(
-    '/settings/:name/:value',
+    '/settings/:id',
     {
       preValidation: [fastify.authenticate, fastify.isAdmin],
       schema: {
         description: 'Endpoint to edit POAP settings',
         tags: ['Settings',],
         params: {
-          name: { type: 'string' },
-          value: { type: 'string' },
+          id: { type: 'number' },
+        },
+        body: {
+          type: 'object',
+          required: [
+            'value',
+          ],
+          properties: {
+            value: { type: 'string' }
+          },
         },
         response: {
           200: { type: 'string' },
@@ -882,16 +858,9 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req, res) => {
-      // Verify that setting variable exist
-      const setting_type = await getPoapSettingByName(req.params.name);
-      if (!setting_type) {
-        return new createError.BadRequest('unsuccessful operation');
-      }
-
-      const isOk = await updatePoapSettingByName(
-        req.params.name,
-        setting_type['type'],
-        req.params.value
+      const isOk = await updatePoapSetting(
+        req.params.id,
+        req.body.value
       );
       if (!isOk) {
         return new createError.BadRequest('unsuccessful operation');

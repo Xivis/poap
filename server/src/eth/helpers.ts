@@ -6,7 +6,6 @@ import pino from 'pino';
 import {
   getEvent,
   getEvents,
-  getPoapSettingByName,
   saveTransaction,
   getSigner,
   getAvailableHelperSigners,
@@ -118,13 +117,6 @@ export async function getCurrentGasPrice(address: string) {
       return parseInt(signer.gas_price);
     }
   }
-
-  // If signer was not defined, then get gas-price value from db Poap Setting variable
-  let gasPriceSetting = await getPoapSettingByName('gas-price');
-  if (gasPriceSetting) {
-    gasPrice = parseInt(gasPriceSetting.value);
-  }
-
   return gasPrice;
 }
 

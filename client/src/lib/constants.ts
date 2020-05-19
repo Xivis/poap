@@ -105,6 +105,11 @@ const ROUTES = {
     roles: [ROLES.administrator, ROLES.eventHost],
     title: 'Manage QR Codes',
   },
+  settings: {
+    path: '/admin/settings',
+    roles: [ROLES.administrator],
+    title: 'Settings'
+  }
 };
 
 const IMAGE_SUPPORTED_FORMATS = ['image/png'];

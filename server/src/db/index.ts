@@ -67,14 +67,9 @@ export async function getPoapSettings(): Promise<PoapSetting[]> {
   return res;
 }
 
-export async function getPoapSettingByName(name: string): Promise<null | PoapSetting> {
-  const res = await db.oneOrNone<PoapSetting>('SELECT * FROM poap_settings WHERE name = $1', [name]);
-  return res;
-}
-
-export async function updatePoapSettingByName(name: string, type: string, value: string): Promise<boolean> {
-  let query = 'update poap_settings set type=${type}, value=${value} where name=${name}';
-  let values = { type, value, name };
+export async function updatePoapSetting(id: number, value: string): Promise<boolean> {
+  let query = 'UPDATE poap_settings SET value=${value} where id=${id}';
+  let values = { value, id };
   const res = await db.result(query, values);
   return res.rowCount === 1;
 }
