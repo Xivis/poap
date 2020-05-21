@@ -9,7 +9,7 @@ import { Formik, FormikActions, Form, Field, FieldProps, ErrorMessage } from 'fo
 import { GasPriceSchema } from '../lib/schemas';
 import { etherscanLinks } from '../lib/constants';
 import { getSigners, setSigner, AdminAddress } from '../api';
-import { convertToGWEI, convertFromGWEI, convertToETH, reduceAddress } from '../lib/helpers';
+import { convertToGWEI, convertFromGWEI, convertToETH, reduceHex } from '../lib/helpers';
 
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
@@ -100,7 +100,7 @@ const AddressManagementPage: FC = () => {
               </div>
               <div className={'col-md-3'}>
                 <span className={'visible-sm'}>Address: </span>
-                <a href={etherscanLinks.address(address.signer)} target={"_blank"}>{reduceAddress(address.signer)}</a>
+                <a href={etherscanLinks.address(address.signer)} target={"_blank"}>{reduceHex(address.signer)}</a>
               </div>
               <div className={'col-md-2 capitalize'}>
                 <span className={'visible-sm'}>Role: </span>

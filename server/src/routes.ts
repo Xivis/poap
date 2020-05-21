@@ -2071,6 +2071,52 @@ export default async function routes(fastify: FastifyInstance) {
   );
 
   //********************************************************************
+  // SUBSCRIPTIONS
+  //********************************************************************
+
+  fastify.post(
+    '/actions/subscription',
+    {
+      schema: {
+        description: 'Lock an account to create a new subscription',
+        tags: ['Subscriptions',],
+        body: {
+          type: 'object',
+          required: ['beneficiary'],
+          properties: {
+            beneficiary: { type: 'string' },
+          }
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              id: { type: 'number' },
+              is_active: { type: 'boolean' },
+              subscription_address: {
+                type: 'object',
+                properties: {
+                  id: { type: 'number' },
+                  address: { type: 'string' },
+                  name: { type: 'string' },
+                  qr_code_image: { type: 'string' }
+                }
+              },
+              created_at: { type: 'string' },
+              unlocked_at: { type: 'string' },
+              expires_at: { type: 'string' }
+            }
+          }
+        }
+      },
+    },
+    async (req, res) => {
+      await sleep(1000)
+      return new createError.NotFound('Not implemented');
+    }
+  );
+
+  //********************************************************************
   // SWAGGER
   //********************************************************************
 

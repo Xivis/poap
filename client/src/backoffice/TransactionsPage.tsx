@@ -10,7 +10,7 @@ import { ErrorMessage, Field, FieldProps, Form, Formik, FormikActions } from 'fo
 import { GasPriceSchema } from '../lib/schemas';
 import { TX_STATUS, etherscanLinks } from '../lib/constants';
 import { Transaction, getTransactions, bumpTransaction, AdminAddress, getSigners } from '../api';
-import { convertFromGWEI, convertToGWEI, reduceAddress } from '../lib/helpers';
+import { convertFromGWEI, convertToGWEI, reduceHex } from '../lib/helpers';
 /* Components */
 import { Loading } from '../components/Loading';
 import { SubmitButton } from '../components/SubmitButton';
@@ -205,13 +205,13 @@ const TransactionsPage: FC = () => {
                 <div className={'col-md-3'}>
                   <span className={'visible-sm'}>Tx: </span>
                   <a href={etherscanLinks.tx(tx.tx_hash)} target={'_blank'}>
-                    {tx.tx_hash && reduceAddress(tx.tx_hash)}
+                    {tx.tx_hash && reduceHex(tx.tx_hash)}
                   </a>
                 </div>
                 <div className={'col-md-3'}>
                   <span className={'visible-sm'}>Signer: </span>
                   <a href={etherscanLinks.address(tx.signer)} target={'_blank'}>
-                    {tx.signer && reduceAddress(tx.signer)}
+                    {tx.signer && reduceHex(tx.signer)}
                   </a>
                   <span className={'nonce'} title={'Nonce'}>{tx.nonce}</span>
                 </div>

@@ -3,6 +3,11 @@ import queryString from 'query-string';
 import { authClient } from './auth';
 
 export type Address = string;
+export type QrCodesListAssignResponse = {
+  success: boolean;
+  alreadyclaimedQrs: string[];
+};
+
 export interface TokenInfo {
   tokenId: string;
   owner: string;
@@ -10,10 +15,6 @@ export interface TokenInfo {
   ownerText?: string;
 }
 
-export type QrCodesListAssignResponse = {
-  success: boolean;
-  alreadyclaimedQrs: string[];
-};
 export interface PoapEvent {
   id: number;
   fancy_id: string;
@@ -30,15 +31,18 @@ export interface PoapEvent {
   start_date: string;
   end_date: string;
 }
+
 export interface Claim extends ClaimProof {
   claimerSignature: string;
 }
+
 export interface ClaimProof {
   claimId: string;
   eventId: number;
   claimer: Address;
   proof: string;
 }
+
 export interface HashClaim {
   id: number;
   qr_hash: string;
@@ -54,6 +58,7 @@ export interface HashClaim {
   tx_status: string;
   secret: string;
 }
+
 export interface PoapSetting {
   id: number;
   name: string;
@@ -62,6 +67,7 @@ export interface PoapSetting {
   type: string;
   value: string;
 }
+
 export interface AdminAddress {
   id: number;
   signer: Address;
@@ -71,6 +77,7 @@ export interface AdminAddress {
   created_date: string;
   pending_tx: number;
 }
+
 export interface Transaction {
   id: number;
   tx_hash: string;
@@ -82,6 +89,7 @@ export interface Transaction {
   signer: string;
   status: string;
 }
+
 export interface PaginatedTransactions {
   limit: number;
   offset: number;
@@ -103,6 +111,23 @@ export interface PaginatedNotifications {
   offset: number;
   total: number;
   notifications: Notification[];
+}
+
+export interface SubscriptionAddress {
+  id: number;
+  address: Address;
+  name: string;
+  qr_code_image: string;
+}
+
+export interface SubscriptionLock {
+  id: number;
+  is_active: boolean;
+  subscription_address: SubscriptionAddress;
+  beneficiary: Address;
+  created_at: string;
+  unlocked_at: string;
+  expires_at: string;
 }
 
 export type QrCode = {
@@ -530,6 +555,14 @@ export async function postClaimHash(
   return fetchJson(`${API_BASE}/actions/claim-qr`, {
     method: 'POST',
     body: JSON.stringify({ qr_hash, address, secret }),
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+export async function createSubscription(beneficiary: string): Promise<SubscriptionLock> {
+  return fetchJson(`${API_BASE}/actions/subscription`, {
+    method: 'POST',
+    body: JSON.stringify({ beneficiary }),
     headers: { 'Content-Type': 'application/json' },
   });
 }

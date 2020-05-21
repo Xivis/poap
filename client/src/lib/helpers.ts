@@ -25,9 +25,9 @@ const convertFromGWEI = (numberInGWEI: string) => {
   return String(numberGWEI);
 };
 
-const reduceAddress = (address: string) => {
-  if (address.length < 10) return address
-  return address.slice(0, 6) + '\u2026' + address.slice(-4)
+const reduceHex = (hexString: string) => {
+  if (hexString.length < 10) return hexString
+  return hexString.slice(0, 6) + '\u2026' + hexString.slice(-4)
 };
 
-export { isValidAddress, convertToGWEI, convertFromGWEI, convertToETH, reduceAddress };
+export { isValidAddress, convertToGWEI, convertFromGWEI, convertToETH, reduceHex };

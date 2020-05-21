@@ -30,7 +30,7 @@ import {
 } from '../api';
 
 // lib
-import { reduceAddress } from '../lib/helpers';
+import { reduceHex } from '../lib/helpers';
 import { etherscanLinks } from '../lib/constants';
 import { authClient } from '../auth';
 
@@ -441,7 +441,7 @@ const QrPage: FC = () => {
                   <div className={'col-md-2 center'}>
                     <span className={'visible-sm'}>Tx Hash: </span>
                     <a href={etherscanLinks.tx(qr.tx_hash)} target={'_blank'}>
-                      {qr.tx_hash && reduceAddress(qr.tx_hash)}
+                      {qr.tx_hash && reduceHex(qr.tx_hash)}
                     </a>
                   </div>
 
