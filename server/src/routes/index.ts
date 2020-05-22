@@ -42,7 +42,7 @@ import {
   createQrClaims,
   checkNumericIdExists,
   checkQrHashExists,
-} from './db';
+} from '../db';
 
 import {
   getAllTokens,
@@ -60,19 +60,19 @@ import {
   checkHasToken,
   getTokenImg,
   getAllEventIds
-} from './eth/helpers';
+} from '../eth/helpers';
 
 import {
   Omit, Claim, PoapEvent, TransactionStatus, Address, NotificationType, Notification, ClaimQR, UserRole,
   // qrRoll,
-} from './types';
+} from '../types';
 import crypto from 'crypto';
-import getEnv from './envs';
+import getEnv from '../envs';
 import * as admin from 'firebase-admin';
-import { uploadFile } from './plugins/google-storage-utils';
-import { getUserRoles } from './plugins/groups-decorator';
-import { sleep } from './utils';
-import { getAssets } from './plugins/opensea-utils';
+import { uploadFile } from '../plugins/google-storage-utils';
+import { getUserRoles } from '../plugins/groups-decorator';
+import { sleep } from '../utils';
+import { getAssets } from '../plugins/opensea-utils';
 
 function buildMetadataJson(homeUrl: string, tokenUrl: string, ev: PoapEvent) {
   return {
@@ -2067,52 +2067,6 @@ export default async function routes(fastify: FastifyInstance) {
 
       res.status(204);
       return;
-    }
-  );
-
-  //********************************************************************
-  // SUBSCRIPTIONS
-  //********************************************************************
-
-  fastify.post(
-    '/actions/subscription',
-    {
-      schema: {
-        description: 'Lock an account to create a new subscription',
-        tags: ['Subscriptions',],
-        body: {
-          type: 'object',
-          required: ['beneficiary'],
-          properties: {
-            beneficiary: { type: 'string' },
-          }
-        },
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              id: { type: 'number' },
-              is_active: { type: 'boolean' },
-              subscription_address: {
-                type: 'object',
-                properties: {
-                  id: { type: 'number' },
-                  address: { type: 'string' },
-                  name: { type: 'string' },
-                  qr_code_image: { type: 'string' }
-                }
-              },
-              created_at: { type: 'string' },
-              unlocked_at: { type: 'string' },
-              expires_at: { type: 'string' }
-            }
-          }
-        }
-      },
-    },
-    async (req, res) => {
-      await sleep(1000)
-      return new createError.NotFound('Not implemented');
     }
   );
 

@@ -182,3 +182,20 @@ export interface UnlockTask extends Task{
 export enum Services {
   unlockProtocol = 'unlock-protocol',
 }
+
+export interface ReceiverAddress {
+  id: number,
+  address: Address,
+  name: string,
+  qr_code_image: string
+}
+
+export interface ReceiverLock {
+  id: number,
+  is_active: boolean,
+  subscription_address_id: number,
+  subscription_address: ReceiverAddress,
+  created_at: string,
+  unlocked_at: string,
+  expires_at: string
+}

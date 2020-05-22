@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import pgPromise from 'pg-promise';
-import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, ClaimQR, Task, UnlockTask, TaskCreator, Services, Notification, NotificationType, eventHost, qrRoll } from '../types';
+import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, ClaimQR, Task, UnlockTask, TaskCreator, Services, Notification, NotificationType, eventHost, qrRoll, ReceiverAddress, ReceiverLock } from '../types';
 import { ContractTransaction } from 'ethers';
 
 const db = pgPromise()({
@@ -60,6 +60,10 @@ export async function getTotalTransactions(statusList: string[], signer: string 
 export async function getSigners(): Promise<Signer[]> {
   const res = await db.manyOrNone<Signer>('SELECT * FROM signers ORDER BY id ASC');
   return res;
+}
+
+export async function getPoapSetting(key: string): Promise<null | PoapSetting> {
+  return db.oneOrNone<PoapSetting>(`SELECT * FROM poap_settings WHERE key = $1`, [key]);
 }
 
 export async function getPoapSettings(): Promise<PoapSetting[]> {
@@ -172,7 +176,6 @@ export async function updateSignerGasPrice(
 export async function createEvent(event: Omit<PoapEvent, 'id'>): Promise<PoapEvent> {
   const data = await db.one(
     'INSERT INTO events(${this:name}) VALUES(${this:csv}) RETURNING id',
-    // 'INSERT INTO events (${this:names}) VALUES (${this:list}) RETURNING id',
     event
   );
 
@@ -553,4 +556,49 @@ export async function getTotalQrClaims(eventId: number, qrRollId: number, claime
 
   const res = await db.result(query);
   return res.rowCount;
+}
+
+export async function getReceiverAddress(id: number): Promise<null | ReceiverAddress> {
+  let query = "SELECT * FROM subscription_addresses WHERE id = ${id};";
+  return db.oneOrNone<ReceiverAddress>(query, {id})
+}
+
+export async function getFreeReceiverAddress(): Promise<null | ReceiverAddress> {
+  let query = `
+    SELECT * FROM subscription_addresses 
+    WHERE id NOT IN (
+        SELECT subscription_address_id FROM subscription_address_locks
+        WHERE is_active = TRUE
+    ) LIMIT 1;`;
+  return db.oneOrNone(query)
+}
+
+export async function getActiveLockForBeneficiary(beneficiary: string): Promise<null | ReceiverLock> {
+  let lock = await db.oneOrNone<ReceiverLock>("SELECT * FROM subscription_address_locks WHERE is_active = True AND beneficiary ILIKE ${beneficiary}", {beneficiary});
+  if (lock) {
+    let address = await getReceiverAddress(lock.subscription_address_id);
+    if (address) {
+      lock = {
+        ...lock,
+        subscription_address: address
+      }
+    }
+  }
+  return lock
+}
+
+export async function createReceiverLock(address: ReceiverAddress, beneficiary: string): Promise<null | ReceiverLock> {
+  let timeLock = await getPoapSetting('lock-time');
+  if (timeLock) {
+    let created_at = new Date().toISOString().replace('T',' ').replace('Z','');
+    let expirationTime = new Date().valueOf() + (60 * 1000 * Number(timeLock.value));
+    let expires_at = new Date(expirationTime).toISOString().replace('T',' ').replace('Z','');
+    let query = "INSERT INTO subscription_address_locks(subscription_address_id, is_active, beneficiary, created_at, unlocked_at, expires_at) VALUES(${address}, TRUE, ${beneficiary}, ${created_at}, NULL, ${expires_at}) RETURNING id, subscription_address_id, is_active, beneficiary, created_at, unlocked_at, expires_at";
+    const lock = await db.one(query, {address: address.id, beneficiary, created_at, expires_at});
+    return {
+      ...lock,
+      subscription_address: address
+    };
+  }
+  return null;
 }

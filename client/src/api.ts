@@ -559,10 +559,10 @@ export async function postClaimHash(
   });
 }
 
-export async function createSubscription(beneficiary: string): Promise<SubscriptionLock> {
-  return fetchJson(`${API_BASE}/actions/subscription`, {
+export async function createSubscription(qr_hash: string): Promise<SubscriptionLock> {
+  return fetchJson(`${API_BASE}/subscription/lock`, {
     method: 'POST',
-    body: JSON.stringify({ beneficiary }),
+    body: JSON.stringify({ qr_hash }),
     headers: { 'Content-Type': 'application/json' },
   });
 }

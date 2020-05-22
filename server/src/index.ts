@@ -11,12 +11,14 @@ import fastifyCompress from 'fastify-compress';
 import authPlugin from './plugins/auth-decorator';
 import optionalAuthPlugin from './plugins/optional-auth-decorator';
 import groupsPlugin from './plugins/groups-decorator';
-import routes from './routes';
 import transactionsMonitorCron  from './plugins/tx-monitor';
 import taskMonitorCron  from './plugins/task-monitor';
 import dotenv from 'dotenv';
 import * as admin from "firebase-admin";
 import getEnv from './envs';
+/* Routes */
+import routes from './routes';
+import subcriptionRoutes from './routes/subscription';
 
 dotenv.config();
 
@@ -88,6 +90,7 @@ fastify.register(authPlugin);
 fastify.register(optionalAuthPlugin);
 fastify.register(groupsPlugin);
 fastify.register(routes);
+fastify.register(subcriptionRoutes);
 fastify.register(transactionsMonitorCron);
 fastify.register(taskMonitorCron);
 

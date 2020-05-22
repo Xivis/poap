@@ -71,6 +71,7 @@ const SubscriptionPlans: React.FC<{action: () => void}> = ({action}) => {
       {subscriptionPlans.map(plan => {
         return (
           <ClaimSubscriptionCard
+            key={plan.price}
             title={plan.title}
             active={plan.active}
             price={plan.price}
@@ -118,7 +119,7 @@ const ClaimPending: React.FC<{ claim: HashClaim; checkClaim: (hash: string) => v
   const submitModal = async () => {
     setIsSubmitting(true);
     try {
-      let lock = await createSubscription(claim.beneficiary);
+      let lock = await createSubscription(claim.qr_hash);
       setSubscriptionLock(lock)
     } catch (error) {
       console.log('error')
@@ -179,6 +180,9 @@ const ClaimPending: React.FC<{ claim: HashClaim; checkClaim: (hash: string) => v
           <div>
             <img src={subscriptionLock.subscription_address.qr_code_image} />
             <div>{subscriptionLock.subscription_address.name}</div>
+            <div onClick={closeEditModal} className={'close-modal'}>
+              Cancel
+            </div>
           </div>
           }
 
