@@ -161,7 +161,8 @@ export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
     gasPrice: Number(gasPrice),
   };
 
-  if (extraParams && extraParams.nonce) {
+  // if (extraParams && extraParams.nonce) {
+  if (extraParams && 'nonce' in extraParams && Number.isFinite(extraParams.nonce) && extraParams.nonce >= 0) {
     transactionParams.nonce = extraParams.nonce;
   } else  {
     const lastTransaction = await getLastSignerTransaction(signerWallet.address);
@@ -183,7 +184,7 @@ async function processTransaction(tx: ContractTransaction, txObj: any, operation
   let saveTx: boolean = true;
   if (!tx.hash) return;
 
-  if (extraParams.hasOwnProperty('original_tx')) {
+  if (extraParams && 'original_tx' in extraParams) {
     if (extraParams.original_tx.toLowerCase() === tx.hash.toLowerCase()) {
       saveTx = false;
     }
