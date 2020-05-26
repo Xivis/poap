@@ -36,10 +36,13 @@ export async function getUserEvents(event_host_id: number): Promise<PoapEvent[]>
 
 export async function getTransactions(limit: number, offset: number, statusList: string[], signer: string | null): Promise<Transaction[]> {
   let signerCondition = '';
-  if (signer) { signerCondition = ' AND signer ILIKE ${signer}'; }
+  let order = ' ORDER BY created_date DESC ';
+  if (signer) {
+    signerCondition = ' AND signer ILIKE ${signer}';
+    order = ' ORDER BY nonce DESC, status DESC, gas_price ASC ';
+  }
   let query = "SELECT * FROM server_transactions WHERE status IN (${statusList:csv}) " +
-    signerCondition +
-    " ORDER BY created_date DESC" +
+    signerCondition + order +
     " LIMIT ${limit} OFFSET ${offset}";
   const res = await db.manyOrNone<Transaction>(query, { statusList, limit, offset, signer });
   return res
@@ -186,7 +189,7 @@ export async function createEvent(event: Omit<PoapEvent, 'id'>): Promise<PoapEve
 
 export async function saveTransaction(hash: string, nonce: number, operation: string, params: string, signer: Address, status: string, gas_price: string): Promise<boolean> {
   let query = "INSERT INTO server_transactions(tx_hash, nonce, operation, arguments, signer, status, gas_price) VALUES (${hash}, ${nonce}, ${operation}, ${params}, ${signer}, ${status}, ${gas_price})";
-  let values = { hash, nonce, operation, params: params.substr(0, 950), signer, status, gas_price };
+  let values = { hash, nonce, operation, params: params.substr(0, 1950), signer, status, gas_price };
   try {
     const res = await db.result(query, values);
     return res.rowCount === 1;
