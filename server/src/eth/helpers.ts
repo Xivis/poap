@@ -12,7 +12,8 @@ import {
   getAvailableHelperSigners,
   getLastSignerTransaction,
   getTransaction,
-  updateTransactionStatus
+  updateTransactionStatus,
+  updateBumpedQrClaim
 } from '../db';
 import getEnv from '../envs';
 import { Poap } from './Poap';
@@ -251,6 +252,11 @@ export async function bumpTransaction(hash: string, gasPrice: string, updateTx: 
   if (!transaction) {
     throw new Error('Transaction was not found');
   }
+
+  if (Number(transaction.gas_price) >= Number(gasPrice)) {
+    throw new Error('New gas price is not bigger than previous gas price');
+  }
+
   // Parse available arguments saved in the database
   const txJSON = JSON.parse(transaction.arguments)
 
@@ -277,12 +283,15 @@ export async function bumpTransaction(hash: string, gasPrice: string, updateTx: 
     }
     case OperationType.mintToken: {
       const [eventId, toAddr] = txJSON
-      await mintToken(eventId, toAddr, false, {
+      let new_tx = await mintToken(eventId, toAddr, false, {
         signer: transaction.signer,
         gas_price: gasPrice,
         nonce: transaction.nonce,
         original_tx: hash
       })
+      if (new_tx && new_tx.hash) {
+        await updateBumpedQrClaim(eventId, toAddr, transaction.signer, hash, new_tx.hash);
+      }
       break;
     }
     case OperationType.mintUserToManyEvents: {

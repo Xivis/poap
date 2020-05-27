@@ -12,6 +12,7 @@ import ClaimLoading from './ClaimLoading';
 import ClaimForm from './ClaimForm';
 import ClaimPending from './ClaimPending';
 import ClaimFinished from './ClaimFinished';
+import ClaimBumped from './ClaimBumped';
 import { ClaimFooter } from '../components/ClaimFooter';
 
 /* Constants */
@@ -62,6 +63,9 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
       }
       if (claim.tx_status === TX_STATUS.passed) {
         body = <ClaimFinished claim={claim} />;
+      }
+      if (claim.tx_status === TX_STATUS.bumped) {
+        body = <ClaimBumped claim={claim} />;
       }
     }
   }

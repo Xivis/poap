@@ -93,7 +93,11 @@ const TransactionsPage: FC = () => {
       fetchTransactions();
       closeEditModal();
     } catch (error) {
-      actions.setStatus({ ok: false, msg: `Gas price couldn't be changed` });
+      let message: any = `Gas price couldn't be changed`
+      if (error.message) {
+        message = <span>{message}<br />{error.message}</span>
+      }
+      actions.setStatus({ ok: false, msg: message });
     } finally {
       actions.setSubmitting(false);
     }

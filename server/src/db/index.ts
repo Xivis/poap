@@ -268,6 +268,12 @@ export async function updateQrClaim(qrHash: string, beneficiary: string, tx: Con
   return res.rowCount === 1;
 }
 
+export async function updateBumpedQrClaim(eventId: number, beneficiary: string, signer: string, hash: string, new_hash: string) {
+  const query = 'UPDATE qr_claims SET tx_hash=${new_hash} ' +
+    'WHERE beneficiary ILIKE ${beneficiary} AND event_id = ${eventId} AND signer ILIKE ${signer} AND tx_hash ILIKE ${hash}';
+  await db.result(query, { new_hash, beneficiary,  eventId, signer, hash });
+}
+
 export async function getTaskCreator(apiKey: string): Promise<null | TaskCreator> {
   const res = await db.oneOrNone<TaskCreator>(
     'SELECT * FROM task_creators WHERE api_key=${apiKey} AND valid_from <= current_timestamp AND valid_to >= current_timestamp',
