@@ -6,7 +6,7 @@ import ReactModal from 'react-modal';
 /* Helpers */
 import { getSettings, HashClaim, createSubscription, SubscriptionLock } from '../api';
 import { reduceHex } from '../lib/helpers';
-import { SETTINGS } from '../lib/constants';
+import { SETTINGS, etherscanLinks } from '../lib/constants';
 
 /* Components */
 import ClaimFooterMessage from './ClaimFooterMessage';
@@ -15,19 +15,14 @@ import ClaimSubscriptionCard from './ClaimSubscriptionCard';
 /* Assets */
 import Spinner from '../images/etherscan-spinner.svg';
 import Arrow from '../images/arrow-link.svg';
+import CountdownTimer from '../components/CountdownTimer';
 
 /*
  * @dev: Component to show user that transaction is being mined
  * */
 
-const MODAL_STATUS = {
-  DETAIL: 'detail',
-  LOADING: 'loading',
-  ERROR: 'error',
-  FINAL: 'final'
-};
-
 const SubscriptionPlans: React.FC<{action: () => void}> = ({action}) => {
+  const fire = <span role="img" aria-label="fire">🔥</span>;
   const subscriptionPlans = [
     {
       title: 'Free POAP',
@@ -36,7 +31,7 @@ const SubscriptionPlans: React.FC<{action: () => void}> = ({action}) => {
       body: (
         <>
           <p>We're paying for the Gas</p>
-          <p>Slower Tx, please be patient 🙏</p>
+          <p>Slower Tx, please be patient <span role="img" aria-label="please">🙏</span></p>
         </>
       ),
       button: null
@@ -48,18 +43,18 @@ const SubscriptionPlans: React.FC<{action: () => void}> = ({action}) => {
       body: (
         <>
           <p>Get your POAP token faster!</p>
-          <p>Fuel your Tx with more Gas 🔥</p>
+          <p>Fuel your Tx with more Gas {fire}</p>
         </>
       ),
       button: 'Try it'
     },
     {
-      title: 'Free POAP',
+      title: 'POAP fans',
       active: false,
       price: 0.1,
       body: (
         <>
-          <p>🔥 Worth <b>20</b> POAP claims 🔥</p>
+          <p>{fire} Worth <b>20</b> POAP claims {fire}</p>
           <p>Purchase for your next claims!</p>
         </>
       ),
@@ -122,15 +117,11 @@ const ClaimPending: React.FC<{ claim: HashClaim; checkClaim: (hash: string) => v
       let lock = await createSubscription(claim.qr_hash);
       setSubscriptionLock(lock)
     } catch (error) {
-      console.log('error')
+      console.log(error)
     } finally {
       setIsSubmitting(false);
-      console.log('Done')
     }
   };
-
-  const etherscanTxLink = `https://etherscan.io/tx/${claim.tx_hash}`;
-  const etherscanAddressLink = `https://etherscan.io/address/${claim.beneficiary}`;
 
   return (
     <div className={'claim-info claim-pending'} data-aos="fade-up" data-aos-delay="300">
@@ -140,7 +131,7 @@ const ClaimPending: React.FC<{ claim: HashClaim; checkClaim: (hash: string) => v
         Pending
       </div>
       <div className={'claim-tx-link'}>
-        <a href={etherscanTxLink} target={"_blank"}>
+        <a href={etherscanLinks.tx(claim.tx_hash)} target={"_blank"}>
           {reduceHex(claim.tx_hash)}
           <img src={Arrow} alt={'Link'} />
         </a>
@@ -154,14 +145,17 @@ const ClaimPending: React.FC<{ claim: HashClaim; checkClaim: (hash: string) => v
           {!isSubmitting && !subscriptionLock &&
             <>
               <p>Do you want to get your POAP faster?</p>
-              <p>The Ethereum network tends to gets congested and Gas prices skyrocket 🚀</p>
+              <p>The Ethereum network tends to gets congested and Gas prices skyrocket <span role={'img'} aria-label={'rocket'}>🚀</span></p>
               <p>
                 We offer you to fuel your transaction to get you POAP faster. If you continue, we will enable an
                 address for you to <b>transfer funds within the next {lockTime} minutes</b>. The transfer can come
                 from any account.
               </p>
               <p>
-                Once we receive the funds, POAP claims for <a href={etherscanAddressLink} target={'_blank'}>{claim.beneficiary}</a> will be fueled 🔥🔥🔥
+                Once we receive the funds, POAP claims for <a href={`/scan/${claim.beneficiary}`} target={'_blank'}>{claim.beneficiary}</a> will be fueled
+                <span role="img" aria-label="fire">🔥</span>
+                <span role="img" aria-label="fire">🔥</span>
+                <span role="img" aria-label="fire">🔥</span>
               </p>
               <div className={'subscription-modal-buttons text-center'}>
                 <button onClick={submitModal}>Continue</button>
@@ -177,13 +171,37 @@ const ClaimPending: React.FC<{ claim: HashClaim; checkClaim: (hash: string) => v
           }
 
           {subscriptionLock &&
-          <div>
-            <img src={subscriptionLock.subscription_address.qr_code_image} />
-            <div>{subscriptionLock.subscription_address.name}</div>
-            <div onClick={closeEditModal} className={'close-modal'}>
-              Cancel
+          <>
+            <div className={'subscription-lock-body'}>
+              <div className={'subscription-lock-qr'}>
+                <img
+                  src={subscriptionLock.subscription_address.qr_code_image}
+                  alt={subscriptionLock.subscription_address.name}
+                />
+              </div>
+              <div className={'subscription-lock-detail'}>
+                <p>Transfer ETH to this address to get your TX moving!</p>
+                <p><a href={etherscanLinks.address(subscriptionLock.subscription_address.address)} target={'_blank'}>{subscriptionLock.subscription_address.address}</a></p>
+                <p><b>ENS: </b>{subscriptionLock.subscription_address.name}</p>
+                <br />
+                <p>The address is time limited blocked for you, hurry up!</p>
+                <CountdownTimer expiration={subscriptionLock.expires_at}/>
+                <div className={'subscription-lock-transfer'}>
+                  <button>Transfer Ξ 0.01</button>
+                  <button>Transfer Ξ 0.1</button>
+                </div>
+              </div>
             </div>
-          </div>
+            <div className={'subscription-lock-footer'}>
+              <div className={'subscription-lock-help-text'}>
+                If you have already transferred funds to the address, wait a couple of seconds.
+                We're monitoring this address to validate transactions received.
+              </div>
+              <div onClick={closeEditModal} className={'close-modal'}>
+                Cancel
+              </div>
+            </div>
+          </>
           }
 
         </div>

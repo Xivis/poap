@@ -651,4 +651,52 @@
     background-size: 30px 30px;
     margin-bottom: 40px;
   }
+
+  .subscription-lock-body {
+    display: grid;
+    grid-template-columns: 2fr 3fr;
+    padding-bottom: 20px;
+
+    .subscription-lock-qr {
+      text-align: center;
+      img {
+        width: 250px;
+      }
+    }
+    .subscription-lock-detail {
+      .subscription-lock-transfer {
+        padding: 20px 0 10px;
+        text-align: center;
+        button {
+          background: $color-primary;
+          color: $color-invert;
+          padding: 10px 20px;
+          border-radius: 5px;
+          border: 0;
+          cursor: pointer;
+          margin: 0 10px;
+        }
+      }
+    }
+  }
+
+  .subscription-lock-footer {
+    text-align: center;
+    .subscription-lock-help-text{
+      color: $color-grey;
+      font-style: italic;
+      font-size: 1rem;
+    }
+  }
+}
+
+.countdown {
+  font-family: 'Audiowide', cursive;
+  text-align: center;
+  font-size: 60px;
+  color: $color-error;
+
+  span {
+    font-size: 3rem;
+  }
 }

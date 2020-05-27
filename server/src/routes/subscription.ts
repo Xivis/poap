@@ -38,6 +38,7 @@ export default async function subscriptionRoutes(fastify: FastifyInstance) {
                   qr_code_image: { type: 'string' }
                 }
               },
+              beneficiary: { type: 'string' },
               created_at: { type: 'string' },
               unlocked_at: { type: 'string' },
               expires_at: { type: 'string' }
