@@ -59,7 +59,9 @@ CREATE TABLE qr_claims (
   "created_date" timestamp with time zone not null default now(),
   "qr_roll_id": integer,
   "numeric_id": integer UNIQUE,
-  "is_active" boolean default true
+  "is_active" boolean default true,
+  "delegated_mint" boolean default false,
+  "delegated_signed_message" varchar(256)
 );
 
 CREATE EXTENSION pgcrypto;

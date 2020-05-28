@@ -98,6 +98,8 @@ export interface ClaimQR {
   claimed_date: Date;
   created_date: Date;
   is_active: boolean;
+  delegated_mint: boolean;
+  delegated_signed_message: string;
 }
 
 export interface Claim extends ClaimProof {

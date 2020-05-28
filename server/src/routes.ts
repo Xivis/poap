@@ -43,6 +43,7 @@ import {
   createQrClaims,
   checkNumericIdExists,
   checkQrHashExists,
+  updateDelegatedQrClaim
 } from './db';
 
 import {
@@ -60,13 +61,15 @@ import {
   checkAddress,
   checkHasToken,
   getTokenImg,
-  getAllEventIds
+  getAllEventIds,
+  signMessage
 } from './eth/helpers';
 
 import {
   Omit, Claim, PoapEvent, TransactionStatus, Address, NotificationType, Notification, ClaimQR, UserRole,
   // qrRoll,
 } from './types';
+import { TypedValue } from 'eth-crypto';
 import crypto from 'crypto';
 import getEnv from './envs';
 import * as admin from 'firebase-admin';
@@ -508,7 +511,9 @@ export default async function routes(fastify: FastifyInstance) {
                   created_date: { type: 'string' }
                 }
               },
-              tx_status: { type: 'string' }
+              tx_status: { type: 'string' },
+              delegated_mint: { type: 'boolean' },
+              delegated_signed_message: { type: 'string' }
             }
           }
         }
@@ -566,6 +571,8 @@ export default async function routes(fastify: FastifyInstance) {
             address: { type: 'string' },
             qr_hash: { type: 'string' },
             secret: { type: 'string' },
+            delegated_mint: { type: 'boolean' },
+            delegated_signed_message: { type: 'string' }
           }
         },
         response: {
@@ -601,7 +608,9 @@ export default async function routes(fastify: FastifyInstance) {
                   created_date: { type: 'string' }
                 }
               },
-              tx_status: { type: 'string' }
+              tx_status: { type: 'string' },
+              delegated_mint: { type: 'boolean' },
+              delegated_signed_message: { type: 'string' }
             }
           }
         }
@@ -657,20 +666,40 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.BadRequest('Address already has this POAP token');
       }
 
-      const tx_mint = await mintToken(qr_claim.event.id, parsed_address, false);
-      if (!tx_mint || !tx_mint.hash) {
-        await unclaimQrClaim(req.body.qr_hash);
-        return new createError.InternalServerError('There was a problem in token mint');
+      // Check if the claim is delegated
+      let delegatedMint = req.body.delegated_mint;
+      if (delegatedMint) {
+        // get signed message
+        let params: TypedValue[] = [
+          {type: "uint256", value: event.id},
+          {type: "address", value: parsed_address.toLowerCase()}
+        ];
+        let message = signMessage(env.poapAdmin.privateKey, params);
+
+        // update database
+        await updateDelegatedQrClaim(req.body.qr_hash, parsed_address, message);
+
+        // update qr_claim to return
+        qr_claim.delegated_mint = true
+        qr_claim.delegated_signed_message = message
+
+      } else {
+        const tx_mint = await mintToken(qr_claim.event.id, parsed_address, false);
+        if (!tx_mint || !tx_mint.hash) {
+          await unclaimQrClaim(req.body.qr_hash);
+          return new createError.InternalServerError('There was a problem in token mint');
+        }
+
+        let set_qr_claim_hash = await updateQrClaim(req.body.qr_hash, parsed_address, tx_mint);
+        if (!set_qr_claim_hash) {
+          return new createError.InternalServerError('There was a problem saving tx_hash');
+        }
+
+        qr_claim.tx_hash = tx_mint.hash
+        qr_claim.signer = tx_mint.from
       }
 
-      let set_qr_claim_hash = await updateQrClaim(req.body.qr_hash, parsed_address, tx_mint);
-      if (!set_qr_claim_hash) {
-        return new createError.InternalServerError('There was a problem saving tx_hash');
-      }
-
-      qr_claim.tx_hash = tx_mint.hash
       qr_claim.beneficiary = parsed_address
-      qr_claim.signer = tx_mint.from
       qr_claim.tx_status = null
 
       if (qr_claim.tx_hash) {

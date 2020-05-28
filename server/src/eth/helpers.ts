@@ -1,5 +1,6 @@
 import { Contract, ContractTransaction, Wallet, getDefaultProvider, utils } from 'ethers';
 import { verifyMessage } from 'ethers/utils';
+import { hash, sign, TypedValue } from 'eth-crypto';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import pino from 'pino';
@@ -459,4 +460,10 @@ export async function checkHasToken(event_id: number, address: string): Promise<
   const all_tokens = await getAllTokens(address);
   let token = all_tokens.find(token => token.event.id === event_id);
   return !!token;
+}
+
+export function signMessage(privateKey: string, params: TypedValue[]): string {
+  // params = [ {type: "uint256", value: value}, ];
+  const message = hash.keccak256(params);
+  return sign(privateKey, message);
 }

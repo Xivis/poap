@@ -268,6 +268,16 @@ export async function updateQrClaim(qrHash: string, beneficiary: string, tx: Con
   return res.rowCount === 1;
 }
 
+export async function updateDelegatedQrClaim(qrHash: string, beneficiary: string, message: string) {
+  const res = await db.result('UPDATE qr_claims SET delegated_mint=TRUE, delegated_signed_message=${message}, beneficiary=${beneficiary} WHERE qr_hash = ${qrHash}',
+    {
+      beneficiary,
+      message,
+      qrHash
+    });
+  return res.rowCount === 1;
+}
+
 export async function updateBumpedQrClaim(eventId: number, beneficiary: string, signer: string, hash: string, new_hash: string) {
   const query = 'UPDATE qr_claims SET tx_hash=${new_hash} ' +
     'WHERE beneficiary ILIKE ${beneficiary} AND event_id = ${eventId} AND signer ILIKE ${signer} AND tx_hash ILIKE ${hash}';

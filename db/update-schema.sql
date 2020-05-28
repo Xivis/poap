@@ -124,3 +124,7 @@ alter table event_host
 
 create unique index event_host_passphrase_uindex_2
 	on event_host (passphrase);
+
+ALTER TABLE qr_claims
+	ADD delegated_mint BOOLEAN DEFAULT false,
+	ADD delegated_signed_message VARCHAR(256);
