@@ -10,6 +10,56 @@ import {
 
 export default async function subscriptionRoutes(fastify: FastifyInstance) {
 
+  fastify.get(
+    '/subscription/lock',
+    {
+      schema: {
+        description: 'Get the active lock for a beneficiary',
+        tags: ['Subscriptions',],
+        querystring: {
+          beneficiary: { type: 'string' },
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              id: { type: 'number' },
+              is_active: { type: 'boolean' },
+              subscription_address: {
+                type: 'object',
+                properties: {
+                  id: { type: 'number' },
+                  address: { type: 'string' },
+                  name: { type: 'string' },
+                  qr_code_image: { type: 'string' }
+                }
+              },
+              beneficiary: { type: 'string' },
+              created_at: { type: 'string' },
+              unlocked_at: { type: 'string' },
+              expires_at: { type: 'string' }
+            }
+          }
+        }
+      },
+    },
+    async (req, res) => {
+      // Check beneficiary validity
+      const beneficiary = req.query.beneficiary;
+      if (!beneficiary) {
+        return new createError.BadRequest('Missing beneficiary on query string');
+      }
+      // Check beneficiary locks
+      let receiverLock = await getActiveLockForBeneficiary(beneficiary);
+      console.log(receiverLock);
+      if (!receiverLock) {
+        return new createError.NotFound('Lock not found');
+      }
+
+      return receiverLock
+    }
+  );
+
   fastify.post(
     '/subscription/lock',
     {

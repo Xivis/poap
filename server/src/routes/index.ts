@@ -487,6 +487,7 @@ export default async function routes(fastify: FastifyInstance) {
               claimed_date: { type: 'string' },
               created_date: { type: 'string' },
               is_active: { type: 'boolean' },
+              bumped: { type: 'boolean' },
               secret: { type: 'string' },
               event: {
                 type: 'object',

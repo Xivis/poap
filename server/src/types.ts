@@ -100,6 +100,7 @@ export interface ClaimQR {
   claimed_date: Date;
   created_date: Date;
   is_active: boolean;
+  bumped: boolean;
 }
 
 export interface Claim extends ClaimProof {

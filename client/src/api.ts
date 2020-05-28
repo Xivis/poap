@@ -44,19 +44,20 @@ export interface ClaimProof {
 }
 
 export interface HashClaim {
-  id: number;
-  qr_hash: string;
-  tx_hash: string;
-  tx: Transaction;
-  event_id: number;
-  event: PoapEvent;
   beneficiary: Address;
-  signer: Address;
+  bumped: boolean;
   claimed: boolean;
   claimed_date: string;
   created_date: string;
-  tx_status: string;
+  event: PoapEvent;
+  event_id: number;
+  id: number;
+  is_active: boolean;
+  qr_hash: string;
   secret: string;
+  signer: Address;
+  tx_hash: string;
+  tx_status: string;
 }
 
 export interface PoapSetting {
@@ -557,6 +558,10 @@ export async function postClaimHash(
     body: JSON.stringify({ qr_hash, address, secret }),
     headers: { 'Content-Type': 'application/json' },
   });
+}
+
+export async function getSubscriptionLock(beneficiary: string): Promise<SubscriptionLock> {
+  return fetchJson(`${API_BASE}/subscription/lock?beneficiary=${beneficiary}`);
 }
 
 export async function createSubscription(qr_hash: string): Promise<SubscriptionLock> {
