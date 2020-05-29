@@ -3,15 +3,15 @@ import { Web3Provider } from 'ethers/providers';
 import { claimToken, PoapEvent, requestProof } from './api';
 import { getAddress } from 'ethers/utils';
 
-declare global {
-  interface Window {
-    ethereum?: {
-      isMetaMask?: boolean;
-      enable(): Promise<string[]>;
-      selectedAddress?: string;
-    };
-  }
-}
+// declare global {
+//   interface Window {
+//     ethereum?: {
+//       isMetaMask?: boolean;
+//       enable(): Promise<string[]>;
+//       selectedAddress?: string;
+//     };
+//   }
+// }
 
 export function hasMetamask() {
   return typeof (window as any).ethereum !== 'undefined' && window.ethereum!.isMetaMask;

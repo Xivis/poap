@@ -571,8 +571,7 @@ export default async function routes(fastify: FastifyInstance) {
             address: { type: 'string' },
             qr_hash: { type: 'string' },
             secret: { type: 'string' },
-            delegated_mint: { type: 'boolean' },
-            delegated_signed_message: { type: 'string' }
+            delegated_mint: { type: 'boolean' }
           }
         },
         response: {

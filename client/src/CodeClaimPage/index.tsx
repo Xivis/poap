@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { RouteComponentProps } from 'react-router';
 
 /* Helpers */
-import { HashClaim, getClaimHash } from '../api';
+import { HashClaim, getClaimHash, getTokensFor } from '../api';
 import { hasWeb3 } from '../poap-eth';
 
 /* Components*/
@@ -13,6 +13,7 @@ import ClaimForm from './ClaimForm';
 import ClaimPending from './ClaimPending';
 import ClaimFinished from './ClaimFinished';
 import ClaimBumped from './ClaimBumped';
+import ClaimDelegated from './ClaimDelegated';
 import { ClaimFooter } from '../components/ClaimFooter';
 
 /* Constants */
@@ -26,6 +27,8 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
   const [claim, setClaim] = useState<null | HashClaim>(null);
   const [claimError, setClaimError] = useState<boolean>(false);
   const [isClaimLoading, setIsClaimLoading] = useState<boolean>(false);
+  const [beneficiaryHasToken, setBeneficiaryHasToken] = useState<boolean>(false);
+
   let { hash } = match.params;
   let title = 'POAP Claim';
   let image = EmptyBadge;
@@ -49,22 +52,39 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
       .finally(() => setIsClaimLoading(false));
   };
 
+  const checkUserTokens = () => {
+    if (!claim) return
+    getTokensFor(claim.beneficiary)
+      .then(tokens => {
+        if(tokens.filter(token => token.event.id === claim.event_id).length > 0) {
+          setBeneficiaryHasToken(true)
+        }
+      })
+
+  }
+
   let body = <QRHashForm loading={isClaimLoading} checkClaim={fetchClaim} error={claimError} />;
 
   if (claim) {
     body = <ClaimForm enabledWeb3={web3} claim={claim} checkClaim={fetchClaim} />;
     title = claim.event.name;
-    if (typeof claim.event.image_url === 'string') {
+    if (claim.event.image_url) {
       image = claim.event.image_url;
     }
-    if (claim.tx_status) {
-      if (claim.tx_status === TX_STATUS.pending) {
+    if (claim.claimed) {
+      // Delegated minting
+      if (claim.delegated_mint) {
+        body = <ClaimDelegated claim={claim} checkTokens={checkUserTokens} />;
+      }
+
+      // POAP minting
+      if (claim.tx_status && claim.tx_status === TX_STATUS.pending) {
         body = <ClaimPending claim={claim} checkClaim={fetchClaim} />;
       }
-      if (claim.tx_status === TX_STATUS.passed) {
+      if ((claim.tx_status && claim.tx_status === TX_STATUS.passed) || beneficiaryHasToken) {
         body = <ClaimFinished claim={claim} />;
       }
-      if (claim.tx_status === TX_STATUS.bumped) {
+      if (claim.tx_status && claim.tx_status === TX_STATUS.bumped) {
         body = <ClaimBumped claim={claim} />;
       }
     }

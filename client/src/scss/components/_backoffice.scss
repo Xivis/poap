@@ -601,6 +601,10 @@
   }
 }
 
+.ReactModal__Overlay--after-open {
+  z-index: 1;
+}
+
 .ReactModal__Content--after-open {
   position: relative !important;
   margin: auto;

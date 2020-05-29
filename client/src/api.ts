@@ -53,6 +53,8 @@ export interface HashClaim {
   created_date: string;
   tx_status: string;
   secret: string;
+  delegated_mint: boolean;
+  delegated_signed_message: string;
 }
 export interface PoapSetting {
   id: number;
@@ -521,11 +523,12 @@ export async function getClaimHash(hash: string): Promise<HashClaim> {
 export async function postClaimHash(
   qr_hash: string,
   address: string,
-  secret: string
+  secret: string,
+  delegated_mint: boolean
 ): Promise<HashClaim> {
   return fetchJson(`${API_BASE}/actions/claim-qr`, {
     method: 'POST',
-    body: JSON.stringify({ qr_hash, address, secret }),
+    body: JSON.stringify({ qr_hash, address, secret, delegated_mint }),
     headers: { 'Content-Type': 'application/json' },
   });
 }

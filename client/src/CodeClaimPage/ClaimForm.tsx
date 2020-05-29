@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import classNames from 'classnames';
 import { ErrorMessage, Field, FieldProps, Form, Formik, FormikActions } from 'formik';
+import ReactModal from 'react-modal';
 
 /* Helpers */
 import { hasMetamask, tryGetAccount, loginMetamask, isMetamaskLogged } from '../poap-eth';
@@ -10,6 +11,10 @@ import { AddressSchema } from '../lib/schemas';
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
 import ClaimFooterMessage from './ClaimFooterMessage';
+
+/* Assets */
+import checkbox from '../images/check-box.svg';
+import checkboxEmpty from '../images/check-box-empty.svg';
 
 type QRFormValues = {
   address: string;
@@ -30,10 +35,18 @@ const ClaimForm: React.FC<{
   checkClaim: (hash: string) => void;
 }> = ({ enabledWeb3, claim, checkClaim }) => {
   const [account, setAccount] = useState<string>('');
+  const [modalOpen, setModalOpen] = useState<boolean>(false);
+  const [delegatedMint, setDelegatedMint] = useState<boolean>(false);
 
   useEffect(() => {
     if (enabledWeb3 && (!hasMetamask() || isMetamaskLogged())) getAddress();
   }, [enabledWeb3]);
+
+  useEffect(() => {
+    if (account) {
+      setDelegatedMint(true);
+    }
+  }, [account]);
 
   const getAddress = () => {
     if (!hasMetamask() || isMetamaskLogged()) {
@@ -49,10 +62,19 @@ const ClaimForm: React.FC<{
     }
   };
 
+  const updateDelegateSelection = () => {
+    setDelegatedMint(!delegatedMint);
+  }
+
   const handleFormSubmit = async (values: QRFormValues, actions: FormikActions<QRFormValues>) => {
     try {
       actions.setSubmitting(true);
-      await postClaimHash(claim.qr_hash.toLowerCase(), values.address.toLowerCase(), claim.secret);
+      await postClaimHash(
+        claim.qr_hash.toLowerCase(),
+        values.address.toLowerCase(),
+        claim.secret,
+        delegatedMint
+      );
       checkClaim(claim.qr_hash);
     } catch (error) {
       actions.setStatus({
@@ -62,6 +84,14 @@ const ClaimForm: React.FC<{
     } finally {
       actions.setSubmitting(false);
     }
+  };
+
+  const openModal = () => {
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
   };
 
   return (
@@ -91,15 +121,24 @@ const ClaimForm: React.FC<{
                     );
                   }}
                 />
+                <div className={'claim-delegated-selector'}>
+                  <img src={delegatedMint ? checkbox : checkboxEmpty}
+                       alt={'Selector'} className={'checkbox'}
+                       onClick={updateDelegateSelection}
+                  />
+                  <div className={'text-holder'}>
+                    <span onClick={updateDelegateSelection}>I want to claim the POAP with my account.</span> <a href={'#'} onClick={openModal}>Learn more</a>
+                  </div>
+                </div>
                 <ErrorMessage name="gasPrice" component="p" className="bk-error" />
                 {status && <p className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</p>}
-                <div className={'web3-browser'}>
-                  {enabledWeb3 && (
-                    <div>
-                      Web3 browser? <span onClick={getAddress}>Get my address</span>
-                    </div>
-                  )}
-                </div>
+                {/*<div className={'web3-browser'}>*/}
+                {/*  {enabledWeb3 && (*/}
+                {/*    <div>*/}
+                {/*      Web3 browser? <span onClick={getAddress}>Get my address</span>*/}
+                {/*    </div>*/}
+                {/*  )}*/}
+                {/*</div>*/}
                 <SubmitButton
                   text="Claim POAP token"
                   isSubmitting={isSubmitting}
@@ -111,6 +150,25 @@ const ClaimForm: React.FC<{
         </Formik>
       </div>
       <ClaimFooterMessage />
+      <ReactModal isOpen={modalOpen} shouldFocusAfterRender={true}>
+        <div className={'help-modal'}>
+          <h3>POAP claims</h3>
+          <div>
+            <p>Do you want to get your POAP faster?</p>
+            <p>
+              The Ethereum network tends to gets congested and Gas prices skyrocket. We can't cover a high Gas price for everyone,
+              so if you want, submit the claim from your address at a higher Gas price.
+            </p>
+            <p>Don't worry if you don't have ETH to pay for it, we've got you covered. Just please be patient!</p>
+          </div>
+          <div>
+            <div onClick={closeModal} className={'close-modal'}>
+              Close
+            </div>
+          </div>
+
+        </div>
+      </ReactModal>
     </div>
   );
 };

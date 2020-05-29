@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@portis/web3": "^2.0.0-beta.55",
+    "@toruslabs/torus-embed": "^1.4.4",
+    "@walletconnect/types": "1.0.0-beta.97",
+    "@walletconnect/web3-provider": "1.0.0-beta.97",
     "aos": "^2.3.4",
     "auth0-js": "^9.11.2",
     "classnames": "^2.2.6",
@@ -25,6 +29,8 @@
     "react-share": "^3.0.0",
     "react-toast-notifications": "^2.4.0",
     "typescript": "3.7.4",
+    "web3": "^1.2.8",
+    "web3modal": "1.6.3",
     "yup": "^0.27.0"
   },
   "scripts": {
@@ -66,6 +72,7 @@
     "@types/react-select": "^3.0.12",
     "@types/react-share": "^2.1.1",
     "@types/react-toast-notifications": "^2.0.0",
+    "@types/web3": "^1.2.2",
     "@types/yup": "^0.26.22"
   }
 }

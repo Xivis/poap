@@ -29,7 +29,7 @@ const ClaimPending: React.FC<{ claim: HashClaim; checkClaim: (hash: string) => v
   return (
     <div className={'claim-info'} data-aos="fade-up" data-aos-delay="300">
       <div className={'info-title'}>The POAP token is on its way to your wallet</div>
-      <div className={'info-pending'}>
+      <div className={'info-tx info-pending'}>
         <img src={Spinner} alt={'Mining'} />
         Pending
       </div>

@@ -254,7 +254,7 @@ export async function bumpTransaction(hash: string, gasPrice: string, updateTx: 
     throw new Error('Transaction was not found');
   }
 
-  if (Number(transaction.gas_price) >= Number(gasPrice)) {
+  if (Number(transaction.gas_price) >= Number(gasPrice) && updateTx) {
     throw new Error('New gas price is not bigger than previous gas price');
   }
 
