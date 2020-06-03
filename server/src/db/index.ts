@@ -441,7 +441,7 @@ export async function createQrClaims(hashesToAdd: any[]) {
 
   const res = await db.tx(t => {
     const queries = hashesToAdd.map(qr_claim => {
-      return t.one('INSERT INTO qr_claims(qr_hash, numeric_id, event_id) VALUES(${qr_hash}, ${numeric_id}, ${event_id}) RETURNING id', qr_claim, a => +a.id);
+      return t.one('INSERT INTO qr_claims(qr_hash, numeric_id, event_id, delegated_mint) VALUES(${qr_hash}, ${numeric_id}, ${event_id}, ${delegated_mint}) RETURNING id', qr_claim, a => +a.id);
     });
     return t.batch(queries);
   });
@@ -521,7 +521,7 @@ export async function getQrRoll(qrRollId: string): Promise<null | eventHost> {
 
 export async function getPaginatedQrClaims(limit: number, offset: number, eventId: number, qrRollId: number, claimed: string | null, scanned: string | null): Promise<ClaimQR[]> {
   let query = `SELECT q.id, q.qr_hash, q.tx_hash, q.event_id, q.beneficiary,
-  q.claimed, q.scanned, tx.status as tx_status
+  q.claimed, q.scanned, tx.status as tx_status, q.delegated_mint
   FROM qr_claims q LEFT JOIN server_transactions tx on q.tx_hash = tx.tx_hash
   WHERE q.is_active = true `
 

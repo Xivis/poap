@@ -94,6 +94,7 @@ type CreationModalProps = {
 type CreationModalFormikValues = {
   ids: string;
   hashes: string;
+  delegated_mint: boolean;
   event: string;
 };
 
@@ -378,7 +379,8 @@ const QrPage: FC = () => {
                 />
               ) : "-"}
             </div>
-            <div className={'col-md-2'}>QR Hash</div>
+            <div className={'col-md-1'}>QR</div>
+            <div className={'col-md-1 center'}>Web3</div>
             <div className={'col-md-4'}>Event</div>
             <div className={'col-md-1 center'}>Status</div>
             <div className={'col-md-1 center'}>Scanned</div>
@@ -400,9 +402,18 @@ const QrPage: FC = () => {
                     )}
                   </div>
 
-                  <div className={'col-md-2'}>
+                  <div className={'col-md-1 col-sm-6'}>
                     <span className={'visible-sm'}>QR Hash: </span>
                     {qr.qr_hash}
+                  </div>
+
+                  <div className={'col-md-1 col-sm-6 center status'}>
+                    {qr.delegated_mint &&
+                      <>
+                        <span className={'visible-sm'}>Web3: </span>
+                        <img src={checked} alt={'Web3 claim'} className={'status-icon'} />
+                      </>
+                    }
                   </div>
 
                   <div className={'col-md-4 elipsis'}>
@@ -498,7 +509,7 @@ const CreationModal: React.FC<CreationModalProps> = ({
     (!hasSameQrsQuantity || !hasHashesButNoIds) && hasNoIncorrectQrs;
 
   const handleCreationModalSubmit = (values: CreationModalFormikValues) => {
-    const { hashes, ids, event } = values;
+    const { hashes, ids, delegated_mint, event } = values;
 
     const hashRegex = /^[a-zA-Z0-9]{6}$/;
     const idRegex = /^[0-9]+$/;
@@ -543,7 +554,7 @@ const CreationModal: React.FC<CreationModalProps> = ({
 
     if (_hasNoIncorrectQrs) {
       if (_hasHashesButNoIds || _hasSameQrsQuantity) {
-        qrCreateMassive(qrHashesFormatted, qrIdsFormatted, event)
+        qrCreateMassive(qrHashesFormatted, qrIdsFormatted, delegated_mint, event)
           .then(_ => {
             addToast('QR codes updated correctly', {
               appearance: 'success',
@@ -571,14 +582,13 @@ const CreationModal: React.FC<CreationModalProps> = ({
         hashes: '',
         ids: '',
         event: '',
+        delegated_mint: false
       }}
       validateOnBlur={false}
       validateOnChange={false}
       onSubmit={handleCreationModalSubmit}
     >
       {({ values, handleChange, handleSubmit }) => {
-        const isEventPlaceholder = !Boolean(values.event);
-
         return (
           <div className={'update-modal-container'}>
             <div className={'modal-top-bar'}>
@@ -629,6 +639,10 @@ const CreationModal: React.FC<CreationModalProps> = ({
             </div>
             <div className="modal-content">
               <div className="modal-buttons-container creation-modal">
+                <div className="modal-action-checkbox-container">
+                  <Field type="checkbox" name="delegated_mint" id="delegated_mint_id" className={""} />
+                  <label htmlFor="delegated_mint_id" className="">Web 3 claim enabled</label>
+                </div>
                 <div className="modal-action-buttons-container">
                   <FilterButton text="Cancel" handleClick={handleCreationModalClosing} />
                   <FilterButton text="Create" handleClick={handleSubmit} />

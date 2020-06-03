@@ -419,7 +419,7 @@ textarea {
   justify-content: space-between;
 
   &.creation-modal {
-    justify-content: flex-end;
+    justify-content: space-between;
   }
 
   button {
@@ -432,6 +432,23 @@ textarea {
     button {
       min-width: 130px;
     }
+  }
+}
+
+.modal-action-checkbox-container {
+  display: flex;
+  flex-direction: row;
+  input {
+    transform: scale(1.2);
+    margin: 2px 0 0 2px;
+  }
+  label,
+  input {
+    cursor: pointer;
+  }
+  label {
+    padding-left: 5px;
+    margin-bottom: 0;
   }
 }
 

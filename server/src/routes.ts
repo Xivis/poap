@@ -1945,6 +1945,7 @@ export default async function routes(fastify: FastifyInstance) {
             qr_list: { type: 'array', items: { type: 'string' } },
             numeric_list: { type: 'array', items: { type: 'number' } },
             event_id: { type: 'number' },
+            delegated_mint: { type: 'boolean' },
           },
         },
         response: {
@@ -1961,6 +1962,7 @@ export default async function routes(fastify: FastifyInstance) {
       const qrCodeHashes: string[] = req.body.qr_list;
       const numericList: number[] = req.body.numeric_list;
       let eventId = req.body.event_id || null;
+      let delegated_mint = req.body.delegated_mint;
       let hashesToAdd: any[] = [];
       let existingClaimedQrs: string[] = [];
       let existingNumericIds: number[] = [];
@@ -2013,7 +2015,8 @@ export default async function routes(fastify: FastifyInstance) {
           {
             event_id: eventId,
             qr_hash: qr_hash,
-            numeric_id: numeric_id
+            numeric_id: numeric_id,
+            delegated_mint
           }
         )
       }

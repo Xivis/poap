@@ -120,6 +120,8 @@ export type QrCode = {
   tx_hash: string;
   tx_status: string | null;
   event: PoapEvent;
+  delegated_mint: boolean;
+  delegated_signed_message: string | null;
 };
 
 export type PaginatedQrCodes = {
@@ -449,11 +451,13 @@ export async function qrCodesListAssign(
 export async function qrCreateMassive(
   qrHashes: string[],
   qrIds: string[],
+  delegated_mint: boolean,
   event?: string
 ): Promise<void> {
   let unstringifiedBody = {
     qr_list: qrHashes,
     numeric_list: qrIds,
+    delegated_mint
   };
 
   if (Number(event) !== 0) Object.assign(unstringifiedBody, { event_id: Number(event) });
