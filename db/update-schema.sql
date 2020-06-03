@@ -131,3 +131,5 @@ ALTER TABLE qr_claims
 
 ALTER TABLE server_transactions
     ALTER COLUMN arguments TYPE VARCHAR(2000);
+
+ALTER TABLE events ADD delegated_mint BOOLEAN DEFAULT false;

@@ -14,6 +14,7 @@ CREATE TABLE events (
   "end_date" date not null,
   "event_host_id" integer,
   "from_admin" boolean default false,
+  "delegated_mint" boolean default false,
   "created_date" timestamp with time zone not null default now()
 );
 
