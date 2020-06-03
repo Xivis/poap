@@ -4,17 +4,18 @@ import { ErrorMessage, Field, FieldProps, Form, Formik, FormikActions } from 'fo
 import ReactModal from 'react-modal';
 
 /* Helpers */
-import { hasMetamask, tryGetAccount, loginMetamask, isMetamaskLogged } from '../poap-eth';
+import { tryGetAccount } from '../poap-eth';
 import { HashClaim, postClaimHash } from '../api';
 import { AddressSchema } from '../lib/schemas';
+import { hasWeb3 } from '../poap-eth';
 
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
 import ClaimFooterMessage from './ClaimFooterMessage';
 
 /* Assets */
-import checkbox from '../images/check-box.svg';
-import checkboxEmpty from '../images/check-box-empty.svg';
+// import checkbox from '../images/check-box.svg';
+// import checkboxEmpty from '../images/check-box-empty.svg';
 
 type QRFormValues = {
   address: string;
@@ -30,41 +31,40 @@ type QRFormValues = {
  * If the user has another provider, we will try to get the account at the moment
  * */
 const ClaimForm: React.FC<{
-  enabledWeb3: boolean | null;
   claim: HashClaim;
-  checkClaim: (hash: string) => void;
-}> = ({ enabledWeb3, claim, checkClaim }) => {
+  web3Claim: boolean;
+  onSubmit: () => void;
+}> = ({ claim, onSubmit, web3Claim }) => {
+  const [enabledWeb3, setEnabledWeb3] = useState<boolean | null>(null);
   const [account, setAccount] = useState<string>('');
   const [modalOpen, setModalOpen] = useState<boolean>(false);
-  const [delegatedMint, setDelegatedMint] = useState<boolean>(false);
+  // const [delegatedMint, setDelegatedMint] = useState<boolean>(web3Claim);
 
   useEffect(() => {
-    if (enabledWeb3 && (!hasMetamask() || isMetamaskLogged())) getAddress();
-  }, [enabledWeb3]);
+    // getAddress();
+    hasWeb3().then(setEnabledWeb3);
+  }, []);
 
-  useEffect(() => {
-    if (account) {
-      setDelegatedMint(true);
-    }
-  }, [account]);
+  // useEffect(() => {
+  //   if (account) {
+  //     setDelegatedMint(true);
+  //   }
+  // }, [account]);
 
   const getAddress = () => {
-    if (!hasMetamask() || isMetamaskLogged()) {
-      tryGetAccount()
-        .then(address => {
-          if (address) setAccount(address);
-        })
-        .catch(e => {
-          console.log('Error while fetching account: ', e);
-        });
-    } else {
-      loginMetamask().then(response => setAccount(response.account));
-    }
+    tryGetAccount()
+      .then(address => {
+        if (address) setAccount(address);
+      })
+      .catch(e => {
+        console.log('Error while fetching account: ', e);
+      });
   };
 
-  const updateDelegateSelection = () => {
-    setDelegatedMint(!delegatedMint);
-  }
+  // const updateDelegateSelection = () => {
+  //   if (web3Claim) return
+  //   setDelegatedMint(!delegatedMint);
+  // }
 
   const handleFormSubmit = async (values: QRFormValues, actions: FormikActions<QRFormValues>) => {
     try {
@@ -73,9 +73,9 @@ const ClaimForm: React.FC<{
         claim.qr_hash.toLowerCase(),
         values.address.toLowerCase(),
         claim.secret,
-        delegatedMint
+        web3Claim
       );
-      checkClaim(claim.qr_hash);
+      onSubmit();
     } catch (error) {
       actions.setStatus({
         ok: false,
@@ -86,9 +86,9 @@ const ClaimForm: React.FC<{
     }
   };
 
-  const openModal = () => {
-    setModalOpen(true);
-  };
+  // const openModal = () => {
+  //   setModalOpen(true);
+  // };
 
   const closeModal = () => {
     setModalOpen(false);
@@ -122,27 +122,36 @@ const ClaimForm: React.FC<{
                   }}
                 />
                 <div className={'claim-delegated-selector'}>
-                  <img src={delegatedMint ? checkbox : checkboxEmpty}
-                       alt={'Selector'} className={'checkbox'}
-                       onClick={updateDelegateSelection}
-                  />
-                  <div className={'text-holder'}>
-                    <span onClick={updateDelegateSelection}>I want to claim the POAP with my account.</span> <a href={'#'} onClick={openModal}>Learn more</a>
-                  </div>
+
+                  {/* if not web3 claim, do not show any option */}
+
+                  {/*{!web3Claim &&*/}
+                  {/*  <>*/}
+                  {/*    <img src={delegatedMint ? checkbox : checkboxEmpty}*/}
+                  {/*         alt={'Selector'} className={'checkbox'}*/}
+                  {/*         onClick={updateDelegateSelection}*/}
+                  {/*    />*/}
+                  {/*    <div className={'text-holder'}>*/}
+                  {/*      <span onClick={updateDelegateSelection}>I want to claim the POAP with my account.</span> <a href={'#'} onClick={openModal}>Learn more</a>*/}
+                  {/*    </div>*/}
+                  {/*  </>*/}
+                  {/*}*/}
+
                 </div>
                 <ErrorMessage name="gasPrice" component="p" className="bk-error" />
                 {status && <p className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</p>}
-                {/*<div className={'web3-browser'}>*/}
-                {/*  {enabledWeb3 && (*/}
-                {/*    <div>*/}
-                {/*      Web3 browser? <span onClick={getAddress}>Get my address</span>*/}
-                {/*    </div>*/}
-                {/*  )}*/}
-                {/*</div>*/}
+                <div className={'web3-browser'}>
+                  {enabledWeb3 && (
+                    <div>
+                    Web3 browser? <span onClick={getAddress}>Get my address</span>
+                    </div>
+                    )}
+                </div>
+
                 <SubmitButton
                   text="Claim POAP token"
                   isSubmitting={isSubmitting}
-                  canSubmit={isValid && enabledWeb3 !== null}
+                  canSubmit={isValid}
                 />
               </Form>
             );

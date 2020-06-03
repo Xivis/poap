@@ -59,7 +59,6 @@ import {
   resolveName,
   lookupAddress,
   checkAddress,
-  checkHasToken,
   getTokenImg,
   getAllEventIds,
   signMessage
@@ -618,6 +617,7 @@ export default async function routes(fastify: FastifyInstance) {
     async (req, res) => {
       const env = getEnv();
       const secret = crypto.createHmac('sha256', env.secretKey).update(req.body.qr_hash).digest('hex');
+      let delegatedMint = req.body.delegated_mint;
 
       if (req.body.secret != secret) {
         await sleep(1000)
@@ -653,20 +653,13 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.BadRequest('Address is not valid');
       }
 
-      const dual_qr_claim = await checkDualQrClaim(qr_claim.event.id, parsed_address);
+      const dual_qr_claim = await checkDualQrClaim(qr_claim.event.id, parsed_address, delegatedMint);
       if (!dual_qr_claim) {
         await unclaimQrClaim(req.body.qr_hash);
         return new createError.BadRequest('Address already claimed a code for this event');
       }
 
-      const has_token = await checkHasToken(qr_claim.event.id, parsed_address);
-      if (has_token) {
-        await unclaimQrClaim(req.body.qr_hash);
-        return new createError.BadRequest('Address already has this POAP token');
-      }
-
       // Check if the claim is delegated
-      let delegatedMint = req.body.delegated_mint;
       if (delegatedMint) {
         // get signed message
         let params: TypedValue[] = [

@@ -32,6 +32,7 @@ const ROUTES = {
   token: '/token/:tokenId',
   callback: '/callback',
   signerClaimPage: '/signer/claim/:event',
+  codeClaimWeb3PageHash: '/claim/:hash/:method',
   codeClaimPageHash: '/claim/:hash',
   codeClaimPage: '/claim',
   admin: '/admin',

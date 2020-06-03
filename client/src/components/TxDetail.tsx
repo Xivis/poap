@@ -7,7 +7,6 @@ import { etherscanLinks } from '../lib/constants'
 
 /* Assets */
 import arrow from '../images/arrow-link.svg'
-import tick from '../images/tick.svg'
 import close from '../images/close.svg'
 import spinner from '../images/etherscan-spinner.svg';
 
@@ -21,14 +20,7 @@ const TxDetail: FC<{hash: string, receipt: null | TransactionReceipt}> = ({hash,
   );
 
   if (receipt) {
-    if (receipt.status) {
-      status = (
-        <div className={'info-tx info-success'}>
-          <img src={tick} alt={'Success'} />
-          Success
-        </div>
-      )
-    } else {
+    if (!receipt.status) {
       status = (
         <div className={'info-tx info-error'}>
           <img src={close} alt={'Failed'} />

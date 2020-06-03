@@ -106,7 +106,6 @@ export async function tryGetAccount(): Promise<null | string> {
       }
     }
   }
-
   return rawAddress == null ? null : getAddress(rawAddress);
 }
 

@@ -460,9 +460,11 @@
         padding: 25px 0;
         font-family: $font-family-narrow;
         color: $color-medium-violet;
-        span {
+        span, a {
           text-decoration: underline;
           cursor: pointer;
+          font-family: inherit;
+          color: inherit;
         }
       }
 
@@ -492,8 +494,6 @@
     }
 
     .claim-info {
-      padding: 20px;
-      max-width: 600px;
       text-align: center;
       margin: auto;
 
@@ -601,6 +601,8 @@
 
 .tx-detail {
   padding: 40px 0 80px;
+  max-width: 500px;
+  margin: auto;
 
   .tx-detail-title {
     text-align: left;

@@ -222,12 +222,14 @@ export async function updateQrScanned(qrHash: string) {
   return res.rowCount === 1;
 }
 
-export async function checkDualQrClaim(eventId: number, address: string): Promise<boolean> {
-  const res = await db.oneOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE event_id = ${eventId} AND beneficiary = ${address} AND is_active = true', {
-    eventId,
-    address
-  });
-  return res === null;
+export async function checkDualQrClaim(eventId: number, address: string, delegated: boolean): Promise<boolean> {
+  let query = 'SELECT COUNT(*) FROM qr_claims WHERE event_id = ${eventId} AND beneficiary = ${address} AND is_active = true';
+  if (delegated) {
+    query = query + ' AND delegated_mint = false'
+  }
+  const res = await db.result(query, {eventId, address});
+  let count = res.rows[0].count;
+  return count === '0';
 }
 
 export async function checkQrHashExists(qrHash: string): Promise<boolean> {

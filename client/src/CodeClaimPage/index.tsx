@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { RouteComponentProps } from 'react-router';
+import Web3 from 'web3'
+// import Contract from "web3-eth-contract"
 
 /* Helpers */
 import { HashClaim, getClaimHash, getTokensFor } from '../api';
-import { hasWeb3 } from '../poap-eth';
 
 /* Components*/
 import ClaimHeader from './ClaimHeader';
@@ -20,23 +21,29 @@ import { ClaimFooter } from '../components/ClaimFooter';
 import { TX_STATUS } from '../lib/constants';
 
 /* Assets */
+import abi from '../abis/PoapDelegatedMint.json'
 import EmptyBadge from '../images/empty-badge.svg';
 
-export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({ match }) => {
-  const [web3, setWeb3] = useState<boolean | null>(null);
+export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string, method: string }>> = ({ match }) => {
   const [claim, setClaim] = useState<null | HashClaim>(null);
   const [claimError, setClaimError] = useState<boolean>(false);
+  const [web3Claim, setWeb3Claim] = useState<boolean>(false);
+  const [initialStep, setInitialStep] = useState<boolean>(true);
   const [isClaimLoading, setIsClaimLoading] = useState<boolean>(false);
   const [beneficiaryHasToken, setBeneficiaryHasToken] = useState<boolean>(false);
 
-  let { hash } = match.params;
+  let { hash, method } = match.params;
   let title = 'POAP Claim';
   let image = EmptyBadge;
 
   useEffect(() => {
-    hasWeb3().then(setWeb3);
     if (hash) fetchClaim(hash);
+    if (method && method === 'web3') setWeb3Claim(true)
   }, []); /* eslint-disable-line react-hooks/exhaustive-deps */
+
+  useEffect(() => {
+    if (claim) fetchClaim(claim.qr_hash)
+  }, [initialStep]);
 
   const fetchClaim = (hash: string) => {
     setIsClaimLoading(true);
@@ -52,6 +59,8 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
       .finally(() => setIsClaimLoading(false));
   };
 
+  const continueClaim = () => setInitialStep(false)
+
   const checkUserTokens = () => {
     if (!claim) return
     getTokensFor(claim.beneficiary)
@@ -66,7 +75,7 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
   let body = <QRHashForm loading={isClaimLoading} checkClaim={fetchClaim} error={claimError} />;
 
   if (claim) {
-    body = <ClaimForm enabledWeb3={web3} claim={claim} checkClaim={fetchClaim} />;
+    body = <ClaimForm claim={claim} onSubmit={continueClaim} web3Claim={web3Claim} />;
     title = claim.event.name;
     if (claim.event.image_url) {
       image = claim.event.image_url;
@@ -74,7 +83,7 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
     if (claim.claimed) {
       // Delegated minting
       if (claim.delegated_mint) {
-        body = <ClaimDelegated claim={claim} checkTokens={checkUserTokens} />;
+        body = <ClaimDelegated claim={claim} checkTokens={checkUserTokens} initialStep={initialStep} />;
       }
 
       // POAP minting
@@ -99,7 +108,7 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
       <ClaimHeader
         title={title}
         image={image}
-        claimed={!!(claim && claim.tx_status === TX_STATUS.passed)}
+        claimed={!!(claim && (claim.tx_status === TX_STATUS.passed || beneficiaryHasToken))}
       />
       <div className={'claim-body'}>{body}</div>
       <ClaimFooter />
