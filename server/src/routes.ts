@@ -569,8 +569,7 @@ export default async function routes(fastify: FastifyInstance) {
           properties: {
             address: { type: 'string' },
             qr_hash: { type: 'string' },
-            secret: { type: 'string' },
-            delegated_mint: { type: 'boolean' }
+            secret: { type: 'string' }
           }
         },
         response: {
@@ -617,7 +616,6 @@ export default async function routes(fastify: FastifyInstance) {
     async (req, res) => {
       const env = getEnv();
       const secret = crypto.createHmac('sha256', env.secretKey).update(req.body.qr_hash).digest('hex');
-      let delegatedMint = req.body.delegated_mint;
 
       if (req.body.secret != secret) {
         await sleep(1000)
@@ -653,14 +651,14 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.BadRequest('Address is not valid');
       }
 
-      const dual_qr_claim = await checkDualQrClaim(qr_claim.event.id, parsed_address, delegatedMint);
+      const dual_qr_claim = await checkDualQrClaim(qr_claim.event.id, parsed_address, qr_claim.delegated_mint);
       if (!dual_qr_claim) {
         await unclaimQrClaim(req.body.qr_hash);
         return new createError.BadRequest('Address already claimed a code for this event');
       }
 
       // Check if the claim is delegated
-      if (delegatedMint) {
+      if (qr_claim.delegated_mint) {
         // get signed message
         let params: TypedValue[] = [
           {type: "uint256", value: event.id},
@@ -672,7 +670,6 @@ export default async function routes(fastify: FastifyInstance) {
         await updateDelegatedQrClaim(req.body.qr_hash, parsed_address, message);
 
         // update qr_claim to return
-        qr_claim.delegated_mint = true
         qr_claim.delegated_signed_message = message
 
       } else {

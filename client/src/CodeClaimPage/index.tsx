@@ -24,26 +24,31 @@ import { TX_STATUS } from '../lib/constants';
 import abi from '../abis/PoapDelegatedMint.json'
 import EmptyBadge from '../images/empty-badge.svg';
 
-export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string, method: string }>> = ({ match }) => {
+export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({ match }) => {
   const [claim, setClaim] = useState<null | HashClaim>(null);
   const [claimError, setClaimError] = useState<boolean>(false);
-  const [web3Claim, setWeb3Claim] = useState<boolean>(false);
+  const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [initialStep, setInitialStep] = useState<boolean>(true);
   const [isClaimLoading, setIsClaimLoading] = useState<boolean>(false);
   const [beneficiaryHasToken, setBeneficiaryHasToken] = useState<boolean>(false);
 
-  let { hash, method } = match.params;
+  let { hash } = match.params;
   let title = 'POAP Claim';
   let image = EmptyBadge;
 
   useEffect(() => {
     if (hash) fetchClaim(hash);
-    if (method && method === 'web3') setWeb3Claim(true)
   }, []); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
     if (claim) fetchClaim(claim.qr_hash)
   }, [initialStep]);
+
+  useEffect(() => {
+    if (claim && claim.delegated_mint && !isVerifying) {
+      verifySignedMessage()
+    }
+  }, [claim]);
 
   const fetchClaim = (hash: string) => {
     setIsClaimLoading(true);
@@ -53,16 +58,15 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string, method:
         setClaimError(false);
       })
       .catch(error => {
-        console.error(error);
         setClaimError(true);
       })
       .finally(() => setIsClaimLoading(false));
-  };
+  }
 
   const continueClaim = () => setInitialStep(false)
 
   const checkUserTokens = () => {
-    if (!claim) return
+    if (!claim || !claim.beneficiary) return
     getTokensFor(claim.beneficiary)
       .then(tokens => {
         if(tokens.filter(token => token.event.id === claim.event_id).length > 0) {
@@ -72,10 +76,29 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string, method:
 
   }
 
+  const verifySignedMessage = () => {
+    if (isVerifying || !claim) return
+
+    // Initiate the contract and check if the message was processed
+    setIsVerifying(true)
+    try {
+      const web3 = new Web3(Web3.givenProvider || process.env.REACT_APP_INFURA_PROVIDER)
+      const contract = new web3.eth.Contract(abi as any, process.env.REACT_APP_MINT_DELEGATE_CONTRACT)
+      contract.methods.processed(claim.delegated_signed_message).call().then((processed: boolean) => {
+        if (processed) setBeneficiaryHasToken(processed)
+        setIsVerifying(false)
+      })
+    } catch (e) {
+      console.log(e)
+      setIsVerifying(false)
+      checkUserTokens()
+    }
+  }
+
   let body = <QRHashForm loading={isClaimLoading} checkClaim={fetchClaim} error={claimError} />;
 
   if (claim) {
-    body = <ClaimForm claim={claim} onSubmit={continueClaim} web3Claim={web3Claim} />;
+    body = <ClaimForm claim={claim} onSubmit={continueClaim} />;
     title = claim.event.name;
     if (claim.event.image_url) {
       image = claim.event.image_url;
@@ -83,7 +106,7 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string, method:
     if (claim.claimed) {
       // Delegated minting
       if (claim.delegated_mint) {
-        body = <ClaimDelegated claim={claim} checkTokens={checkUserTokens} initialStep={initialStep} />;
+        body = <ClaimDelegated claim={claim} verifyClaim={verifySignedMessage} initialStep={initialStep} />;
       }
 
       // POAP minting
@@ -99,7 +122,7 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string, method:
     }
   }
 
-  if (hash && !claim && !claimError) {
+  if ((hash && !claim && !claimError) || isVerifying) {
     body = <ClaimLoading />;
   }
 

@@ -402,12 +402,12 @@ const QrPage: FC = () => {
                     )}
                   </div>
 
-                  <div className={'col-md-1 col-sm-6'}>
+                  <div className={'col-md-1 col-xs-8'}>
                     <span className={'visible-sm'}>QR Hash: </span>
                     {qr.qr_hash}
                   </div>
 
-                  <div className={'col-md-1 col-sm-6 center status'}>
+                  <div className={'col-md-1 col-xs-4 center status'}>
                     {qr.delegated_mint &&
                       <>
                         <span className={'visible-sm'}>Web3: </span>
@@ -416,7 +416,7 @@ const QrPage: FC = () => {
                     }
                   </div>
 
-                  <div className={'col-md-4 elipsis'}>
+                  <div className={'col-md-4 elipsis col-xs-12'}>
                     <span className={'visible-sm'}>Event: </span>
                     {(!qr.event || !qr.event.name) && <span>-</span>}
 

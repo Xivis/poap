@@ -32,9 +32,9 @@ const CONTRACT_ADDRESS = process.env.REACT_APP_MINT_DELEGATE_CONTRACT;
  * */
 const ClaimDelegated: React.FC<{
   claim: HashClaim;
-  checkTokens: () => void;
+  verifyClaim: () => void;
   initialStep: boolean;
-}> = ({ claim, checkTokens, initialStep }) => {
+}> = ({ claim, verifyClaim, initialStep }) => {
   const [web3, setWeb3] = useState<any>(null)
   const [network, setNetwork] = useState<string | null>(null)
   const [connectStatus, setConnectStatus] = useState<string>(!initialStep ? PAGE_STATUS.LOADING : PAGE_STATUS.DISCONNECTED)
@@ -50,9 +50,6 @@ const ClaimDelegated: React.FC<{
         let claims = JSON.parse(localTxs)
         if (claim.qr_hash in claims) {
           setTxHash(claims[claim.qr_hash])
-          connectWallet().then(_web3 => {
-            if (_web3) setWeb3(_web3)
-          })
         }
       }
     } else {
@@ -68,7 +65,7 @@ const ClaimDelegated: React.FC<{
 
     // After getting the correct status, check if the user has the token already
     if (txReceipt && txReceipt.status) {
-      const interval = setInterval(checkTokens, 5000);
+      const interval = setInterval(verifyClaim, 3000);
       return () => clearInterval(interval);
     }
   }, [txHash, web3, txReceipt]) /* eslint-disable-line react-hooks/exhaustive-deps */
@@ -132,10 +129,15 @@ const ClaimDelegated: React.FC<{
 
     try {
       const contract = new _web3.eth.Contract(abi, CONTRACT_ADDRESS);
-      let gas = await contract.methods.mintToken(
-        claim.event_id, claim.beneficiary, claim.delegated_signed_message
-      ).estimateGas({ from: account })
-      gas = Math.floor(gas * 1.5)
+      let gas = 1000000
+      try {
+        gas = await contract.methods.mintToken(
+          claim.event_id, claim.beneficiary, claim.delegated_signed_message
+        ).estimateGas({ from: account })
+        gas = Math.floor(gas * 1.3)
+      } catch (e) {
+        console.log('Error calculating gas')
+      }
 
       contract.methods.mintToken(
         claim.event_id, claim.beneficiary, claim.delegated_signed_message
@@ -174,7 +176,6 @@ const ClaimDelegated: React.FC<{
     setTxReceipt(null)
   }
 
-  const appLink = `/scan/${claim.beneficiary}`;
   const fadeEffect = initialStep ? 'fade-up' : '';
 
   return (
@@ -184,7 +185,7 @@ const ClaimDelegated: React.FC<{
         <input type={'text'} disabled={true} value={claim.beneficiary} />
 
         <div className={'web3-browser'}>
-          If you have already submitted your transaction, <a href={appLink}>check your wallet</a>
+          This POAP hasn’t been claimed. <a href={"mailto:hello@poap.xyz"}>Need help?</a>
         </div>
 
       </form>
