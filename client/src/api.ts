@@ -48,6 +48,7 @@ export interface HashClaim {
   event_id: number;
   event: PoapEvent;
   beneficiary: Address;
+  user_input: string | null;
   signer: Address;
   claimed: boolean;
   claimed_date: string;
@@ -108,6 +109,7 @@ export interface PaginatedNotifications {
 
 export type QrCode = {
   beneficiary: string;
+  user_input: string | null;
   claimed: boolean;
   claimed_date: string;
   created_date: string;

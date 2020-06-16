@@ -257,24 +257,26 @@ export async function unclaimQrClaim(qrHash: string) {
   return res.rowCount === 1;
 }
 
-export async function updateQrClaim(qrHash: string, beneficiary: string, tx: ContractTransaction) {
+export async function updateQrClaim(qrHash: string, beneficiary: string, user_input: string, tx: ContractTransaction) {
   const tx_hash = tx.hash
   const signer = tx.from
 
-  const res = await db.result('update qr_claims set tx_hash=${tx_hash}, beneficiary=${beneficiary}, signer=${signer} where qr_hash = ${qrHash}',
+  const res = await db.result('UPDATE qr_claims SET tx_hash=${tx_hash}, beneficiary=${beneficiary}, signer=${signer}, user_input=${user_input} WHERE qr_hash = ${qrHash}',
     {
       tx_hash,
       beneficiary,
+      user_input,
       signer,
       qrHash
     });
   return res.rowCount === 1;
 }
 
-export async function updateDelegatedQrClaim(qrHash: string, beneficiary: string, message: string) {
-  const res = await db.result('UPDATE qr_claims SET delegated_mint=TRUE, delegated_signed_message=${message}, beneficiary=${beneficiary} WHERE qr_hash = ${qrHash}',
+export async function updateDelegatedQrClaim(qrHash: string, beneficiary: string, user_input: string, message: string) {
+  const res = await db.result('UPDATE qr_claims SET delegated_mint=TRUE, delegated_signed_message=${message}, beneficiary=${beneficiary}, user_input=${user_input} WHERE qr_hash = ${qrHash}',
     {
       beneficiary,
+      user_input,
       message,
       qrHash
     });
@@ -522,7 +524,7 @@ export async function getQrRoll(qrRollId: string): Promise<null | eventHost> {
 
 export async function getPaginatedQrClaims(limit: number, offset: number, eventId: number, qrRollId: number, claimed: string | null, scanned: string | null): Promise<ClaimQR[]> {
   let query = `SELECT q.id, q.qr_hash, q.tx_hash, q.event_id, q.beneficiary,
-  q.claimed, q.scanned, tx.status as tx_status, q.delegated_mint
+  q.claimed, q.scanned, tx.status as tx_status, q.delegated_mint, q.user_input
   FROM qr_claims q LEFT JOIN server_transactions tx on q.tx_hash = tx.tx_hash
   WHERE q.is_active = true `
 

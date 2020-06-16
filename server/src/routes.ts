@@ -480,6 +480,7 @@ export default async function routes(fastify: FastifyInstance) {
               tx_hash: { type: 'string' },
               event_id: { type: 'number' },
               beneficiary: { type: 'string' },
+              user_input: { type: 'string' },
               signer: { type: 'string' },
               claimed: { type: 'boolean' },
               claimed_date: { type: 'string' },
@@ -577,6 +578,7 @@ export default async function routes(fastify: FastifyInstance) {
               tx_hash: { type: 'string' },
               event_id: { type: 'number' },
               beneficiary: { type: 'string' },
+              user_input: { type: 'string' },
               signer: { type: 'string' },
               claimed: { type: 'boolean' },
               claimed_date: { type: 'string' },
@@ -663,7 +665,7 @@ export default async function routes(fastify: FastifyInstance) {
         let message = signMessage(env.poapAdmin.privateKey, params);
 
         // update database
-        await updateDelegatedQrClaim(req.body.qr_hash, parsed_address, message);
+        await updateDelegatedQrClaim(req.body.qr_hash, parsed_address, req.body.address, message);
 
         // update qr_claim to return
         qr_claim.delegated_signed_message = message
@@ -675,7 +677,7 @@ export default async function routes(fastify: FastifyInstance) {
           return new createError.InternalServerError('There was a problem in token mint');
         }
 
-        let set_qr_claim_hash = await updateQrClaim(req.body.qr_hash, parsed_address, tx_mint);
+        let set_qr_claim_hash = await updateQrClaim(req.body.qr_hash, parsed_address, req.body.address, tx_mint);
         if (!set_qr_claim_hash) {
           return new createError.InternalServerError('There was a problem saving tx_hash');
         }
@@ -686,6 +688,7 @@ export default async function routes(fastify: FastifyInstance) {
 
       qr_claim.beneficiary = parsed_address
       qr_claim.tx_status = null
+      qr_claim.user_input = req.body.addres
 
       if (qr_claim.tx_hash) {
         const transaction_status = await getTransaction(qr_claim.tx_hash);

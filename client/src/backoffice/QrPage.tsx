@@ -380,11 +380,12 @@ const QrPage: FC = () => {
               ) : "-"}
             </div>
             <div className={'col-md-1'}>QR</div>
+            <div className={'col-md-3'}>Event</div>
             <div className={'col-md-1 center'}>Web3</div>
-            <div className={'col-md-4'}>Event</div>
-            <div className={'col-md-1 center'}>Status</div>
+            <div className={'col-md-1 center'}>Claimed</div>
             <div className={'col-md-1 center'}>Scanned</div>
-            <div className={'col-md-3 center'}>Tx Hash</div>
+            <div className={'col-md-2 center'}>Transaction</div>
+            <div className={'col-md-2 center'}>Beneficiary</div>
           </div>
           <div className={'admin-table-row qr-table'}>
             {qrCodes.map((qr, i) => {
@@ -402,21 +403,12 @@ const QrPage: FC = () => {
                     )}
                   </div>
 
-                  <div className={'col-md-1 col-xs-8'}>
+                  <div className={'col-md-1 col-xs-12'}>
                     <span className={'visible-sm'}>QR Hash: </span>
                     {qr.qr_hash}
                   </div>
 
-                  <div className={'col-md-1 col-xs-4 center status'}>
-                    {qr.delegated_mint &&
-                      <>
-                        <span className={'visible-sm'}>Web3: </span>
-                        <img src={checked} alt={'Web3 claim'} className={'status-icon'} />
-                      </>
-                    }
-                  </div>
-
-                  <div className={'col-md-4 elipsis col-xs-12'}>
+                  <div className={'col-md-3 elipsis col-xs-12'}>
                     <span className={'visible-sm'}>Event: </span>
                     {(!qr.event || !qr.event.name) && <span>-</span>}
 
@@ -431,7 +423,16 @@ const QrPage: FC = () => {
                     )}
                   </div>
 
-                  <div className={'col-md-1 center status'}>
+                  <div className={'col-md-1 col-xs-3 center status'}>
+                    <span className={'visible-sm'}>Web3: </span>
+                    {qr.delegated_mint &&
+                    <>
+                      <img src={checked} alt={'Web3 claim'} className={'status-icon'} />
+                    </>
+                    }
+                  </div>
+
+                  <div className={'col-md-1 col-xs-3 center status'}>
                     <span className={'visible-sm'}>Status: </span>
                     <img
                       src={qr.claimed ? checked : error}
@@ -440,7 +441,7 @@ const QrPage: FC = () => {
                     />
                   </div>
 
-                  <div className={'col-md-1 center'}>
+                  <div className={'col-md-1 col-xs-3 center'}>
                     <span className={'visible-sm'}>Scanned: </span>
                     <img
                       src={qr.scanned ? checked : error}
@@ -453,11 +454,17 @@ const QrPage: FC = () => {
                     <span className={'visible-sm'}>Tx Hash: </span>
                     <a href={etherscanLinks.tx(qr.tx_hash)} target={'_blank'}>
                       {qr.tx_hash && reduceAddress(qr.tx_hash)}
-                    </a>
+                    </a>&nbsp;&nbsp;
+                    {qr.tx_status && <TxStatus status={qr.tx_status}/>}
                   </div>
 
-                  <div className={'col-md-1 center'}>
-                    {qr.tx_status && <TxStatus status={qr.tx_status}/>}
+                  <div className={'col-md-2 center ellipsis'}>
+                    <span className={'visible-sm'}>Beneficiary: </span>
+                    {qr.beneficiary &&
+                      <a href={etherscanLinks.address(qr.tx_hash)} target={'_blank'} title={qr.user_input ? qr.user_input : qr.beneficiary}>
+                        {qr.user_input ? qr.user_input : reduceAddress(qr.beneficiary)}
+                      </a>
+                    }
                   </div>
                 </div>
               );

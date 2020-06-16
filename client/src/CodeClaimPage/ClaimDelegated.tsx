@@ -182,7 +182,7 @@ const ClaimDelegated: React.FC<{
     <div className={'container claim-info claim-delegated'} data-aos={fadeEffect} data-aos-delay="300">
       <form className={'claim-form'}>
 
-        <input type={'text'} disabled={true} value={claim.beneficiary} />
+        <input type={'text'} disabled={true} value={claim.user_input ? claim.user_input : claim.beneficiary} />
 
         <div className={'web3-browser'}>
           This POAP hasn’t been claimed. <a href={"mailto:hello@poap.xyz"}>Need help?</a>

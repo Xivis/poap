@@ -93,6 +93,7 @@ export interface ClaimQR {
   event_id: number;
   event: PoapEvent;
   beneficiary: null | Address;
+  user_input: null | string;
   signer: null | Address;
   claimed: boolean;
   scanned: boolean;
