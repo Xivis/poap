@@ -53,6 +53,7 @@ export interface PoapEvent {
   event_host_id: number | null;
   from_admin: boolean;
   virtual_event: boolean;
+  supply?: number;
 }
 
 export interface PoapSetting {

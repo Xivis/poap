@@ -65,7 +65,7 @@ import {
 } from './eth/helpers';
 
 import {
-  Omit, Claim, PoapEvent, TransactionStatus, Address, NotificationType, Notification, ClaimQR, UserRole,
+  Omit, Claim, PoapEvent, TransactionStatus, Address, NotificationType, Notification, ClaimQR, UserRole, TokenInfo,
   // qrRoll,
 } from './types';
 import { TypedValue } from 'eth-crypto';
@@ -75,7 +75,7 @@ import * as admin from 'firebase-admin';
 import { uploadFile } from './plugins/google-storage-utils';
 import { getUserRoles } from './plugins/groups-decorator';
 import { sleep } from './utils';
-import { getAssets } from './plugins/opensea-utils';
+import { getEventTokenSupply } from './plugins/thegraph-utils';
 
 function buildMetadataJson(homeUrl: string, tokenUrl: string, ev: PoapEvent) {
   return {
@@ -321,26 +321,17 @@ export default async function routes(fastify: FastifyInstance) {
     },
     async (req, res) => {
       const address = req.params.address;
-      const assets = await getAssets(address);
       let tokens = await getAllTokens(address);
 
-      tokens = tokens.map(token => {
-        let token_asset = assets.find(asset => asset.token_id === token.tokenId)
+      return await Promise.all(tokens.map(async (token): Promise<TokenInfo> => {
         let supply = 1;
-        if (token_asset) {
-          let min_trait_count = token_asset.traits.reduce((min: number, trait: any) => {
-            if (trait.trait_count) {
-              return min ? Math.min(trait.trait_count, min) : trait.trait_count
-            }
-            return min
-          }, null);
-          supply = min_trait_count ? min_trait_count : supply;
+        try {
+          supply = await getEventTokenSupply(token.event.id)
+        } catch (e) {
+          console.log('The Graph Query error')
         }
         return { ...token, event: { ...token.event, supply: supply } }
-
-      })
-
-      return tokens
+      }));
     }
   );
 
