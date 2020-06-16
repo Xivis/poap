@@ -51,7 +51,8 @@ export interface PoapEvent {
   start_date: string;
   end_date: string;
   event_host_id: number | null;
-  from_admin: boolean | null;
+  from_admin: boolean;
+  virtual_event: boolean;
 }
 
 export interface PoapSetting {

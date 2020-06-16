@@ -131,3 +131,6 @@ ALTER TABLE qr_claims
 
 ALTER TABLE server_transactions
     ALTER COLUMN arguments TYPE VARCHAR(2000);
+
+ALTER TABLE events ADD virtual_event BOOLEAN DEFAULT false;
+ALTER TABLE qr_claims ADD user_input VARCHAR(256);

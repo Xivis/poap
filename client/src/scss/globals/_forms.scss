@@ -83,6 +83,17 @@ div {
         border: 2px solid $color-primary;
       }
     }
+
+    input:disabled {
+      cursor: not-allowed;
+      background: $color-light-grey;
+      color: #bababa;
+      border: none !important;
+
+      &:hover {
+        border: none !important;
+      }
+    }
   }
 }
 
@@ -106,6 +117,21 @@ div {
         left: auto;
       }
     }
+  }
+}
+
+.checkbox-field {
+  margin-top: $grid-gutter;
+  display: flex;
+  flex-direction: row;
+
+  label {
+    color: $color-primary;
+    cursor: pointer;
+  }
+  input {
+    cursor: pointer;
+    margin-top: 2px;
   }
 }
 

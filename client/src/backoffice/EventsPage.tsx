@@ -44,6 +44,7 @@ type EventEditValues = {
   event_url: string;
   image?: Blob;
   isFile: boolean;
+  virtual_event: boolean;
 };
 
 type DatePickerDay = 'start_date' | 'end_date';
@@ -57,6 +58,8 @@ type DatePickerContainerProps = {
   setFieldValue: SetFieldValue;
   disabledDays: RangeModifier | undefined;
   placeholder?: string;
+  disabled: boolean;
+  value: string | Date;
 };
 
 type PaginateAction = {
@@ -73,8 +76,11 @@ type EventTableProps = {
 type EventFieldProps = {
   title: string;
   name: string;
+  placeholder?: string;
   disabled?: boolean;
   type?: string;
+  action?: () => void;
+  checked?: boolean;
 };
 
 type ImageContainerProps = {
@@ -121,6 +127,8 @@ export const EditEventForm: React.FC<RouteComponentProps<{
 };
 
 const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, event }) => {
+  const [virtualEvent, setVirtualEvent] =  useState<boolean>(event ? event.virtual_event : false);
+  const [multiDay, setMultiDay] =  useState<boolean>(event ? event.start_date !== event.end_date : false);
   const history = useHistory();
   const veryOldDate = new Date('1900-01-01');
   const veryFutureDate = new Date('2200-01-01');
@@ -140,7 +148,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
         ...event,
         start_date: event.start_date.replace(dateRegex, '-'),
         end_date: event.end_date.replace(dateRegex, '-'),
-        isFile: false,
+        isFile: false
       };
     } else {
       const now = new Date();
@@ -157,6 +165,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
         event_url: '',
         image: new Blob(),
         isFile: true,
+        virtual_event: false
       };
       return values;
     }
@@ -175,8 +184,20 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
     setFieldValue('image', firstFile);
   };
 
-  const handleDayClick = (day: Date, dayToSetup: DatePickerDay, setFieldValue: SetFieldValue) =>
+  const toggleVirtualEvent = () => setVirtualEvent(!virtualEvent)
+  const toggleMultiDay = (setFieldValue: SetFieldValue, start_date: string) => {
+    if(start_date && multiDay) {
+      setFieldValue('end_date', start_date);
+    }
+    setMultiDay(!multiDay)
+  }
+
+  const handleDayClick = (day: Date, dayToSetup: DatePickerDay, setFieldValue: SetFieldValue) => {
     setFieldValue(dayToSetup, dateFormatter(day));
+    if (!multiDay && dayToSetup === 'start_date') {
+      setFieldValue('end_date', dateFormatter(day));
+    }
+  }
 
   const day = 60 * 60 * 24 * 1000;
 
@@ -184,6 +205,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
     <div className={'bk-container'}>
       <Formik
         initialValues={initialValues}
+        enableReinitialize
         validateOnBlur={false}
         validateOnChange={false}
         validationSchema={PoapEventSchema}
@@ -203,6 +225,8 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
             Object.entries(othersKeys).forEach(([key, value]) =>
               formData.append(key, typeof value === 'number' ? String(value) : value)
             );
+
+            formData.append('virtual_event', String(virtualEvent))
 
             if (create) {
               await createEvent(formData!);
@@ -236,10 +260,13 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
               </>
             )}
             <EventField disabled={false} title="Description" type="textarea" name="description" />
+            <CheckboxField title="Virtual Event" name="virtual_event" action={toggleVirtualEvent} checked={virtualEvent} />
             <div className="bk-group">
               <EventField disabled={false} title="City" name="city" />
               <EventField disabled={false} title="Country" name="country" />
             </div>
+
+            <CheckboxField title="Multi-day event" name="multi_day" action={() => toggleMultiDay(setFieldValue, values.start_date)} checked={multiDay} />
             <div className="bk-group">
               <DayPickerContainer
                 text="Start Date:"
@@ -247,8 +274,10 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
                 handleDayClick={handleDayClick}
                 setFieldValue={setFieldValue}
                 placeholder={values.start_date}
+                value={values.start_date !== '' ? new Date(dateFormatterString(values.start_date).getTime() + day) : ''}
+                disabled={false}
                 disabledDays={
-                  values.end_date
+                  values.end_date !== ''
                     ? {
                         from: new Date(dateFormatterString(values.end_date).getTime() + day * 2),
                         to: veryFutureDate,
@@ -262,8 +291,10 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
                 handleDayClick={handleDayClick}
                 setFieldValue={setFieldValue}
                 placeholder={values.end_date}
+                value={values.end_date !== '' ? new Date(dateFormatterString(values.end_date).getTime() + day) : ''}
+                disabled={!multiDay}
                 disabledDays={
-                  values.start_date
+                  values.start_date !== ''
                     ? {
                         from: veryOldDate,
                         to: new Date(dateFormatterString(values.start_date).getTime()),
@@ -300,9 +331,10 @@ const DayPickerContainer = ({
   setFieldValue,
   placeholder,
   disabledDays,
+  disabled,
+  value
 }: DatePickerContainerProps) => {
   const handleDayChange = (day: Date) => handleDayClick(day, dayToSetup, setFieldValue);
-
   return (
     <div className={`date-picker-container ${dayToSetup === 'end_date' ? 'end-date-overlay' : ''}`}>
       <label>{text}</label>
@@ -310,8 +342,10 @@ const DayPickerContainer = ({
         placeholder={placeholder}
         dayPickerProps={{ disabledDays }}
         onDayChange={handleDayChange}
-        inputProps={{ readOnly: 'readonly' }}
+        value={value}
+        inputProps={{ readOnly: 'readonly', disabled: disabled }}
       />
+      <ErrorMessage name={dayToSetup} component="p" className="bk-error" />
     </div>
   );
 };
@@ -336,7 +370,7 @@ const ImageContainer = ({ text, handleFileChange, setFieldValue, errors }: Image
   </div>
 );
 
-const EventField: React.FC<EventFieldProps> = ({ title, name, disabled, type }) => {
+const EventField: React.FC<EventFieldProps> = ({ title, name, disabled, type, placeholder }) => {
   return (
     <Field
       name={name}
@@ -354,6 +388,7 @@ const EventField: React.FC<EventFieldProps> = ({ title, name, disabled, type }) 
           {type !== 'textarea' && (
             <input
               {...field}
+              placeholder={placeholder ? placeholder : ''}
               type={type || 'text'}
               disabled={disabled}
               className={classNames(!!form.errors[name] && 'error')}
@@ -363,6 +398,15 @@ const EventField: React.FC<EventFieldProps> = ({ title, name, disabled, type }) 
         </div>
       )}
     />
+  );
+};
+
+const CheckboxField: React.FC<EventFieldProps> = ({ title, action, checked }) => {
+  return (
+    <div className={'checkbox-field'} onClick={action}>
+      <input type='checkbox' checked={checked} readOnly />
+      <label>{title}</label>
+    </div>
   );
 };
 

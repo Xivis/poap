@@ -24,7 +24,7 @@ import { TX_STATUS } from '../lib/constants';
 import abi from '../abis/PoapDelegatedMint.json'
 import EmptyBadge from '../images/empty-badge.svg';
 
-export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({ match }) => {
+export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string, method: string }>> = ({ match }) => {
   const [claim, setClaim] = useState<null | HashClaim>(null);
   const [claimError, setClaimError] = useState<boolean>(false);
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
@@ -32,7 +32,7 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
   const [isClaimLoading, setIsClaimLoading] = useState<boolean>(false);
   const [beneficiaryHasToken, setBeneficiaryHasToken] = useState<boolean>(false);
 
-  let { hash } = match.params;
+  let { hash, method } = match.params;
   let title = 'POAP Claim';
   let image = EmptyBadge;
 
@@ -98,7 +98,7 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
   let body = <QRHashForm loading={isClaimLoading} checkClaim={fetchClaim} error={claimError} />;
 
   if (claim) {
-    body = <ClaimForm claim={claim} onSubmit={continueClaim} />;
+    body = <ClaimForm claim={claim} onSubmit={continueClaim} method={method} />;
     title = claim.event.name;
     if (claim.event.image_url) {
       image = claim.event.image_url;

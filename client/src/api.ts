@@ -29,6 +29,7 @@ export interface PoapEvent {
   year: number;
   start_date: string;
   end_date: string;
+  virtual_event: boolean;
 }
 export interface Claim extends ClaimProof {
   claimerSignature: string;
@@ -527,11 +528,13 @@ export async function getClaimHash(hash: string): Promise<HashClaim> {
 export async function postClaimHash(
   qr_hash: string,
   address: string,
-  secret: string
+  secret: string,
+  method: string
 ): Promise<HashClaim> {
+  let delegated = method === 'web3'
   return fetchJson(`${API_BASE}/actions/claim-qr`, {
     method: 'POST',
-    body: JSON.stringify({ qr_hash, address, secret }),
+    body: JSON.stringify({ qr_hash, address, secret, delegated }),
     headers: { 'Content-Type': 'application/json' },
   });
 }

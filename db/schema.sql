@@ -14,6 +14,7 @@ CREATE TABLE events (
   "end_date" date not null,
   "event_host_id" integer,
   "from_admin" boolean default false,
+  "virtual_event" boolean default false,
   "created_date" timestamp with time zone not null default now()
 );
 
@@ -52,6 +53,7 @@ CREATE TABLE qr_claims (
   "tx_hash" varchar(256) UNIQUE,
   "event_id" integer,
   "beneficiary" varchar(256),
+  "user_input" varchar(256),
   "signer" varchar(256),
   "claimed" boolean default false,
   "scanned" boolean default false,

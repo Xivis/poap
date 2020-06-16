@@ -96,6 +96,10 @@ function buildMetadataJson(homeUrl: string, tokenUrl: string, ev: PoapEvent) {
         value: ev.end_date,
       },
       {
+        trait_type: 'virtualEvent',
+        value: ev.virtual_event,
+      },
+      {
         trait_type: 'city',
         value: ev.city,
       },
@@ -569,7 +573,8 @@ export default async function routes(fastify: FastifyInstance) {
           properties: {
             address: { type: 'string' },
             qr_hash: { type: 'string' },
-            secret: { type: 'string' }
+            secret: { type: 'string' },
+            delegated: { type: 'boolean' }
           }
         },
         response: {
@@ -658,7 +663,7 @@ export default async function routes(fastify: FastifyInstance) {
       }
 
       // Check if the claim is delegated
-      if (qr_claim.delegated_mint) {
+      if (qr_claim.delegated_mint || req.body.delegated) {
         // get signed message
         let params: TypedValue[] = [
           {type: "uint256", value: event.id},
@@ -949,6 +954,7 @@ export default async function routes(fastify: FastifyInstance) {
                 end_date: { type: 'string' },
                 created_date: { type: 'string' },
                 from_admin: { type: 'boolean' },
+                virtual_event: { type: 'boolean' }
               },
             }
           }
@@ -985,7 +991,8 @@ export default async function routes(fastify: FastifyInstance) {
               start_date: { type: 'string' },
               end_date: { type: 'string' },
               created_date: { type: 'string' },
-              from_admin: { type: 'boolean' }
+              from_admin: { type: 'boolean' },
+              virtual_event: { type: 'boolean' }
             },
           }
         }
@@ -1035,6 +1042,7 @@ export default async function routes(fastify: FastifyInstance) {
             end_date: { type: 'string' },
             year: { type: 'integer' },
             event_url: { type: 'string' },
+            virtual_event: { type: 'boolean' },
             image: { type: 'string', format: 'binary' },
           },
         },
@@ -1054,7 +1062,8 @@ export default async function routes(fastify: FastifyInstance) {
               event_url: { type: 'string' },
               image_url: { type: 'string' },
               event_host_id: { type: 'number' },
-              from_admin: { type: 'boolean' }
+              from_admin: { type: 'boolean' },
+              virtual_event: { type: 'string' }
             },
           }
         },
@@ -1123,7 +1132,8 @@ export default async function routes(fastify: FastifyInstance) {
         event_url: req.body.event_url,
         image_url: google_image_url,
         event_host_id: eventHost ? eventHost.id : null,
-        from_admin: is_admin
+        from_admin: is_admin,
+        virtual_event: req.body.virtual_event === 'true'
       }
 
       const event = await createEvent(newEvent);
@@ -1155,7 +1165,8 @@ export default async function routes(fastify: FastifyInstance) {
             start_date: { type: 'string' },
             end_date: { type: 'string' },
             event_url: { type: 'string' },
-            image: { type: 'string', format: 'binary' }
+            image: { type: 'string', format: 'binary' },
+            virtual_event: { type: 'string' }
           },
         },
         response: {
@@ -1211,6 +1222,7 @@ export default async function routes(fastify: FastifyInstance) {
         start_date: req.body.start_date ? req.body.start_date : event.start_date,
         end_date: req.body.end_date ? req.body.end_date : event.end_date,
         event_url: req.body.event_url,
+        virtual_event: req.body.virtual_event  === 'true',
         image_url: ((google_image_url === null) ? event.image_url : google_image_url)
       });
       if (!isOk) {
