@@ -132,15 +132,15 @@ const QrPage: FC = () => {
   }, []); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
-    if (passphrase) fetchQrCodes();
-  }, [passphrase]);
+    if (passphrase) fetchQrCodes()
+  }, [passphrase]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
     if (!initialFetch) {
       fetchQrCodes()
       setCheckedAllQrs(false)
     }
-  }, [page]);
+  }, [page]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
     if (!initialFetch) {
@@ -149,12 +149,7 @@ const QrPage: FC = () => {
       fetchQrCodes()
       setCheckedAllQrs(false)
     }
-  }, [
-    selectedEvent,
-    claimStatus,
-    claimScanned,
-    limit
-  ]); /* eslint-disable-line react-hooks/exhaustive-deps */
+  }, [selectedEvent, claimStatus, claimScanned, limit ]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   const cleanQrSelection = () => setSelectedQrs([]);
 
@@ -408,22 +403,22 @@ const QrPage: FC = () => {
                     {qr.qr_hash}
                   </div>
 
-                  <div className={'col-md-3 elipsis col-xs-12'}>
+                  <div className={'col-md-3 ellipsis col-xs-12 event-name'}>
                     <span className={'visible-sm'}>Event: </span>
                     {(!qr.event || !qr.event.name) && <span>-</span>}
 
                     {qr.event && qr.event.event_url && qr.event.name && (
-                      <a href={qr.event.event_url} target="_blank" rel="noopener noreferrer">
+                      <a href={qr.event.event_url} title={qr.event.name} target="_blank" rel="noopener noreferrer">
                         {qr.event.name}
                       </a>
                     )}
 
                     {qr.event && qr.event.name && !qr.event.event_url && (
-                      <span>{qr.event.name}</span>
+                      <span title={qr.event.name}>{qr.event.name}</span>
                     )}
                   </div>
 
-                  <div className={'col-md-1 col-xs-3 center status'}>
+                  <div className={'col-md-1 col-xs-4 center status'}>
                     <span className={'visible-sm'}>Web3: </span>
                     {qr.delegated_mint &&
                     <>
@@ -432,7 +427,7 @@ const QrPage: FC = () => {
                     }
                   </div>
 
-                  <div className={'col-md-1 col-xs-3 center status'}>
+                  <div className={'col-md-1 col-xs-4 center status'}>
                     <span className={'visible-sm'}>Status: </span>
                     <img
                       src={qr.claimed ? checked : error}
@@ -441,7 +436,7 @@ const QrPage: FC = () => {
                     />
                   </div>
 
-                  <div className={'col-md-1 col-xs-3 center'}>
+                  <div className={'col-md-1 col-xs-4 center'}>
                     <span className={'visible-sm'}>Scanned: </span>
                     <img
                       src={qr.scanned ? checked : error}
@@ -450,7 +445,7 @@ const QrPage: FC = () => {
                     />
                   </div>
 
-                  <div className={'col-md-2 center'}>
+                  <div className={'col-md-2 col-xs-12 center'}>
                     <span className={'visible-sm'}>Tx Hash: </span>
                     <a href={etherscanLinks.tx(qr.tx_hash)} target={'_blank'}>
                       {qr.tx_hash && reduceAddress(qr.tx_hash)}
@@ -458,11 +453,11 @@ const QrPage: FC = () => {
                     {qr.tx_status && <TxStatus status={qr.tx_status}/>}
                   </div>
 
-                  <div className={'col-md-2 center ellipsis'}>
+                  <div className={'col-md-2 col-xs-12 center ellipsis'}>
                     <span className={'visible-sm'}>Beneficiary: </span>
                     {qr.beneficiary &&
-                      <a href={etherscanLinks.address(qr.tx_hash)} target={'_blank'} title={qr.user_input ? qr.user_input : qr.beneficiary}>
-                        {qr.user_input ? qr.user_input : reduceAddress(qr.beneficiary)}
+                      <a href={etherscanLinks.address(qr.beneficiary)} target={'_blank'} title={qr.user_input ? qr.user_input : qr.beneficiary}>
+                        {qr.user_input ? qr.user_input : qr.beneficiary}
                       </a>
                     }
                   </div>
@@ -734,11 +729,11 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
       assignHashList();
     }
     setIsSendingHashList(false);
-  }, [hasIncorrectHashes, isSendingHashList, selectedEvent]);
+  }, [hasIncorrectHashes, isSendingHashList, selectedEvent]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
     if (isListActive) setIsSendingHashList(true);
-  }, [selectedEvent]);
+  }, [selectedEvent]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   const assignHashList = () => {
     if (isListActive) {

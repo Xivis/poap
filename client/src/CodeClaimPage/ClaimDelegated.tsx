@@ -26,6 +26,7 @@ const PAGE_STATUS = {
 
 const NETWORK = process.env.REACT_APP_ETH_NETWORK;
 const CONTRACT_ADDRESS = process.env.REACT_APP_MINT_DELEGATE_CONTRACT;
+const TX_RETRY_LIMIT = 60; // ~3m
 
 /*
  * @dev: Component to show user that transactions is being mined
@@ -39,6 +40,7 @@ const ClaimDelegated: React.FC<{
   const [network, setNetwork] = useState<string | null>(null)
   const [connectStatus, setConnectStatus] = useState<string>(!initialStep ? PAGE_STATUS.LOADING : PAGE_STATUS.DISCONNECTED)
   const [txHash, setTxHash] = useState<string>('')
+  const [txRetry, setTxRetry] = useState<number>(0)
   const [txReceipt, setTxReceipt] = useState<null | TransactionReceipt>(null)
 
   const { addToast } = useToasts()
@@ -51,24 +53,23 @@ const ClaimDelegated: React.FC<{
         if (claim.qr_hash in claims) {
           setTxHash(claims[claim.qr_hash])
         }
+        const _web3 = new Web3(Web3.givenProvider || process.env.REACT_APP_INFURA_PROVIDER)
+        setWeb3(_web3)
       }
     } else {
       claimPoap()
     }
-  }, [])
+  }, []) /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
-    if (txHash && web3 && !txReceipt) {
-      const interval = setInterval(getReceipt, 1000);
-      return () => clearInterval(interval);
+    if (txHash && web3) {
+      const interval = setInterval(() => {
+        verifyClaim()
+        getReceipt()
+      }, 3000);
+      return () => clearInterval(interval)
     }
-
-    // After getting the correct status, check if the user has the token already
-    if (txReceipt && txReceipt.status) {
-      const interval = setInterval(verifyClaim, 3000);
-      return () => clearInterval(interval);
-    }
-  }, [txHash, web3, txReceipt]) /* eslint-disable-line react-hooks/exhaustive-deps */
+  }, [txHash, web3, txReceipt, txRetry]) /* eslint-disable-line react-hooks/exhaustive-deps */
 
   const connectWallet = async () => {
     const providerOptions = {
@@ -117,7 +118,7 @@ const ClaimDelegated: React.FC<{
     const account = accounts[0]
 
     if (NETWORK && network && NETWORK.indexOf(network) === -1) {
-      let message = `Please connect to ${NETWORK}.\nCurrently on ${network}`
+      let message = `Wrong network, please connect to ${NETWORK}.\nCurrently on ${network}`
       addToast(message, {
         appearance: 'error',
         autoDismiss: false,
@@ -162,12 +163,18 @@ const ClaimDelegated: React.FC<{
   };
 
   const getReceipt = async () => {
+    let receipt: null | TransactionReceipt = null
     if (web3 && txHash !== '' && !txReceipt) {
-      let receipt = await web3.eth.getTransactionReceipt(txHash)
+      receipt = await web3.eth.getTransactionReceipt(txHash)
       if (receipt) {
-        setTxReceipt(receipt)
+        setTimeout(() => setTxReceipt(receipt), 3000)
       }
     }
+
+    if(!receipt || !receipt.status || (txReceipt && !txReceipt.status)){
+      setTxRetry(txRetry + 1)
+    }
+
   }
 
   const cleanState = () => {
@@ -207,10 +214,39 @@ const ClaimDelegated: React.FC<{
       }
 
       {txHash &&
-      <TxDetail
-        hash={txHash}
-        receipt={txReceipt}
-      />
+        <TxDetail
+          hash={txHash}
+          receipt={txReceipt}
+        />
+      }
+
+      {txHash && txRetry > TX_RETRY_LIMIT &&
+      (!txReceipt || (txReceipt && txReceipt.status)) &&
+      <>
+        <div className={'text-info'}>
+          <p>We can't verify your transaction. If you cancel it, please try again</p>
+        </div>
+        <Button
+          text={'Try again'}
+          action={cleanState}
+          extraClass={'link-btn'}
+        />
+      </>
+      }
+
+
+      {txReceipt && txReceipt.status &&
+      <>
+        <div className={'text-info'}>
+          <p>Your transaction was mined but we can't verify that the POAP is in your wallet</p>
+          <p>Please, click below to refresh and try again</p>
+        </div>
+        <Button
+          text={'Try again'}
+          action={cleanState}
+          extraClass={'link-btn'}
+        />
+      </>
       }
 
       {txReceipt && !txReceipt.status &&

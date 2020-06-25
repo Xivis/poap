@@ -669,6 +669,7 @@ export default async function routes(fastify: FastifyInstance) {
 
         // update qr_claim to return
         qr_claim.delegated_signed_message = message
+        qr_claim.delegated_mint = true
 
       } else {
         const tx_mint = await mintToken(qr_claim.event.id, parsed_address, false);
@@ -1127,7 +1128,7 @@ export default async function routes(fastify: FastifyInstance) {
         image_url: google_image_url,
         event_host_id: eventHost ? eventHost.id : null,
         from_admin: is_admin,
-        virtual_event: req.body.virtual_event === 'true'
+        virtual_event: req.body.virtual_event
       }
 
       const event = await createEvent(newEvent);
@@ -1160,7 +1161,7 @@ export default async function routes(fastify: FastifyInstance) {
             end_date: { type: 'string' },
             event_url: { type: 'string' },
             image: { type: 'string', format: 'binary' },
-            virtual_event: { type: 'string' }
+            virtual_event: { type: 'boolean' }
           },
         },
         response: {
@@ -1216,7 +1217,7 @@ export default async function routes(fastify: FastifyInstance) {
         start_date: req.body.start_date ? req.body.start_date : event.start_date,
         end_date: req.body.end_date ? req.body.end_date : event.end_date,
         event_url: req.body.event_url,
-        virtual_event: req.body.virtual_event  === 'true',
+        virtual_event: req.body.virtual_event,
         image_url: ((google_image_url === null) ? event.image_url : google_image_url)
       });
       if (!isOk) {

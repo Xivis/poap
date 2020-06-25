@@ -18,19 +18,10 @@ type QRFormValues = {
   address: string;
 };
 
-/*
- * @dev: Form component to get the address and submit mint request
- * Logic behind web3 enabled status
- * We will always try to populate the address field, but as Metamask requires
- * that the user 'connect' their wallet to the site (`ethereum.enable()`),
- * we ask if the user has a web3 instance that is not Metamask or if it's, it should
- * be already logged-in: `if(enabledWeb3 && (!hasMetamask() || isMetamaskLogged()))`
- * If the user has another provider, we will try to get the account at the moment
- * */
 const ClaimForm: React.FC<{
   claim: HashClaim;
   method: string;
-  onSubmit: () => void;
+  onSubmit: (claim: HashClaim) => void;
 }> = ({ claim, onSubmit, method }) => {
   const [enabledWeb3, setEnabledWeb3] = useState<boolean | null>(null);
   const [account, setAccount] = useState<string>('');
@@ -52,13 +43,13 @@ const ClaimForm: React.FC<{
   const handleFormSubmit = async (values: QRFormValues, actions: FormikActions<QRFormValues>) => {
     try {
       actions.setSubmitting(true);
-      await postClaimHash(
+      let newClaim = await postClaimHash(
         claim.qr_hash.toLowerCase(),
         values.address.toLowerCase(),
         claim.secret,
         method
       );
-      onSubmit();
+      onSubmit(newClaim);
     } catch (error) {
       actions.setStatus({
         ok: false,

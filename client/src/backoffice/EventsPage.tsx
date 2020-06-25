@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, ChangeEvent } from 'react';
+import React, { useState, useEffect, useMemo, ChangeEvent, ReactNode } from 'react';
 import { Link, Route, RouteComponentProps, Switch } from 'react-router-dom';
 import classNames from 'classnames';
 import { Formik, Form, Field, ErrorMessage, FieldProps, FormikActions } from 'formik';
@@ -44,7 +44,6 @@ type EventEditValues = {
   event_url: string;
   image?: Blob;
   isFile: boolean;
-  virtual_event: boolean;
 };
 
 type DatePickerDay = 'start_date' | 'end_date';
@@ -74,7 +73,7 @@ type EventTableProps = {
 };
 
 type EventFieldProps = {
-  title: string;
+  title: string | ReactNode;
   name: string;
   placeholder?: string;
   disabled?: boolean;
@@ -144,8 +143,9 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
 
   const initialValues = useMemo(() => {
     if (event) {
+      let {virtual_event, ...eventKeys} = event
       return {
-        ...event,
+        ...eventKeys,
         start_date: event.start_date.replace(dateRegex, '-'),
         end_date: event.end_date.replace(dateRegex, '-'),
         isFile: false
@@ -164,12 +164,11 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
         country: '',
         event_url: '',
         image: new Blob(),
-        isFile: true,
-        virtual_event: false
+        isFile: true
       };
       return values;
     }
-  }, [event]);
+  }, [event]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   const handleFileChange = (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -222,9 +221,9 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
               actions.setErrors({ isFile: 'An image is required' });
             }
 
-            Object.entries(othersKeys).forEach(([key, value]) =>
+            Object.entries(othersKeys).forEach(([key, value]) => {
               formData.append(key, typeof value === 'number' ? String(value) : value)
-            );
+            });
 
             formData.append('virtual_event', String(virtualEvent))
 
@@ -262,14 +261,14 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
             <EventField disabled={false} title="Description" type="textarea" name="description" />
             <CheckboxField title="Virtual Event" name="virtual_event" action={toggleVirtualEvent} checked={virtualEvent} />
             <div className="bk-group">
-              <EventField disabled={false} title="City" name="city" />
-              <EventField disabled={false} title="Country" name="country" />
+              <EventField disabled={false} title={<>City <i>Optional</i></>} name="city" />
+              <EventField disabled={false} title={<>Country <i>Optional</i></>} name="country" />
             </div>
 
             <CheckboxField title="Multi-day event" name="multi_day" action={() => toggleMultiDay(setFieldValue, values.start_date)} checked={multiDay} />
             <div className="bk-group">
               <DayPickerContainer
-                text="Start Date:"
+                text="Start Date"
                 dayToSetup="start_date"
                 handleDayClick={handleDayClick}
                 setFieldValue={setFieldValue}
@@ -286,7 +285,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
                 }
               />
               <DayPickerContainer
-                text="End Date:"
+                text="End Date"
                 dayToSetup="end_date"
                 handleDayClick={handleDayClick}
                 setFieldValue={setFieldValue}
@@ -306,7 +305,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
             <EventField title="Website" name="event_url" />
 
             <ImageContainer
-              text="Image of the POAP:"
+              text="Image of the POAP"
               handleFileChange={handleFileChange}
               setFieldValue={setFieldValue}
               errors={errors}
@@ -376,7 +375,7 @@ const EventField: React.FC<EventFieldProps> = ({ title, name, disabled, type, pl
       name={name}
       render={({ field, form }: FieldProps) => (
         <div className="bk-form-row">
-          <label>{title}:</label>
+          <label>{title}</label>
           {type === 'textarea' && (
             <textarea
               {...field}
@@ -490,7 +489,7 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, create
     setEvents(eventsByCreator);
 
     if (createdBy === 'all') setEvents(initialEvents);
-  }, [createdBy]);
+  }, [createdBy]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
     setEvents(initialEvents.filter(handleCriteriaFilter));
@@ -546,7 +545,7 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, create
     setIdSort(0);
   };
 
-  const nameColumnLength = isAdmin ? 4 : 5;
+  const nameColumnLength = isAdmin ? 6 : 7;
 
   return (
     <div>
@@ -561,7 +560,6 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, create
             {nameSort !== 0 && <img className={'img-sort'} src={nameSort > 0 ? sort_up : sort_down} alt={'sort'} />}
           </div>
           <div className={'col-md-2 center'}>Start Date</div>
-          <div className={'col-md-2 center'}>End Date</div>
           <div className={'col-md-2 center'}>Image</div>
           {isAdmin && <div className={'col-md-1 center'}>Edit</div>}
         </div>
@@ -572,19 +570,15 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, create
                 <span className={'visible-sm visible-md'}>#</span>
                 {event.id}
               </div>
-              <div className={`col-md-${nameColumnLength}`}>
-                <span className={'visible-sm'}>Name of the POAP: </span>
-                <a href={event.event_url} target="_blank" rel="noopener noreferrer">
+              <div className={`col-md-${nameColumnLength} ellipsis`}>
+                <span className={'visible-sm'}>Name of the POAP: <br/></span>
+                <a href={event.event_url} title={event.name} target="_blank" rel="noopener noreferrer">
                   {event.name}
                 </a>
               </div>
               <div className={'col-md-2 center'}>
                 <span className={'visible-sm'}>Start date: </span>
                 <span>{event.start_date}</span>
-              </div>
-              <div className={'col-md-2 center'}>
-                <span className={'visible-sm'}>End date: </span>
-                <span>{event.end_date}</span>
               </div>
               <div className={'col-md-2 center logo-image-container'}>
                 <img alt={event.image_url} className={'logo-image'} src={event.image_url} />

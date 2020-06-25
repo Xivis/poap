@@ -63,6 +63,12 @@
     margin-bottom: 10px;
     display: block;
     color: $color-primary;
+
+    i {
+      font-size: 0.8rem;
+      color: $color-grey;
+    }
+
   }
 
   .bk-form-row:nth-of-type(1),
@@ -206,7 +212,7 @@
 
 .admin-table {
   .row {
-    padding: 15px;
+    padding: 10px 5px;
 
     &.table-header {
       font-weight: bold;
@@ -250,6 +256,7 @@
           position: absolute;
           bottom: 15px;
           right: 25px;
+          z-index: 10;
         }
       }
 
