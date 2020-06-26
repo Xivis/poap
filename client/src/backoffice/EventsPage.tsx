@@ -30,7 +30,7 @@ import sort_up from '../images/sort-up.png';
 /* Helpers */
 import { useAsync } from '../react-helpers';
 import { PoapEventSchema } from '../lib/schemas';
-import { PoapEvent, getEvent, getEvents, updateEvent, createEvent } from '../api';
+import { PoapFullEvent, PoapEvent, getEvent, getEvents, updateEvent, createEvent } from '../api';
 
 type EventEditValues = {
   name: string;
@@ -44,6 +44,7 @@ type EventEditValues = {
   event_url: string;
   image?: Blob;
   isFile: boolean;
+  secret_code: string;
 };
 
 type DatePickerDay = 'start_date' | 'end_date';
@@ -125,7 +126,7 @@ export const EditEventForm: React.FC<RouteComponentProps<{
   return <EventForm event={event} />;
 };
 
-const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, event }) => {
+const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ create, event }) => {
   const [virtualEvent, setVirtualEvent] =  useState<boolean>(event ? event.virtual_event : false);
   const [multiDay, setMultiDay] =  useState<boolean>(event ? event.start_date !== event.end_date : false);
   const history = useHistory();
@@ -143,12 +144,13 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
 
   const initialValues = useMemo(() => {
     if (event) {
-      let {virtual_event, ...eventKeys} = event
+      let {virtual_event, secret_code, ...eventKeys} = event
       return {
         ...eventKeys,
         start_date: event.start_date.replace(dateRegex, '-'),
         end_date: event.end_date.replace(dateRegex, '-'),
-        isFile: false
+        isFile: false,
+        secret_code: secret_code ? secret_code.toString().padStart(6, '0') : ''
       };
     } else {
       const now = new Date();
@@ -164,7 +166,8 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
         country: '',
         event_url: '',
         image: new Blob(),
-        isFile: true
+        isFile: true,
+        secret_code: Math.floor(Math.random()*999999).toString().padStart(6, '0')
       };
       return values;
     }
@@ -199,6 +202,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
   }
 
   const day = 60 * 60 * 24 * 1000;
+  const attention = <span role={'img'}>⚠️</span>
 
   return (
     <div className={'bk-container'}>
@@ -304,17 +308,35 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapEvent }> = ({ create, 
             </div>
             <EventField title="Website" name="event_url" />
 
-            <ImageContainer
-              text="Image of the POAP"
-              handleFileChange={handleFileChange}
-              setFieldValue={setFieldValue}
-              errors={errors}
-            />
-            {event && typeof event.image_url === 'string' && (
+            <div className="bk-group">
+              <ImageContainer
+                text="Image of the POAP"
+                handleFileChange={handleFileChange}
+                setFieldValue={setFieldValue}
+                errors={errors}
+              />
+              <div>
+                <EventField disabled={false} title={<b>Edit Code</b>} name="secret_code" />
+              </div>
+            </div>
+            {event && event.image_url && (
               <div className={'image-edit-container'}>
                 <img alt={event.image_url} className={'image-edit'} src={event.image_url} />
               </div>
             )}
+            <div>
+              <div className={"disclaimer"}>
+                <div className={"title"}>
+                  {attention} Attention {attention}
+                </div>
+                <p>
+                  {create ?
+                    <>Please before submitting, be sure to save the 6 digit <b>Edit Code</b> to make any further updates</> :
+                    <>To update this event, be sure to complete the 6 digit <b>Edit Code</b> that was originally used</>
+                  }
+                </p>
+              </div>
+            </div>
             <SubmitButton text="Save" isSubmitting={isSubmitting} canSubmit={true} />
           </Form>
         )}
@@ -358,6 +380,7 @@ const ImageContainer = ({ text, handleFileChange, setFieldValue, errors }: Image
       className={classNames(Boolean(errors.image) && 'error')}
       onChange={(e: ChangeEvent<HTMLInputElement>) => handleFileChange(e, setFieldValue)}
     />
+    <ErrorMessage name="image" component="p" className="bk-error" />
     <div className="input-field-helper">
       Badge specs:
       <ul>
@@ -365,7 +388,6 @@ const ImageContainer = ({ text, handleFileChange, setFieldValue, errors }: Image
         <li>Recommended: measures 500x500px, round shape, size less than 200KB</li>
       </ul>
     </div>
-    <ErrorMessage name="image" component="p" className="bk-error" />
   </div>
 );
 
@@ -545,8 +567,6 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, create
     setIdSort(0);
   };
 
-  const nameColumnLength = isAdmin ? 6 : 7;
-
   return (
     <div>
       <div className={'admin-table transactions'}>
@@ -555,7 +575,7 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, create
             #
             {idSort !== 0 && <img className={'img-sort'} src={idSort > 0 ? sort_up : sort_down} alt={'sort'} />}
           </div>
-          <div className={`col-md-${nameColumnLength} pointer`} onClick={handleNameSort}>
+          <div className={`col-md-6 pointer`} onClick={handleNameSort}>
             Name of the POAP
             {nameSort !== 0 && <img className={'img-sort'} src={nameSort > 0 ? sort_up : sort_down} alt={'sort'} />}
           </div>
@@ -570,7 +590,7 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, create
                 <span className={'visible-sm visible-md'}>#</span>
                 {event.id}
               </div>
-              <div className={`col-md-${nameColumnLength} ellipsis`}>
+              <div className={`col-md-6 ellipsis`}>
                 <span className={'visible-sm'}>Name of the POAP: <br/></span>
                 <a href={event.event_url} title={event.name} target="_blank" rel="noopener noreferrer">
                   {event.name}
@@ -583,13 +603,11 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, create
               <div className={'col-md-2 center logo-image-container'}>
                 <img alt={event.image_url} className={'logo-image'} src={event.image_url} />
               </div>
-              {isAdmin && (
-                <div className={'col-md-1 center event-edit-icon-container'}>
-                  <Link to={`/admin/events/${event.fancy_id}`}>
-                    <EditIcon />
-                  </Link>
-                </div>
-              )}
+              <div className={'col-md-1 center event-edit-icon-container'}>
+                <Link to={`/admin/events/${event.fancy_id}`}>
+                  <EditIcon />
+                </Link>
+              </div>
             </div>
           ))}
         </div>

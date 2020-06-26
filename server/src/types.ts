@@ -56,6 +56,10 @@ export interface PoapEvent {
   supply?: number;
 }
 
+export interface PoapFullEvent extends PoapEvent{
+  secret_code: number
+}
+
 export interface PoapSetting {
   id: number;
   name: string;

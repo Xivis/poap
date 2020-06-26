@@ -15,7 +15,18 @@ CREATE TABLE events (
   "event_host_id" integer,
   "from_admin" boolean default false,
   "virtual_event" boolean default false,
-  "created_date" timestamp with time zone not null default now()
+  "created_date" timestamp with time zone not null default now(),
+  "secret_code" integer
+);
+
+CREATE TABLE events_history (
+    "id" SERIAL PRIMARY KEY,
+    "event_id" INTEGER NOT NULL REFERENCES events (id),
+    "field" VARCHAR(100) NOT NULL,
+    "old_value" VARCHAR,
+    "new_value" VARCHAR,
+    "from_admin" BOOLEAN DEFAULT FALSE,
+    "created_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
 CREATE TABLE signers (

@@ -1,6 +1,17 @@
 .app-content {
   &.backoffice {
     padding-bottom: 200px;
+
+    .disclaimer {
+      text-align: center;
+      padding: 20px 0;
+      .title {
+        font-size: 2rem;
+        line-height: 5rem;
+        font-weight: bold;
+      }
+    }
+
   }
 }
 
@@ -30,10 +41,6 @@
 .bk-container {
   margin: auto;
 }
-
-// .bk-field-detail {
-//   padding: 5px 10px;
-// }
 
 .bk-form-row {
   width: 100%;

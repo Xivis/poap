@@ -31,6 +31,9 @@ export interface PoapEvent {
   end_date: string;
   virtual_event: boolean;
 }
+export interface PoapFullEvent extends PoapEvent{
+  secret_code?: number;
+}
 export interface Claim extends ClaimProof {
   claimerSignature: string;
 }
@@ -216,8 +219,11 @@ export async function getEvents(): Promise<PoapEvent[]> {
     : fetchJson(`${API_BASE}/events`);
 }
 
-export async function getEvent(fancyId: string): Promise<null | PoapEvent> {
-  return fetchJson(`${API_BASE}/events/${fancyId}`);
+export async function getEvent(fancyId: string): Promise<null | PoapFullEvent> {
+  const isAdmin = authClient.isAuthenticated();
+  return isAdmin
+    ? secureFetch(`${API_BASE}/events-admin/${fancyId}`)
+    : fetchJson(`${API_BASE}/events/${fancyId}`);
 }
 
 export async function getSetting(settingName: string): Promise<null | PoapSetting> {
@@ -338,11 +344,12 @@ export async function mintUserToManyEvents(
   });
 }
 
-export async function updateEvent(event: FormData, fancyId: string) {
-  return secureFetchNoResponse(`${API_BASE}/events/${fancyId}`, {
-    method: 'PUT',
-    body: event,
-  });
+export async function updateEvent(event: FormData, fancyId: string): Promise<void> {
+  const isAdmin = authClient.isAuthenticated();
+
+  return isAdmin
+    ? secureFetchNoResponse(`${API_BASE}/events/${fancyId}`, { method: 'PUT', body: event })
+    : fetchJsonNoResponse(`${API_BASE}/events/${fancyId}`, { method: 'PUT', body: event });
 }
 
 export async function createEvent(event: FormData) {

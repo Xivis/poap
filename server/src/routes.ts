@@ -4,9 +4,11 @@ import createError from 'http-errors';
 import {
   getEvent,
   getEventByFancyId,
+  getFullEventByFancyId,
   getEvents,
   updateEvent,
   createEvent,
+  saveEventUpdate,
   getPoapSettingByName,
   getPoapSettings,
   updatePoapSettingByName,
@@ -65,8 +67,8 @@ import {
 } from './eth/helpers';
 
 import {
-  Omit, Claim, PoapEvent, TransactionStatus, Address, NotificationType, Notification, ClaimQR, UserRole, TokenInfo,
-  // qrRoll,
+  Omit, Claim, PoapEvent, PoapFullEvent, TransactionStatus, Address,
+  NotificationType, Notification, ClaimQR, UserRole, TokenInfo
 } from './types';
 import { TypedValue } from 'eth-crypto';
 import crypto from 'crypto';
@@ -1002,6 +1004,54 @@ export default async function routes(fastify: FastifyInstance) {
     }
   );
 
+  fastify.get(
+    '/events-admin/:fancyid',
+    {
+      preValidation: [fastify.authenticate, fastify.isAdmin],
+      schema: {
+        description: 'Endpoint to get an specific event for admins',
+        tags: ['Events',],
+        params: {
+          fancyid: { type: 'string' },
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              id: { type: 'number' },
+              fancy_id: { type: 'string' },
+              name: { type: 'string' },
+              event_url: { type: 'string' },
+              image_url: { type: 'string' },
+              country: { type: 'string' },
+              city: { type: 'string' },
+              description: { type: 'string' },
+              year: { type: 'number' },
+              start_date: { type: 'string' },
+              end_date: { type: 'string' },
+              created_date: { type: 'string' },
+              from_admin: { type: 'boolean' },
+              virtual_event: { type: 'boolean' },
+              secret_code: { type: 'number' }
+            },
+          }
+        },
+        security: [
+          {
+            "authorization": []
+          }
+        ]
+      },
+    },
+    async (req, res) => {
+      const event = await getFullEventByFancyId(req.params.fancyid);
+      if (!event) {
+        return new createError.NotFound('Invalid Event');
+      }
+      return event;
+    }
+  );
+
   async function validate_file(req: any) {
     const image = { ...req.body.image };
     req.body.image = '@image';
@@ -1026,7 +1076,8 @@ export default async function routes(fastify: FastifyInstance) {
             'end_date',
             'year',
             'event_url',
-            'image'
+            'image',
+            'secret_code'
           ],
           properties: {
             name: { type: 'string' },
@@ -1039,6 +1090,7 @@ export default async function routes(fastify: FastifyInstance) {
             event_url: { type: 'string' },
             virtual_event: { type: 'boolean' },
             image: { type: 'string', format: 'binary' },
+            secret_code: { type: 'string' },
           },
         },
         response: {
@@ -1071,7 +1123,7 @@ export default async function routes(fastify: FastifyInstance) {
     },
     async (req: any, res) => {
 
-      const unidecoded_slug = unidecode(req.body.name)
+      const slugCode = unidecode(req.body.name)
         .replace(/^\s+|\s+$/g, "") // trim
         .toLowerCase()
         .replace(/[^a-z0-9 -]/g, "") // remove invalid chars
@@ -1080,7 +1132,7 @@ export default async function routes(fastify: FastifyInstance) {
         .replace(/^-+/, "") // trim - from start of text
         .replace(/-+$/, "");
 
-      const parsed_fancy_id = unidecoded_slug + '-' + req.body.year;
+      const parsed_fancy_id = slugCode + '-' + req.body.year;
 
       let eventHost = null;
       let is_admin: boolean = false;
@@ -1115,7 +1167,7 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.InternalServerError('Error uploading image');
       }
 
-      let newEvent: Omit<PoapEvent, 'id'> = {
+      let newEvent: Omit<PoapFullEvent, 'id'> = {
         fancy_id: parsed_fancy_id,
         name: req.body.name,
         description: req.body.description,
@@ -1128,7 +1180,8 @@ export default async function routes(fastify: FastifyInstance) {
         image_url: google_image_url,
         event_host_id: eventHost ? eventHost.id : null,
         from_admin: is_admin,
-        virtual_event: req.body.virtual_event
+        virtual_event: req.body.virtual_event,
+        secret_code: req.body.secret_code
       }
 
       const event = await createEvent(newEvent);
@@ -1142,7 +1195,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.put(
     '/events/:fancyid',
     {
-      preValidation: [fastify.authenticate, fastify.isAdmin, validate_file],
+      preValidation: [fastify.optionalAuthenticate, validate_file],
       schema: {
         description: 'Endpoint to modify several attributes of selected event',
         tags: ['Events',],
@@ -1151,7 +1204,18 @@ export default async function routes(fastify: FastifyInstance) {
         },
         body: {
           type: 'object',
-          required: ['event_url',],
+          required: [
+            'name',
+            'description',
+            'city',
+            'country',
+            'start_date',
+            'end_date',
+            'year',
+            'event_url',
+            'image',
+            'secret_code'
+          ],
           properties: {
             name: { type: 'string' },
             description: { type: 'string' },
@@ -1175,24 +1239,26 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req: any, res) => {
-      const user_id = req.user.sub;
+      let isAdmin: boolean = false;
+      let secretCode: number = parseInt(req.body.secret_code)
+
+      if (req.user && req.user.hasOwnProperty('sub')) {
+        if (getUserRoles(req.user).indexOf(UserRole.administrator) != -1) {
+          isAdmin = true
+        }
+      }
+
 
       // Check if event exists
-      const event = await getEventByFancyId(req.params.fancyid);
+      const event = await getFullEventByFancyId(req.params.fancyid);
       if (!event) {
         return new createError.NotFound('Invalid Event');
       }
 
-      // Check if user is host
-      if (getUserRoles(req.user).indexOf(UserRole.administrator) === -1) {
-        const eventHost = await getEventHost(user_id);
-        if (!eventHost) {
-          return new createError.NotFound('You are not registered as an event host');
-        }
-
-        // Check if user is editing owned event
-        if (event.event_host_id !== eventHost.id) {
-          return new createError.BadRequest('You can not edit an event that was created by another user');
+      if (!isAdmin) {
+        if (event.secret_code !== secretCode) {
+          await sleep(3000)
+          return new createError.InternalServerError('Incorrect Edit Code');
         }
       }
 
@@ -1210,19 +1276,34 @@ export default async function routes(fastify: FastifyInstance) {
       }
 
       const isOk = await updateEvent(req.params.fancyid, {
-        name: req.body.name ? req.body.name : event.name,
-        description: req.body.description ? req.body.description : event.description,
-        city: req.body.city ? req.body.city : event.city,
-        country: req.body.country ? req.body.country : event.country,
-        start_date: req.body.start_date ? req.body.start_date : event.start_date,
-        end_date: req.body.end_date ? req.body.end_date : event.end_date,
+        name: req.body.name,
+        description: req.body.description,
+        city: req.body.city,
+        country: req.body.country,
+        start_date: req.body.start_date,
+        end_date: req.body.end_date,
         event_url: req.body.event_url,
         virtual_event: req.body.virtual_event,
-        image_url: ((google_image_url === null) ? event.image_url : google_image_url)
+        image_url: ((google_image_url === null) ? event.image_url : google_image_url),
+        secret_code: secretCode
       });
       if (!isOk) {
         return new createError.NotFound('Invalid event');
       }
+
+      const updatedEvent = await getFullEventByFancyId(req.params.fancyid);
+      if (updatedEvent) {
+        let initialEvent = JSON.parse(JSON.stringify(event))
+        let editedEvent = JSON.parse(JSON.stringify(updatedEvent))
+        let keys = Object.keys(initialEvent)
+        for (const key of keys) {
+          if (initialEvent[key] !== editedEvent[key]) {
+            await saveEventUpdate(event.id, key, editedEvent[key], initialEvent[key], isAdmin)
+            console.log('Updated: ', key)
+          }
+        }
+      }
+
       res.status(204);
       return;
     }
