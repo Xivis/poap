@@ -1,6 +1,7 @@
 import { Contract, ContractTransaction, Wallet, getDefaultProvider, utils } from 'ethers';
 import { verifyMessage } from 'ethers/utils';
 import { hash, sign, TypedValue } from 'eth-crypto';
+import { differenceInDays, isFuture } from 'date-fns';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import pino from 'pino';
@@ -341,15 +342,13 @@ export async function getAllTokens(address: Address): Promise<TokenInfo[]> {
     });
   }
 
-  const sortedTokens = tokens.sort((a:any, b:any) => {
+  return tokens.sort((a:any, b:any) => {
     try{
       return new Date(b.event.start_date) > new Date(a.event.start_date) ? 1 : -1
     } catch (e) {
       return -1
     }
   })
-
-  return sortedTokens;
 }
 
 export async function getAllEventIds(address: Address): Promise<number[]> {
@@ -466,4 +465,13 @@ export function signMessage(privateKey: string, params: TypedValue[]): string {
   // params = [ {type: "uint256", value: value}, ];
   const message = hash.keccak256(params);
   return sign(privateKey, message);
+}
+
+export function isEventEditable(eventDate: string): boolean {
+  try {
+    const _eventDate = new Date(eventDate)
+    return isFuture(_eventDate) || differenceInDays(new Date(), _eventDate) < 30
+  } catch (e) {
+    return false
+  }
 }

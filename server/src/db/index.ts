@@ -14,7 +14,7 @@ const publicEventColumns = 'id, fancy_id, name, description, city, country, even
   'end_date, event_host_id, from_admin, virtual_event'
 
 function formatDate(dbDate: string): string {
-  return format(new Date(dbDate), 'MM/DD/YYYY');;
+  return format(new Date(dbDate), 'DD-MMM-YYYY');
 }
 
 export async function getEvents(): Promise<PoapEvent[]> {

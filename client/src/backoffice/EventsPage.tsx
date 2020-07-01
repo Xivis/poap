@@ -12,6 +12,7 @@ import { authClient } from '../auth';
 
 // libraries
 import ReactPaginate from 'react-paginate';
+import { Tooltip } from 'react-lightweight-tooltip';
 
 /* Components */
 import { SubmitButton } from '../components/SubmitButton';
@@ -24,8 +25,9 @@ import { ROUTES } from '../lib/constants';
 
 // assets
 import { ReactComponent as EditIcon } from '../images/edit.svg';
-import sort_down from '../images/sort-down.png';
-import sort_up from '../images/sort-up.png';
+import sortDown from '../images/sort-down.png';
+import sortUp from '../images/sort-up.png';
+import infoButton from '../images/info-button.svg';
 
 /* Helpers */
 import { useAsync } from '../react-helpers';
@@ -201,8 +203,19 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
     }
   }
 
-  const day = 60 * 60 * 24 * 1000;
-  const attention = <span role={'img'}>⚠️</span>
+  const day = 60 * 60 * 24 * 1000
+
+  const warning = <div className={"backoffice-tooltip"}> { create ?
+    <>Be sure to save the 6 digit <b>Edit Code</b> to make any further updates</> :
+    <>Be sure to complete the 6 digit <b>Edit Code</b> that was originally used</>
+  }</div>
+
+  const editLabel = <>
+    <b>Edit Code</b>
+    <Tooltip content={warning}>
+      <img src={infoButton} className={'info-button'} />
+    </Tooltip>
+  </>
 
   return (
     <div className={'bk-container'}>
@@ -316,7 +329,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
                 errors={errors}
               />
               <div>
-                <EventField disabled={false} title={<b>Edit Code</b>} name="secret_code" />
+                <EventField disabled={false} title={editLabel} name="secret_code" />
               </div>
             </div>
             {event && event.image_url && (
@@ -324,19 +337,6 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
                 <img alt={event.image_url} className={'image-edit'} src={event.image_url} />
               </div>
             )}
-            <div>
-              <div className={"disclaimer"}>
-                <div className={"title"}>
-                  {attention} Attention {attention}
-                </div>
-                <p>
-                  {create ?
-                    <>Please before submitting, be sure to save the 6 digit <b>Edit Code</b> to make any further updates</> :
-                    <>To update this event, be sure to complete the 6 digit <b>Edit Code</b> that was originally used</>
-                  }
-                </p>
-              </div>
-            </div>
             <SubmitButton text="Save" isSubmitting={isSubmitting} canSubmit={true} />
           </Form>
         )}
@@ -573,11 +573,11 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, create
         <div className={'row table-header visible-md'}>
           <div className={'col-md-1 center pointer'} onClick={handleIdSort}>
             #
-            {idSort !== 0 && <img className={'img-sort'} src={idSort > 0 ? sort_up : sort_down} alt={'sort'} />}
+            {idSort !== 0 && <img className={'img-sort'} src={idSort > 0 ? sortUp : sortDown} alt={'sort'} />}
           </div>
           <div className={`col-md-6 pointer`} onClick={handleNameSort}>
             Name of the POAP
-            {nameSort !== 0 && <img className={'img-sort'} src={nameSort > 0 ? sort_up : sort_down} alt={'sort'} />}
+            {nameSort !== 0 && <img className={'img-sort'} src={nameSort > 0 ? sortUp : sortDown} alt={'sort'} />}
           </div>
           <div className={'col-md-2 center'}>Start Date</div>
           <div className={'col-md-2 center'}>Image</div>
@@ -601,7 +601,15 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, create
                 <span>{event.start_date}</span>
               </div>
               <div className={'col-md-2 center logo-image-container'}>
-                <img alt={event.image_url} className={'logo-image'} src={event.image_url} />
+                <Tooltip content={
+                  [
+                    <div className={'event-table-tooltip'}>
+                      <img alt={event.image_url} src={event.image_url} className={'tooltipped'} />
+                    </div>
+                  ]
+                }>
+                  <img alt={event.image_url} className={'logo-image'} src={event.image_url} />
+                </Tooltip>
               </div>
               <div className={'col-md-1 center event-edit-icon-container'}>
                 <Link to={`/admin/events/${event.fancy_id}`}>

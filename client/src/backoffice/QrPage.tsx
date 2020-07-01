@@ -522,7 +522,7 @@ const CreationModal: React.FC<CreationModalProps> = ({
     const qrHashesFormatted = hashes
       .trim()
       .split('\n')
-      .map(hash => hash.trim())
+      .map(hash => hash.trim().toLowerCase())
       .filter(hash => {
         if (!hash.match(hashRegex) && hash !== '') _incorrectQrHashes.push(hash);
 
@@ -796,7 +796,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
     const _hashesList = hashesList
       .trim()
       .split('\n')
-      .map(hash => hash.trim())
+      .map(hash => hash.trim().toLowerCase())
       .filter(hash => {
         if (!hash.match(hashRegex)) _incorrectQrHashes.push(hash);
 

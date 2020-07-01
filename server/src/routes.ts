@@ -63,7 +63,8 @@ import {
   checkAddress,
   getTokenImg,
   getAllEventIds,
-  signMessage
+  signMessage,
+  isEventEditable
 } from './eth/helpers';
 
 import {
@@ -1259,6 +1260,10 @@ export default async function routes(fastify: FastifyInstance) {
         if (event.secret_code !== secretCode) {
           await sleep(3000)
           return new createError.InternalServerError('Incorrect Edit Code');
+        }
+        if (!isEventEditable(event.start_date)) {
+          await sleep(3000)
+          return new createError.InternalServerError('Event is not editable');
         }
       }
 
