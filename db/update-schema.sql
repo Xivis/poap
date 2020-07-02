@@ -138,7 +138,7 @@ ALTER TABLE qr_claims ADD user_input VARCHAR(256);
 ALTER TABLE events ADD secret_code INTEGER;
 UPDATE events SET secret_code = floor(100000 + random() * 899999);
 
-CREATE TABLE events_history {
+CREATE TABLE events_history (
     "id" SERIAL PRIMARY KEY,
     "event_id" INTEGER NOT NULL REFERENCES events (id),
     "field" VARCHAR(100) NOT NULL,
@@ -146,4 +146,4 @@ CREATE TABLE events_history {
     "new_value" VARCHAR,
     "from_admin" BOOLEAN DEFAULT FALSE,
     "created_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
-};
+);

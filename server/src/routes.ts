@@ -692,7 +692,7 @@ export default async function routes(fastify: FastifyInstance) {
 
       qr_claim.beneficiary = parsed_address
       qr_claim.tx_status = null
-      qr_claim.user_input = req.body.addres
+      qr_claim.user_input = req.body.address
 
       if (qr_claim.tx_hash) {
         const transaction_status = await getTransaction(qr_claim.tx_hash);
