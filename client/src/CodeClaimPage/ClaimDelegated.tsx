@@ -9,6 +9,7 @@ import { useToasts } from 'react-toast-notifications'
 
 /* Helpers */
 import { HashClaim } from '../api'
+import { reduceAddress } from '../lib/helpers'
 
 /* Components */
 import { Button } from '../components/Button'
@@ -26,7 +27,7 @@ const PAGE_STATUS = {
 
 const NETWORK = process.env.REACT_APP_ETH_NETWORK;
 const CONTRACT_ADDRESS = process.env.REACT_APP_MINT_DELEGATE_CONTRACT;
-const TX_RETRY_LIMIT = 60; // ~3m
+const TX_RETRY_LIMIT = 100; // ~5m
 
 /*
  * @dev: Component to show user that transactions is being mined
@@ -185,11 +186,16 @@ const ClaimDelegated: React.FC<{
 
   const fadeEffect = initialStep ? 'fade-up' : '';
 
+  let beneficiary = claim.beneficiary
+  if (claim.user_input) {
+    beneficiary = `${claim.user_input} (${reduceAddress(claim.beneficiary)})`
+  }
+
   return (
     <div className={'container claim-info claim-delegated'} data-aos={fadeEffect} data-aos-delay="300">
       <form className={'claim-form'}>
 
-        <input type={'text'} disabled={true} value={claim.user_input ? claim.user_input : claim.beneficiary} />
+        <input type={'text'} disabled={true} value={beneficiary} />
 
         <div className={'web3-browser'}>
           This POAP hasn’t been claimed. <a href={"mailto:hello@poap.xyz"}>Need help?</a>
