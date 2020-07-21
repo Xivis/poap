@@ -32,6 +32,7 @@ const ROUTES = {
   token: '/token/:tokenId',
   callback: '/callback',
   signerClaimPage: '/signer/claim/:event',
+  codeClaimWeb3PageHash: '/claim/:hash/:method',
   codeClaimPageHash: '/claim/:hash',
   codeClaimPage: '/claim',
   admin: '/admin',
@@ -116,9 +117,10 @@ const TX_STATUS = {
   bumped: 'bumped',
 };
 
+const prefix = process.env.REACT_APP_ETH_NETWORK === 'mainnet' ? '' : `${process.env.REACT_APP_ETH_NETWORK}.`
 const etherscanLinks = {
-  tx: (hash: string): string => `https://etherscan.io/tx/${hash}`,
-  address: (address: string): string => `https://etherscan.io/address/${address}`,
+  tx: (hash: string): string => `https://${prefix}etherscan.io/tx/${hash}`,
+  address: (address: string): string => `https://${prefix}etherscan.io/address/${address}`,
 };
 
 export { ROLES, ROUTES, TX_STATUS, etherscanLinks, LABELS, IMAGE_SUPPORTED_FORMATS };

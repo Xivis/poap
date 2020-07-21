@@ -28,7 +28,7 @@ const fileSchema = yup
   );
 
 const PoapEventSchema = yup.object().shape({
-  name: yup.string().required(),
+  name: yup.string().required('A unique name is required'),
   year: yup
     .number()
     .required()
@@ -36,8 +36,8 @@ const PoapEventSchema = yup.object().shape({
     .max(new Date().getFullYear() + 1),
   id: yup.number(),
   description: yup.string(),
-  start_date: yup.string(),
-  end_date: yup.string(),
+  start_date: yup.string().required('The start date is required'),
+  end_date: yup.string().required('The end date is required'),
   city: yup.string(),
   country: yup.string(),
   event_url: yup.string().url(),
@@ -46,6 +46,8 @@ const PoapEventSchema = yup.object().shape({
     then: fileSchema,
     otherwise: yup.string(),
   }),
+  secret_code: yup.string().required('The secret code is required')
+    .matches(/^[0-9]{6}$/, 'Must be exactly 6 digits')
 });
 
 const IssueForEventFormValueSchema = yup.object().shape({

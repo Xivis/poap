@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@walletconnect/web3-provider": "1.0.11",
     "aos": "^2.3.4",
     "auth0-js": "^9.11.2",
     "classnames": "^2.2.6",
@@ -17,6 +18,7 @@
     "react-burger-menu": "^2.6.10",
     "react-day-picker": "^7.4.0",
     "react-dom": "^16.8.6",
+    "react-lightweight-tooltip": "^1.0.0",
     "react-modal": "^3.10.1",
     "react-paginate": "^6.3.0",
     "react-router-dom": "^5.1.2",
@@ -25,6 +27,8 @@
     "react-share": "^3.0.0",
     "react-toast-notifications": "^2.4.0",
     "typescript": "3.7.4",
+    "web3": "^1.2.8",
+    "web3modal": "1.6.3",
     "yup": "^0.27.0"
   },
   "scripts": {
@@ -66,6 +70,7 @@
     "@types/react-select": "^3.0.12",
     "@types/react-share": "^2.1.1",
     "@types/react-toast-notifications": "^2.0.0",
+    "@types/web3": "^1.2.2",
     "@types/yup": "^0.26.22"
   }
 }

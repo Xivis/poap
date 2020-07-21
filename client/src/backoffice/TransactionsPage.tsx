@@ -17,7 +17,6 @@ import { SubmitButton } from '../components/SubmitButton';
 import { TxStatus } from '../components/TxStatus';
 /* Assets */
 import gas from '../images/gas-station.svg';
-import error from '../images/error.svg';
 import FilterChip from '../components/FilterChip';
 import FilterSelect from '../components/FilterSelect';
 
@@ -50,7 +49,7 @@ const TransactionsPage: FC = () => {
         setSigners(data);
       })
     }
-  }, []);
+  }, []); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
     fetchTransactions();
@@ -59,7 +58,7 @@ const TransactionsPage: FC = () => {
   useEffect(() => {
     setPage(0);
     fetchTransactions();
-  }, [statusList, signerFilter, limit]);
+  }, [statusList, signerFilter, limit]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   const fetchTransactions = () => {
     setIsFetchingTx(true);

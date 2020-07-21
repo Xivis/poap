@@ -94,6 +94,7 @@ type CreationModalProps = {
 type CreationModalFormikValues = {
   ids: string;
   hashes: string;
+  delegated_mint: boolean;
   event: string;
 };
 
@@ -131,15 +132,15 @@ const QrPage: FC = () => {
   }, []); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
-    if (passphrase) fetchQrCodes();
-  }, [passphrase]);
+    if (passphrase) fetchQrCodes()
+  }, [passphrase]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
     if (!initialFetch) {
       fetchQrCodes()
       setCheckedAllQrs(false)
     }
-  }, [page]);
+  }, [page]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
     if (!initialFetch) {
@@ -148,12 +149,7 @@ const QrPage: FC = () => {
       fetchQrCodes()
       setCheckedAllQrs(false)
     }
-  }, [
-    selectedEvent,
-    claimStatus,
-    claimScanned,
-    limit
-  ]); /* eslint-disable-line react-hooks/exhaustive-deps */
+  }, [selectedEvent, claimStatus, claimScanned, limit ]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   const cleanQrSelection = () => setSelectedQrs([]);
 
@@ -378,11 +374,13 @@ const QrPage: FC = () => {
                 />
               ) : "-"}
             </div>
-            <div className={'col-md-2'}>QR Hash</div>
-            <div className={'col-md-4'}>Event</div>
-            <div className={'col-md-1 center'}>Status</div>
+            <div className={'col-md-1'}>QR</div>
+            <div className={'col-md-3'}>Event</div>
+            <div className={'col-md-1 center'}>Web3</div>
+            <div className={'col-md-1 center'}>Claimed</div>
             <div className={'col-md-1 center'}>Scanned</div>
-            <div className={'col-md-3 center'}>Tx Hash</div>
+            <div className={'col-md-2 center'}>Transaction</div>
+            <div className={'col-md-2 center'}>Beneficiary</div>
           </div>
           <div className={'admin-table-row qr-table'}>
             {qrCodes.map((qr, i) => {
@@ -400,27 +398,36 @@ const QrPage: FC = () => {
                     )}
                   </div>
 
-                  <div className={'col-md-2'}>
+                  <div className={'col-md-1 col-xs-12'}>
                     <span className={'visible-sm'}>QR Hash: </span>
                     {qr.qr_hash}
                   </div>
 
-                  <div className={'col-md-4 elipsis'}>
+                  <div className={'col-md-3 ellipsis col-xs-12 event-name'}>
                     <span className={'visible-sm'}>Event: </span>
                     {(!qr.event || !qr.event.name) && <span>-</span>}
 
                     {qr.event && qr.event.event_url && qr.event.name && (
-                      <a href={qr.event.event_url} target="_blank" rel="noopener noreferrer">
+                      <a href={qr.event.event_url} title={qr.event.name} target="_blank" rel="noopener noreferrer">
                         {qr.event.name}
                       </a>
                     )}
 
                     {qr.event && qr.event.name && !qr.event.event_url && (
-                      <span>{qr.event.name}</span>
+                      <span title={qr.event.name}>{qr.event.name}</span>
                     )}
                   </div>
 
-                  <div className={'col-md-1 center status'}>
+                  <div className={'col-md-1 col-xs-4 center status'}>
+                    <span className={'visible-sm'}>Web3: </span>
+                    {qr.delegated_mint &&
+                    <>
+                      <img src={checked} alt={'Web3 claim'} className={'status-icon'} />
+                    </>
+                    }
+                  </div>
+
+                  <div className={'col-md-1 col-xs-4 center status'}>
                     <span className={'visible-sm'}>Status: </span>
                     <img
                       src={qr.claimed ? checked : error}
@@ -429,7 +436,7 @@ const QrPage: FC = () => {
                     />
                   </div>
 
-                  <div className={'col-md-1 center'}>
+                  <div className={'col-md-1 col-xs-4 center'}>
                     <span className={'visible-sm'}>Scanned: </span>
                     <img
                       src={qr.scanned ? checked : error}
@@ -438,15 +445,21 @@ const QrPage: FC = () => {
                     />
                   </div>
 
-                  <div className={'col-md-2 center'}>
+                  <div className={'col-md-2 col-xs-12 center'}>
                     <span className={'visible-sm'}>Tx Hash: </span>
                     <a href={etherscanLinks.tx(qr.tx_hash)} target={'_blank'}>
                       {qr.tx_hash && reduceAddress(qr.tx_hash)}
-                    </a>
+                    </a>&nbsp;&nbsp;
+                    {qr.tx_status && <TxStatus status={qr.tx_status}/>}
                   </div>
 
-                  <div className={'col-md-1 center'}>
-                    {qr.tx_status && <TxStatus status={qr.tx_status}/>}
+                  <div className={'col-md-2 col-xs-12 center ellipsis'}>
+                    <span className={'visible-sm'}>Beneficiary: </span>
+                    {qr.beneficiary &&
+                      <a href={etherscanLinks.address(qr.beneficiary)} target={'_blank'} title={qr.user_input ? qr.user_input : qr.beneficiary}>
+                        {qr.user_input ? qr.user_input : qr.beneficiary}
+                      </a>
+                    }
                   </div>
                 </div>
               );
@@ -498,7 +511,7 @@ const CreationModal: React.FC<CreationModalProps> = ({
     (!hasSameQrsQuantity || !hasHashesButNoIds) && hasNoIncorrectQrs;
 
   const handleCreationModalSubmit = (values: CreationModalFormikValues) => {
-    const { hashes, ids, event } = values;
+    const { hashes, ids, delegated_mint, event } = values;
 
     const hashRegex = /^[a-zA-Z0-9]{6}$/;
     const idRegex = /^[0-9]+$/;
@@ -509,7 +522,7 @@ const CreationModal: React.FC<CreationModalProps> = ({
     const qrHashesFormatted = hashes
       .trim()
       .split('\n')
-      .map(hash => hash.trim())
+      .map(hash => hash.trim().toLowerCase())
       .filter(hash => {
         if (!hash.match(hashRegex) && hash !== '') _incorrectQrHashes.push(hash);
 
@@ -543,7 +556,7 @@ const CreationModal: React.FC<CreationModalProps> = ({
 
     if (_hasNoIncorrectQrs) {
       if (_hasHashesButNoIds || _hasSameQrsQuantity) {
-        qrCreateMassive(qrHashesFormatted, qrIdsFormatted, event)
+        qrCreateMassive(qrHashesFormatted, qrIdsFormatted, delegated_mint, event)
           .then(_ => {
             addToast('QR codes updated correctly', {
               appearance: 'success',
@@ -571,14 +584,13 @@ const CreationModal: React.FC<CreationModalProps> = ({
         hashes: '',
         ids: '',
         event: '',
+        delegated_mint: false
       }}
       validateOnBlur={false}
       validateOnChange={false}
       onSubmit={handleCreationModalSubmit}
     >
       {({ values, handleChange, handleSubmit }) => {
-        const isEventPlaceholder = !Boolean(values.event);
-
         return (
           <div className={'update-modal-container'}>
             <div className={'modal-top-bar'}>
@@ -629,6 +641,10 @@ const CreationModal: React.FC<CreationModalProps> = ({
             </div>
             <div className="modal-content">
               <div className="modal-buttons-container creation-modal">
+                <div className="modal-action-checkbox-container">
+                  <Field type="checkbox" name="delegated_mint" id="delegated_mint_id" className={""} />
+                  <label htmlFor="delegated_mint_id" className="">Web 3 claim enabled</label>
+                </div>
                 <div className="modal-action-buttons-container">
                   <FilterButton text="Cancel" handleClick={handleCreationModalClosing} />
                   <FilterButton text="Create" handleClick={handleSubmit} />
@@ -713,11 +729,11 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
       assignHashList();
     }
     setIsSendingHashList(false);
-  }, [hasIncorrectHashes, isSendingHashList, selectedEvent]);
+  }, [hasIncorrectHashes, isSendingHashList, selectedEvent]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
     if (isListActive) setIsSendingHashList(true);
-  }, [selectedEvent]);
+  }, [selectedEvent]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   const assignHashList = () => {
     if (isListActive) {
@@ -780,7 +796,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
     const _hashesList = hashesList
       .trim()
       .split('\n')
-      .map(hash => hash.trim())
+      .map(hash => hash.trim().toLowerCase())
       .filter(hash => {
         if (!hash.match(hashRegex)) _incorrectQrHashes.push(hash);
 

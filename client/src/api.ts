@@ -29,6 +29,10 @@ export interface PoapEvent {
   year: number;
   start_date: string;
   end_date: string;
+  virtual_event: boolean;
+}
+export interface PoapFullEvent extends PoapEvent{
+  secret_code?: number;
 }
 export interface Claim extends ClaimProof {
   claimerSignature: string;
@@ -47,12 +51,15 @@ export interface HashClaim {
   event_id: number;
   event: PoapEvent;
   beneficiary: Address;
+  user_input: string | null;
   signer: Address;
   claimed: boolean;
   claimed_date: string;
   created_date: string;
   tx_status: string;
   secret: string;
+  delegated_mint: boolean;
+  delegated_signed_message: string;
 }
 export interface PoapSetting {
   id: number;
@@ -105,6 +112,7 @@ export interface PaginatedNotifications {
 
 export type QrCode = {
   beneficiary: string;
+  user_input: string | null;
   claimed: boolean;
   claimed_date: string;
   created_date: string;
@@ -118,6 +126,8 @@ export type QrCode = {
   tx_hash: string;
   tx_status: string | null;
   event: PoapEvent;
+  delegated_mint: boolean;
+  delegated_signed_message: string | null;
 };
 
 export type PaginatedQrCodes = {
@@ -209,8 +219,11 @@ export async function getEvents(): Promise<PoapEvent[]> {
     : fetchJson(`${API_BASE}/events`);
 }
 
-export async function getEvent(fancyId: string): Promise<null | PoapEvent> {
-  return fetchJson(`${API_BASE}/events/${fancyId}`);
+export async function getEvent(fancyId: string): Promise<null | PoapFullEvent> {
+  const isAdmin = authClient.isAuthenticated();
+  return isAdmin
+    ? secureFetch(`${API_BASE}/events-admin/${fancyId}`)
+    : fetchJson(`${API_BASE}/events/${fancyId}`);
 }
 
 export async function getSetting(settingName: string): Promise<null | PoapSetting> {
@@ -331,11 +344,12 @@ export async function mintUserToManyEvents(
   });
 }
 
-export async function updateEvent(event: FormData, fancyId: string) {
-  return secureFetchNoResponse(`${API_BASE}/events/${fancyId}`, {
-    method: 'PUT',
-    body: event,
-  });
+export async function updateEvent(event: FormData, fancyId: string): Promise<void> {
+  const isAdmin = authClient.isAuthenticated();
+
+  return isAdmin
+    ? secureFetchNoResponse(`${API_BASE}/events/${fancyId}`, { method: 'PUT', body: event })
+    : fetchJsonNoResponse(`${API_BASE}/events/${fancyId}`, { method: 'PUT', body: event });
 }
 
 export async function createEvent(event: FormData) {
@@ -447,11 +461,13 @@ export async function qrCodesListAssign(
 export async function qrCreateMassive(
   qrHashes: string[],
   qrIds: string[],
+  delegated_mint: boolean,
   event?: string
 ): Promise<void> {
   let unstringifiedBody = {
     qr_list: qrHashes,
     numeric_list: qrIds,
+    delegated_mint
   };
 
   if (Number(event) !== 0) Object.assign(unstringifiedBody, { event_id: Number(event) });
@@ -521,11 +537,13 @@ export async function getClaimHash(hash: string): Promise<HashClaim> {
 export async function postClaimHash(
   qr_hash: string,
   address: string,
-  secret: string
+  secret: string,
+  method: string
 ): Promise<HashClaim> {
+  let delegated = method === 'web3'
   return fetchJson(`${API_BASE}/actions/claim-qr`, {
     method: 'POST',
-    body: JSON.stringify({ qr_hash, address, secret }),
+    body: JSON.stringify({ qr_hash, address, secret, delegated }),
     headers: { 'Content-Type': 'application/json' },
   });
 }

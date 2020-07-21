@@ -4,9 +4,11 @@ import createError from 'http-errors';
 import {
   getEvent,
   getEventByFancyId,
+  getFullEventByFancyId,
   getEvents,
   updateEvent,
   createEvent,
+  saveEventUpdate,
   getPoapSettingByName,
   getPoapSettings,
   updatePoapSettingByName,
@@ -43,6 +45,7 @@ import {
   createQrClaims,
   checkNumericIdExists,
   checkQrHashExists,
+  updateDelegatedQrClaim
 } from './db';
 
 import {
@@ -58,22 +61,24 @@ import {
   resolveName,
   lookupAddress,
   checkAddress,
-  checkHasToken,
   getTokenImg,
-  getAllEventIds
+  getAllEventIds,
+  signMessage,
+  isEventEditable
 } from './eth/helpers';
 
 import {
-  Omit, Claim, PoapEvent, TransactionStatus, Address, NotificationType, Notification, ClaimQR, UserRole,
-  // qrRoll,
+  Omit, Claim, PoapEvent, PoapFullEvent, TransactionStatus, Address,
+  NotificationType, Notification, ClaimQR, UserRole, TokenInfo
 } from './types';
+import { TypedValue } from 'eth-crypto';
 import crypto from 'crypto';
 import getEnv from './envs';
 import * as admin from 'firebase-admin';
 import { uploadFile } from './plugins/google-storage-utils';
 import { getUserRoles } from './plugins/groups-decorator';
 import { sleep } from './utils';
-import { getAssets } from './plugins/opensea-utils';
+import { getEventTokenSupply } from './plugins/thegraph-utils';
 
 function buildMetadataJson(homeUrl: string, tokenUrl: string, ev: PoapEvent) {
   return {
@@ -92,6 +97,10 @@ function buildMetadataJson(homeUrl: string, tokenUrl: string, ev: PoapEvent) {
       {
         trait_type: 'endDate',
         value: ev.end_date,
+      },
+      {
+        trait_type: 'virtualEvent',
+        value: ev.virtual_event,
       },
       {
         trait_type: 'city',
@@ -315,26 +324,17 @@ export default async function routes(fastify: FastifyInstance) {
     },
     async (req, res) => {
       const address = req.params.address;
-      const assets = await getAssets(address);
       let tokens = await getAllTokens(address);
 
-      tokens = tokens.map(token => {
-        let token_asset = assets.find(asset => asset.token_id === token.tokenId)
+      return await Promise.all(tokens.map(async (token): Promise<TokenInfo> => {
         let supply = 1;
-        if (token_asset) {
-          let min_trait_count = token_asset.traits.reduce((min: number, trait: any) => {
-            if (trait.trait_count) {
-              return min ? Math.min(trait.trait_count, min) : trait.trait_count
-            }
-            return min
-          }, null);
-          supply = min_trait_count ? min_trait_count : supply;
+        try {
+          supply = await getEventTokenSupply(token.event.id)
+        } catch (e) {
+          console.log('The Graph Query error')
         }
         return { ...token, event: { ...token.event, supply: supply } }
-
-      })
-
-      return tokens
+      }));
     }
   );
 
@@ -483,6 +483,7 @@ export default async function routes(fastify: FastifyInstance) {
               tx_hash: { type: 'string' },
               event_id: { type: 'number' },
               beneficiary: { type: 'string' },
+              user_input: { type: 'string' },
               signer: { type: 'string' },
               claimed: { type: 'boolean' },
               claimed_date: { type: 'string' },
@@ -508,7 +509,9 @@ export default async function routes(fastify: FastifyInstance) {
                   created_date: { type: 'string' }
                 }
               },
-              tx_status: { type: 'string' }
+              tx_status: { type: 'string' },
+              delegated_mint: { type: 'boolean' },
+              delegated_signed_message: { type: 'string' }
             }
           }
         }
@@ -566,6 +569,7 @@ export default async function routes(fastify: FastifyInstance) {
             address: { type: 'string' },
             qr_hash: { type: 'string' },
             secret: { type: 'string' },
+            delegated: { type: 'boolean' }
           }
         },
         response: {
@@ -577,6 +581,7 @@ export default async function routes(fastify: FastifyInstance) {
               tx_hash: { type: 'string' },
               event_id: { type: 'number' },
               beneficiary: { type: 'string' },
+              user_input: { type: 'string' },
               signer: { type: 'string' },
               claimed: { type: 'boolean' },
               claimed_date: { type: 'string' },
@@ -601,7 +606,9 @@ export default async function routes(fastify: FastifyInstance) {
                   created_date: { type: 'string' }
                 }
               },
-              tx_status: { type: 'string' }
+              tx_status: { type: 'string' },
+              delegated_mint: { type: 'boolean' },
+              delegated_signed_message: { type: 'string' }
             }
           }
         }
@@ -645,33 +652,47 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.BadRequest('Address is not valid');
       }
 
-      const dual_qr_claim = await checkDualQrClaim(qr_claim.event.id, parsed_address);
+      const dual_qr_claim = await checkDualQrClaim(qr_claim.event.id, parsed_address, qr_claim.delegated_mint);
       if (!dual_qr_claim) {
         await unclaimQrClaim(req.body.qr_hash);
         return new createError.BadRequest('Address already claimed a code for this event');
       }
 
-      const has_token = await checkHasToken(qr_claim.event.id, parsed_address);
-      if (has_token) {
-        await unclaimQrClaim(req.body.qr_hash);
-        return new createError.BadRequest('Address already has this POAP token');
+      // Check if the claim is delegated
+      if (qr_claim.delegated_mint || req.body.delegated) {
+        // get signed message
+        let params: TypedValue[] = [
+          {type: "uint256", value: event.id},
+          {type: "address", value: parsed_address.toLowerCase()}
+        ];
+        let message = signMessage(env.poapAdmin.privateKey, params);
+
+        // update database
+        await updateDelegatedQrClaim(req.body.qr_hash, parsed_address, req.body.address, message);
+
+        // update qr_claim to return
+        qr_claim.delegated_signed_message = message
+        qr_claim.delegated_mint = true
+
+      } else {
+        const tx_mint = await mintToken(qr_claim.event.id, parsed_address, false);
+        if (!tx_mint || !tx_mint.hash) {
+          await unclaimQrClaim(req.body.qr_hash);
+          return new createError.InternalServerError('There was a problem in token mint');
+        }
+
+        let set_qr_claim_hash = await updateQrClaim(req.body.qr_hash, parsed_address, req.body.address, tx_mint);
+        if (!set_qr_claim_hash) {
+          return new createError.InternalServerError('There was a problem saving tx_hash');
+        }
+
+        qr_claim.tx_hash = tx_mint.hash
+        qr_claim.signer = tx_mint.from
       }
 
-      const tx_mint = await mintToken(qr_claim.event.id, parsed_address, false);
-      if (!tx_mint || !tx_mint.hash) {
-        await unclaimQrClaim(req.body.qr_hash);
-        return new createError.InternalServerError('There was a problem in token mint');
-      }
-
-      let set_qr_claim_hash = await updateQrClaim(req.body.qr_hash, parsed_address, tx_mint);
-      if (!set_qr_claim_hash) {
-        return new createError.InternalServerError('There was a problem saving tx_hash');
-      }
-
-      qr_claim.tx_hash = tx_mint.hash
       qr_claim.beneficiary = parsed_address
-      qr_claim.signer = tx_mint.from
       qr_claim.tx_status = null
+      qr_claim.user_input = req.body.address
 
       if (qr_claim.tx_hash) {
         const transaction_status = await getTransaction(qr_claim.tx_hash);
@@ -931,6 +952,7 @@ export default async function routes(fastify: FastifyInstance) {
                 end_date: { type: 'string' },
                 created_date: { type: 'string' },
                 from_admin: { type: 'boolean' },
+                virtual_event: { type: 'boolean' }
               },
             }
           }
@@ -967,7 +989,8 @@ export default async function routes(fastify: FastifyInstance) {
               start_date: { type: 'string' },
               end_date: { type: 'string' },
               created_date: { type: 'string' },
-              from_admin: { type: 'boolean' }
+              from_admin: { type: 'boolean' },
+              virtual_event: { type: 'boolean' }
             },
           }
         }
@@ -975,6 +998,54 @@ export default async function routes(fastify: FastifyInstance) {
     },
     async (req, res) => {
       const event = await getEventByFancyId(req.params.fancyid);
+      if (!event) {
+        return new createError.NotFound('Invalid Event');
+      }
+      return event;
+    }
+  );
+
+  fastify.get(
+    '/events-admin/:fancyid',
+    {
+      preValidation: [fastify.authenticate, fastify.isAdmin],
+      schema: {
+        description: 'Endpoint to get an specific event for admins',
+        tags: ['Events',],
+        params: {
+          fancyid: { type: 'string' },
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              id: { type: 'number' },
+              fancy_id: { type: 'string' },
+              name: { type: 'string' },
+              event_url: { type: 'string' },
+              image_url: { type: 'string' },
+              country: { type: 'string' },
+              city: { type: 'string' },
+              description: { type: 'string' },
+              year: { type: 'number' },
+              start_date: { type: 'string' },
+              end_date: { type: 'string' },
+              created_date: { type: 'string' },
+              from_admin: { type: 'boolean' },
+              virtual_event: { type: 'boolean' },
+              secret_code: { type: 'number' }
+            },
+          }
+        },
+        security: [
+          {
+            "authorization": []
+          }
+        ]
+      },
+    },
+    async (req, res) => {
+      const event = await getFullEventByFancyId(req.params.fancyid);
       if (!event) {
         return new createError.NotFound('Invalid Event');
       }
@@ -1006,7 +1077,8 @@ export default async function routes(fastify: FastifyInstance) {
             'end_date',
             'year',
             'event_url',
-            'image'
+            'image',
+            'secret_code'
           ],
           properties: {
             name: { type: 'string' },
@@ -1017,7 +1089,9 @@ export default async function routes(fastify: FastifyInstance) {
             end_date: { type: 'string' },
             year: { type: 'integer' },
             event_url: { type: 'string' },
+            virtual_event: { type: 'boolean' },
             image: { type: 'string', format: 'binary' },
+            secret_code: { type: 'string' },
           },
         },
         response: {
@@ -1036,7 +1110,8 @@ export default async function routes(fastify: FastifyInstance) {
               event_url: { type: 'string' },
               image_url: { type: 'string' },
               event_host_id: { type: 'number' },
-              from_admin: { type: 'boolean' }
+              from_admin: { type: 'boolean' },
+              virtual_event: { type: 'string' }
             },
           }
         },
@@ -1049,7 +1124,7 @@ export default async function routes(fastify: FastifyInstance) {
     },
     async (req: any, res) => {
 
-      const unidecoded_slug = unidecode(req.body.name)
+      const slugCode = unidecode(req.body.name)
         .replace(/^\s+|\s+$/g, "") // trim
         .toLowerCase()
         .replace(/[^a-z0-9 -]/g, "") // remove invalid chars
@@ -1058,7 +1133,7 @@ export default async function routes(fastify: FastifyInstance) {
         .replace(/^-+/, "") // trim - from start of text
         .replace(/-+$/, "");
 
-      const parsed_fancy_id = unidecoded_slug + '-' + req.body.year;
+      const parsed_fancy_id = slugCode + '-' + req.body.year;
 
       let eventHost = null;
       let is_admin: boolean = false;
@@ -1093,7 +1168,7 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.InternalServerError('Error uploading image');
       }
 
-      let newEvent: Omit<PoapEvent, 'id'> = {
+      let newEvent: Omit<PoapFullEvent, 'id'> = {
         fancy_id: parsed_fancy_id,
         name: req.body.name,
         description: req.body.description,
@@ -1105,7 +1180,9 @@ export default async function routes(fastify: FastifyInstance) {
         event_url: req.body.event_url,
         image_url: google_image_url,
         event_host_id: eventHost ? eventHost.id : null,
-        from_admin: is_admin
+        from_admin: is_admin,
+        virtual_event: req.body.virtual_event,
+        secret_code: req.body.secret_code
       }
 
       const event = await createEvent(newEvent);
@@ -1119,7 +1196,7 @@ export default async function routes(fastify: FastifyInstance) {
   fastify.put(
     '/events/:fancyid',
     {
-      preValidation: [fastify.authenticate, fastify.isAdmin, validate_file],
+      preValidation: [fastify.optionalAuthenticate, validate_file],
       schema: {
         description: 'Endpoint to modify several attributes of selected event',
         tags: ['Events',],
@@ -1128,7 +1205,18 @@ export default async function routes(fastify: FastifyInstance) {
         },
         body: {
           type: 'object',
-          required: ['event_url',],
+          required: [
+            'name',
+            'description',
+            'city',
+            'country',
+            'start_date',
+            'end_date',
+            'year',
+            'event_url',
+            'image',
+            'secret_code'
+          ],
           properties: {
             name: { type: 'string' },
             description: { type: 'string' },
@@ -1137,7 +1225,8 @@ export default async function routes(fastify: FastifyInstance) {
             start_date: { type: 'string' },
             end_date: { type: 'string' },
             event_url: { type: 'string' },
-            image: { type: 'string', format: 'binary' }
+            image: { type: 'string', format: 'binary' },
+            virtual_event: { type: 'boolean' }
           },
         },
         response: {
@@ -1151,24 +1240,30 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req: any, res) => {
-      const user_id = req.user.sub;
+      let isAdmin: boolean = false;
+      let secretCode: number = parseInt(req.body.secret_code)
+
+      if (req.user && req.user.hasOwnProperty('sub')) {
+        if (getUserRoles(req.user).indexOf(UserRole.administrator) != -1) {
+          isAdmin = true
+        }
+      }
+
 
       // Check if event exists
-      const event = await getEventByFancyId(req.params.fancyid);
+      const event = await getFullEventByFancyId(req.params.fancyid);
       if (!event) {
         return new createError.NotFound('Invalid Event');
       }
 
-      // Check if user is host
-      if (getUserRoles(req.user).indexOf(UserRole.administrator) === -1) {
-        const eventHost = await getEventHost(user_id);
-        if (!eventHost) {
-          return new createError.NotFound('You are not registered as an event host');
+      if (!isAdmin) {
+        if (event.secret_code !== secretCode) {
+          await sleep(3000)
+          return new createError.InternalServerError('Incorrect Edit Code');
         }
-
-        // Check if user is editing owned event
-        if (event.event_host_id !== eventHost.id) {
-          return new createError.BadRequest('You can not edit an event that was created by another user');
+        if (!isEventEditable(event.start_date)) {
+          await sleep(3000)
+          return new createError.InternalServerError('Event is not editable');
         }
       }
 
@@ -1186,18 +1281,34 @@ export default async function routes(fastify: FastifyInstance) {
       }
 
       const isOk = await updateEvent(req.params.fancyid, {
-        name: req.body.name ? req.body.name : event.name,
-        description: req.body.description ? req.body.description : event.description,
-        city: req.body.city ? req.body.city : event.city,
-        country: req.body.country ? req.body.country : event.country,
-        start_date: req.body.start_date ? req.body.start_date : event.start_date,
-        end_date: req.body.end_date ? req.body.end_date : event.end_date,
+        name: req.body.name,
+        description: req.body.description,
+        city: req.body.city,
+        country: req.body.country,
+        start_date: req.body.start_date,
+        end_date: req.body.end_date,
         event_url: req.body.event_url,
-        image_url: ((google_image_url === null) ? event.image_url : google_image_url)
+        virtual_event: req.body.virtual_event,
+        image_url: ((google_image_url === null) ? event.image_url : google_image_url),
+        secret_code: secretCode
       });
       if (!isOk) {
         return new createError.NotFound('Invalid event');
       }
+
+      const updatedEvent = await getFullEventByFancyId(req.params.fancyid);
+      if (updatedEvent) {
+        let initialEvent = JSON.parse(JSON.stringify(event))
+        let editedEvent = JSON.parse(JSON.stringify(updatedEvent))
+        let keys = Object.keys(initialEvent)
+        for (const key of keys) {
+          if (initialEvent[key] !== editedEvent[key]) {
+            await saveEventUpdate(event.id, key, editedEvent[key], initialEvent[key], isAdmin)
+            console.log('Updated: ', key)
+          }
+        }
+      }
+
       res.status(204);
       return;
     }
@@ -1924,6 +2035,7 @@ export default async function routes(fastify: FastifyInstance) {
             qr_list: { type: 'array', items: { type: 'string' } },
             numeric_list: { type: 'array', items: { type: 'number' } },
             event_id: { type: 'number' },
+            delegated_mint: { type: 'boolean' },
           },
         },
         response: {
@@ -1940,6 +2052,7 @@ export default async function routes(fastify: FastifyInstance) {
       const qrCodeHashes: string[] = req.body.qr_list;
       const numericList: number[] = req.body.numeric_list;
       let eventId = req.body.event_id || null;
+      let delegated_mint = req.body.delegated_mint;
       let hashesToAdd: any[] = [];
       let existingClaimedQrs: string[] = [];
       let existingNumericIds: number[] = [];
@@ -1992,7 +2105,8 @@ export default async function routes(fastify: FastifyInstance) {
           {
             event_id: eventId,
             qr_hash: qr_hash,
-            numeric_id: numeric_id
+            numeric_id: numeric_id,
+            delegated_mint
           }
         )
       }

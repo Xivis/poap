@@ -51,7 +51,13 @@ export interface PoapEvent {
   start_date: string;
   end_date: string;
   event_host_id: number | null;
-  from_admin: boolean | null;
+  from_admin: boolean;
+  virtual_event: boolean;
+  supply?: number;
+}
+
+export interface PoapFullEvent extends PoapEvent{
+  secret_code: number
 }
 
 export interface PoapSetting {
@@ -91,6 +97,7 @@ export interface ClaimQR {
   event_id: number;
   event: PoapEvent;
   beneficiary: null | Address;
+  user_input: null | string;
   signer: null | Address;
   claimed: boolean;
   scanned: boolean;
@@ -98,6 +105,8 @@ export interface ClaimQR {
   claimed_date: Date;
   created_date: Date;
   is_active: boolean;
+  delegated_mint: boolean;
+  delegated_signed_message: string;
 }
 
 export interface Claim extends ClaimProof {

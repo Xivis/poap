@@ -460,16 +460,16 @@
         padding: 25px 0;
         font-family: $font-family-narrow;
         color: $color-medium-violet;
-        span {
+        span, a {
           text-decoration: underline;
           cursor: pointer;
+          font-family: inherit;
+          color: inherit;
         }
       }
     }
 
     .claim-info {
-      padding: 20px;
-      max-width: 600px;
       text-align: center;
       margin: auto;
 
@@ -492,9 +492,7 @@
         margin: 30px auto;
       }
 
-      .info-pending {
-        background: $color-light-grey;
-        color: $color-medium-violet;
+      .info-tx {
         display: inline;
         border-radius: 4px;
         padding: 10px 10px 10px 35px;
@@ -508,6 +506,32 @@
           left: 5px;
           top: 15px;
         }
+
+        &.info-pending {
+          background: $color-light-grey;
+          color: $color-medium-violet;
+        }
+
+        &.info-error {
+          background: $tx-error-background;
+          color: $tx-error-color;
+          img {
+            width: 12px;
+            left: 13px;
+            top: 13px;
+          }
+        }
+
+        &.info-success {
+          background: $tx-success-background;
+          color: $tx-success-color;
+          img {
+            width: 12px;
+            left: 13px;
+            top: 13px;
+          }
+        }
+
       }
 
       .text-info {
@@ -524,6 +548,17 @@
         width: 300px;
         min-width: 300px;
       }
+
+      &.claim-delegated {
+        .text-info {
+          max-width: inherit;
+          p {
+            margin: 0 auto 0.5rem;
+            max-width: inherit;
+          }
+        }
+      }
+
     }
   }
 
@@ -536,6 +571,61 @@
 
   footer {
     background: #fff;
-    padding: 0;
+    padding: 0 0 300px;
+  }
+}
+
+.tx-detail {
+  padding: 40px 0 80px;
+  max-width: 500px;
+  margin: auto;
+
+  .tx-detail-title {
+    text-align: left;
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+  }
+
+  .tx-detail-box {
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.06) 0px 2px 4px -1px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 20px;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+
+    .tx-detail-cell {
+      text-align: center;
+      padding: 5px;
+      .tx-detail-cell-title {
+        text-align: center;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        color: $color-grey;
+        margin-bottom: 20px
+      }
+      &:first-child {
+        border-right: 1px solid rgb(226, 232, 240);
+      }
+      a {
+        img {
+          margin-left: 5px;
+          width: 12px;
+        }
+      }
+    }
+
+  }
+}
+
+.help-modal {
+  text-align: center;
+  p {
+    max-width: inherit;
+  }
+  .close-modal {
+    margin-top: 20px;
   }
 }

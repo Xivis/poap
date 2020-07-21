@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import pgPromise from 'pg-promise';
-import { PoapEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, ClaimQR, Task, UnlockTask, TaskCreator, Services, Notification, NotificationType, eventHost, qrRoll } from '../types';
+import { PoapEvent, PoapFullEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, ClaimQR, Task, UnlockTask, TaskCreator, Services, Notification, NotificationType, eventHost, qrRoll } from '../types';
 import { ContractTransaction } from 'ethers';
 
 const db = pgPromise()({
@@ -10,28 +10,22 @@ const db = pgPromise()({
   database: process.env.DB_DATABASE || 'poap_dev',
 });
 
-function replaceDates(event: PoapEvent): PoapEvent {
-  event.start_date = format(new Date(event.start_date), 'MM/DD/YYYY');
-  event.end_date = format(new Date(event.end_date), 'MM/DD/YYYY');
-  return event;
+const publicEventColumns = 'id, fancy_id, name, description, city, country, event_url, image_url, year, start_date, ' +
+  'end_date, event_host_id, from_admin, virtual_event'
+
+function formatDate(dbDate: string): string {
+  return format(new Date(dbDate), 'DD-MMM-YYYY');
 }
 
 export async function getEvents(): Promise<PoapEvent[]> {
-  const res = await db.manyOrNone<PoapEvent>('SELECT * FROM events ORDER BY start_date DESC');
-
-  return res.map(replaceDates);
-}
-
-export async function getPublicEvents(): Promise<PoapEvent[]> {
-  const res = await db.manyOrNone<PoapEvent>('SELECT * FROM events WHERE from_admin = false ORDER BY start_date DESC');
-
-  return res.map(replaceDates);
-}
-
-export async function getUserEvents(event_host_id: number): Promise<PoapEvent[]> {
-  const res = await db.manyOrNone<PoapEvent>('SELECT * FROM events WHERE event_host_id  = $1 ORDER BY start_date DESC', [event_host_id]);
-
-  return res.map(replaceDates);
+  const res = await db.manyOrNone<PoapEvent>('SELECT ' + publicEventColumns + ' FROM events ORDER BY start_date DESC');
+  return res.map(event => {
+    return {
+      ...event,
+      start_date: formatDate(event.start_date),
+      end_date: formatDate(event.end_date),
+    }
+  });
 }
 
 export async function getTransactions(limit: number, offset: number, statusList: string[], signer: string | null): Promise<Transaction[]> {
@@ -125,21 +119,46 @@ export async function getPendingTxsAmount(signer: Signer): Promise<Signer> {
 }
 
 export async function getEvent(id: number | string): Promise<null | PoapEvent> {
-  const res = await db.oneOrNone<PoapEvent>('SELECT * FROM events WHERE id = ${id}',
-    {
-      id: id
-    });
-  return res ? replaceDates(res) : res;
+  const res = await db.oneOrNone<PoapEvent>('SELECT ' + publicEventColumns + ' FROM events WHERE id = ${id}', { id: id });
+  if(res) {
+    return {
+      ...res,
+      start_date: formatDate(res.start_date),
+      end_date: formatDate(res.end_date),
+    }
+  }
+  return res;
 }
 
-export async function getEventByFancyId(fancyid: string): Promise<null | PoapEvent> {
-  const res = await db.oneOrNone<PoapEvent>('SELECT * FROM events WHERE fancy_id = $1', [fancyid]);
-  return res ? replaceDates(res) : res;
+export async function getEventByFancyId(fancyId: string): Promise<null | PoapEvent> {
+  let query = 'SELECT ' + publicEventColumns + ' FROM events WHERE fancy_id = ${fancyId}'
+  const res = await db.oneOrNone<PoapEvent>(query, {fancyId});
+  if(res) {
+    return {
+      ...res,
+      start_date: formatDate(res.start_date),
+      end_date: formatDate(res.end_date),
+    }
+  }
+  return res;
+}
+
+export async function getFullEventByFancyId(fancyId: string): Promise<null | PoapFullEvent> {
+  let query = 'SELECT * FROM events WHERE fancy_id = ${fancyId}'
+  const res = await db.oneOrNone<PoapFullEvent>(query, {fancyId});
+  if(res) {
+    return {
+      ...res,
+      start_date: formatDate(res.start_date),
+      end_date: formatDate(res.end_date),
+    }
+  }
+  return res;
 }
 
 export async function updateEvent(
   fancyId: string,
-  changes: Pick<PoapEvent, 'event_url' | 'image_url' | 'name' | 'description' | 'city' | 'country' | 'start_date' | 'end_date'>
+  changes: Pick<PoapFullEvent, 'event_url' | 'image_url' | 'name' | 'description' | 'city' | 'country' | 'start_date' | 'end_date' | 'virtual_event' | 'secret_code'>
 ): Promise<boolean> {
   const res = await db.result(
     'UPDATE EVENTS SET ' +
@@ -150,14 +169,24 @@ export async function updateEvent(
     'start_date=${start_date}, ' +
     'end_date=${end_date}, ' +
     'event_url=${event_url}, ' +
-    'image_url=${image_url} ' +
-    'WHERE fancy_id = ${fancy_id}',
+    'image_url=${image_url}, ' +
+    'virtual_event=${virtual_event}, ' +
+    'secret_code=${secret_code} ' +
+    'WHERE fancy_id = ${fancyId}',
     {
-      fancy_id: fancyId,
+      fancyId,
       ...changes,
     }
   );
   return res.rowCount === 1;
+}
+
+export async function saveEventUpdate(eventId: number, field: string, newValue: string, oldValue: string, isAdmin: boolean): Promise<boolean> {
+  let query = 'INSERT INTO events_history (event_id, field, old_value, new_value, from_admin) ' +
+    'VALUES (${eventId}, ${field}, ${oldValue}, ${newValue}, ${isAdmin}) RETURNING id'
+
+  await db.one(query, {eventId, field, oldValue, newValue, isAdmin})
+  return true
 }
 
 export async function updateSignerGasPrice(
@@ -174,10 +203,9 @@ export async function updateSignerGasPrice(
   return res.rowCount === 1;
 }
 
-export async function createEvent(event: Omit<PoapEvent, 'id'>): Promise<PoapEvent> {
+export async function createEvent(event: Omit<PoapFullEvent, 'id'>): Promise<PoapEvent> {
   const data = await db.one(
     'INSERT INTO events(${this:name}) VALUES(${this:csv}) RETURNING id',
-    // 'INSERT INTO events (${this:names}) VALUES (${this:list}) RETURNING id',
     event
   );
 
@@ -222,12 +250,14 @@ export async function updateQrScanned(qrHash: string) {
   return res.rowCount === 1;
 }
 
-export async function checkDualQrClaim(eventId: number, address: string): Promise<boolean> {
-  const res = await db.oneOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE event_id = ${eventId} AND beneficiary = ${address} AND is_active = true', {
-    eventId,
-    address
-  });
-  return res === null;
+export async function checkDualQrClaim(eventId: number, address: string, delegated: boolean): Promise<boolean> {
+  let query = 'SELECT COUNT(*) FROM qr_claims WHERE event_id = ${eventId} AND beneficiary = ${address} AND is_active = true';
+  if (delegated) {
+    query = query + ' AND delegated_mint = false'
+  }
+  const res = await db.result(query, {eventId, address});
+  let count = res.rows[0].count;
+  return count === '0';
 }
 
 export async function checkQrHashExists(qrHash: string): Promise<boolean> {
@@ -254,15 +284,27 @@ export async function unclaimQrClaim(qrHash: string) {
   return res.rowCount === 1;
 }
 
-export async function updateQrClaim(qrHash: string, beneficiary: string, tx: ContractTransaction) {
+export async function updateQrClaim(qrHash: string, beneficiary: string, user_input: string, tx: ContractTransaction) {
   const tx_hash = tx.hash
   const signer = tx.from
 
-  const res = await db.result('update qr_claims set tx_hash=${tx_hash}, beneficiary=${beneficiary}, signer=${signer} where qr_hash = ${qrHash}',
+  const res = await db.result('UPDATE qr_claims SET tx_hash=${tx_hash}, beneficiary=${beneficiary}, signer=${signer}, user_input=${user_input} WHERE qr_hash = ${qrHash}',
     {
       tx_hash,
       beneficiary,
+      user_input,
       signer,
+      qrHash
+    });
+  return res.rowCount === 1;
+}
+
+export async function updateDelegatedQrClaim(qrHash: string, beneficiary: string, user_input: string, message: string) {
+  const res = await db.result('UPDATE qr_claims SET delegated_mint=TRUE, delegated_signed_message=${message}, beneficiary=${beneficiary}, user_input=${user_input} WHERE qr_hash = ${qrHash}',
+    {
+      beneficiary,
+      user_input,
+      message,
       qrHash
     });
   return res.rowCount === 1;
@@ -429,7 +471,7 @@ export async function createQrClaims(hashesToAdd: any[]) {
 
   const res = await db.tx(t => {
     const queries = hashesToAdd.map(qr_claim => {
-      return t.one('INSERT INTO qr_claims(qr_hash, numeric_id, event_id) VALUES(${qr_hash}, ${numeric_id}, ${event_id}) RETURNING id', qr_claim, a => +a.id);
+      return t.one('INSERT INTO qr_claims(qr_hash, numeric_id, event_id, delegated_mint) VALUES(${qr_hash}, ${numeric_id}, ${event_id}, ${delegated_mint}) RETURNING id', qr_claim, a => +a.id);
     });
     return t.batch(queries);
   });
@@ -509,7 +551,7 @@ export async function getQrRoll(qrRollId: string): Promise<null | eventHost> {
 
 export async function getPaginatedQrClaims(limit: number, offset: number, eventId: number, qrRollId: number, claimed: string | null, scanned: string | null): Promise<ClaimQR[]> {
   let query = `SELECT q.id, q.qr_hash, q.tx_hash, q.event_id, q.beneficiary,
-  q.claimed, q.scanned, tx.status as tx_status
+  q.claimed, q.scanned, tx.status as tx_status, q.delegated_mint, q.user_input
   FROM qr_claims q LEFT JOIN server_transactions tx on q.tx_hash = tx.tx_hash
   WHERE q.is_active = true `
 

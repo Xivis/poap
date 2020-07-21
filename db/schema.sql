@@ -14,7 +14,19 @@ CREATE TABLE events (
   "end_date" date not null,
   "event_host_id" integer,
   "from_admin" boolean default false,
-  "created_date" timestamp with time zone not null default now()
+  "virtual_event" boolean default false,
+  "created_date" timestamp with time zone not null default now(),
+  "secret_code" integer
+);
+
+CREATE TABLE events_history (
+    "id" SERIAL PRIMARY KEY,
+    "event_id" INTEGER NOT NULL REFERENCES events (id),
+    "field" VARCHAR(100) NOT NULL,
+    "old_value" VARCHAR,
+    "new_value" VARCHAR,
+    "from_admin" BOOLEAN DEFAULT FALSE,
+    "created_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
 CREATE TABLE signers (
@@ -52,6 +64,7 @@ CREATE TABLE qr_claims (
   "tx_hash" varchar(256) UNIQUE,
   "event_id" integer,
   "beneficiary" varchar(256),
+  "user_input" varchar(256),
   "signer" varchar(256),
   "claimed" boolean default false,
   "scanned" boolean default false,
@@ -59,7 +72,9 @@ CREATE TABLE qr_claims (
   "created_date" timestamp with time zone not null default now(),
   "qr_roll_id": integer,
   "numeric_id": integer UNIQUE,
-  "is_active" boolean default true
+  "is_active" boolean default true,
+  "delegated_mint" boolean default false,
+  "delegated_signed_message" varchar(256)
 );
 
 CREATE EXTENSION pgcrypto;
