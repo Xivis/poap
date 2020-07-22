@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import classNames from 'classnames';
+import { Formik, Form } from 'formik';
 
 /* Hooks */
 import { useToggleState, useAsync } from '../react-helpers';
@@ -8,6 +9,7 @@ import { useToggleState, useAsync } from '../react-helpers';
 import { tryGetAccount, hasMetamask, isMetamaskLogged } from '../poap-eth';
 import { resolveENS, getENSFromAddress } from '../api';
 import { isValidAddress, isValidEmail } from '../lib/helpers';
+import { AddressPageSchema } from '../lib/schemas';
 
 /* Components */
 // import { Loading } from '../components/Loading';
@@ -27,6 +29,7 @@ export const CheckAccount: React.FC<{
     const account = await tryGetAccount();
     return account;
   });
+
   const metamaskLoggedOut = hasMetamask() && !isMetamaskLogged();
 
   let state = AccountState.Present;
@@ -126,18 +129,19 @@ type AddressInputProps = {
   onAddress: (addressOrENS: string, address: string) => void;
 };
 
+type AddressFormValues = {
+  address: string;
+};
+
+const initialValues: AddressFormValues = {
+  address: '',
+};
+
 const AddressInput: React.FC<AddressInputProps> = ({ onAddress }) => {
-  const [address, setAddress] = useState('');
   const [ensError, setEnsError] = useState(false);
   const [working, setWorking] = useState(false);
 
-  const handleChange: React.ChangeEventHandler<HTMLInputElement> = (event) => {
-    setAddress(event.target.value);
-    if (ensError) setEnsError(false);
-  };
-
-  const onSubmit: React.FormEventHandler = async (event) => {
-    event.preventDefault();
+  const onSubmit = async ({ address }: AddressFormValues) => {
     setWorking(true);
 
     if (isValidAddress(address)) {
@@ -160,25 +164,34 @@ const AddressInput: React.FC<AddressInputProps> = ({ onAddress }) => {
   };
 
   return (
-    <form className="login-form" onSubmit={onSubmit}>
-      <input
-        type="text"
-        id="address"
-        required
-        placeholder="matoken.eth"
-        onChange={handleChange}
-        autoComplete={'off'}
-        className={classNames(ensError && 'error')}
-      />
-      {ensError && <p className="text-error">Invalid ENS name</p>}
-      <input
-        type="submit"
-        id="submit"
-        value={working ? '' : 'Display Badges'}
-        disabled={working}
-        className={classNames(working && 'loading')}
-        name="submit"
-      />
-    </form>
+    <Formik onSubmit={onSubmit} initialValues={initialValues} validationSchema={AddressPageSchema}>
+      {({ values, handleSubmit, errors, setFieldValue }) => {
+        console.log('errors', errors);
+
+        return (
+          <Form className="login-form">
+            <input
+              type="text"
+              id="address"
+              name="address"
+              placeholder="matoken.eth or alison@google.com"
+              onChange={(e) => setFieldValue('address', e.target.value, true)}
+              autoComplete="off"
+              value={values.address}
+              className={classNames(ensError && 'error')}
+            />
+            {ensError && <p className="text-error">Invalid ENS name</p>}
+            <input
+              type="submit"
+              id="submit"
+              value={working ? '' : 'Display Badges'}
+              disabled={Boolean(errors.address) || !values.address}
+              className={classNames(working && 'loading')}
+              name="submit"
+            />
+          </Form>
+        );
+      }}
+    </Formik>
   );
 };

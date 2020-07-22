@@ -77,7 +77,8 @@
       "prettier/prettier": "error",
       "react/jsx-sort-props": 0,
       "no-console": "off",
-      "react/no-unescaped-entities": 0
+      "react/no-unescaped-entities": 0,
+      "no-control-regex": 0
     }
   },
   "browserslist": {
