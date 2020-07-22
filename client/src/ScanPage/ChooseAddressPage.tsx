@@ -4,9 +4,11 @@ import classNames from 'classnames';
 /* Hooks */
 import { useToggleState, useAsync } from '../react-helpers';
 /* Helpers */
+
 import { tryGetAccount, hasMetamask, isMetamaskLogged } from '../poap-eth';
 import { resolveENS, getENSFromAddress } from '../api';
-import { isValidAddress } from '../lib/helpers';
+import { isValidAddress, isValidEmail } from '../lib/helpers';
+
 /* Components */
 // import { Loading } from '../components/Loading';
 
@@ -52,8 +54,8 @@ export const ChooseAddressPage: React.FC<ChooseAddressPageProps> = ({ onAccountD
       <div className="container">
         <div className="content-event" data-aos="fade-up" data-aos-delay="300">
           <p>
-            The <span>Proof of attendance protocol</span> (POAP) reminds you off the{' '}
-            <span>cool places</span> you’ve been to.
+            The <span>Proof of attendance protocol</span> (POAP) reminds you off the <span>cool places</span> you’ve
+            been to.
           </p>
           {/* <CheckAccount
               render={(account, state) => {
@@ -71,7 +73,7 @@ export const ChooseAddressPage: React.FC<ChooseAddressPageProps> = ({ onAccountD
                 or{' '}
                 <a
                   href="/"
-                  onClick={e => {
+                  onClick={(e) => {
                     e.preventDefault();
                     toggleEnterByHand();
                   }}
@@ -129,18 +131,20 @@ const AddressInput: React.FC<AddressInputProps> = ({ onAddress }) => {
   const [ensError, setEnsError] = useState(false);
   const [working, setWorking] = useState(false);
 
-  const handleChange: React.ChangeEventHandler<HTMLInputElement> = event => {
+  const handleChange: React.ChangeEventHandler<HTMLInputElement> = (event) => {
     setAddress(event.target.value);
     if (ensError) setEnsError(false);
   };
 
-  const onSubmit: React.FormEventHandler = async event => {
+  const onSubmit: React.FormEventHandler = async (event) => {
     event.preventDefault();
     setWorking(true);
 
     if (isValidAddress(address)) {
       const addressResponse = await getENSFromAddress(address);
       onAddress(addressResponse.valid ? addressResponse.ens : address, address);
+    } else if (isValidEmail(address)) {
+      console.log('onSubmit:React.FormEventHandler -> address', address);
     } else {
       setEnsError(false);
       const ensResponse = await resolveENS(address);
