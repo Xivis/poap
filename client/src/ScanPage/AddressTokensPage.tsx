@@ -10,7 +10,7 @@ import delve from 'dlv';
 
 /* Helpers */
 import { TokenInfo, getTokensFor, resolveENS, getENSFromAddress } from '../api';
-import { isValidAddress } from '../lib/helpers';
+import { isValidAddress, isValidEmail } from '../lib/helpers';
 
 /* Assets */
 import NoEventsImg from '../images/event-2019.svg';
@@ -58,6 +58,15 @@ export class AddressTokensPage extends React.Component<
         const ens = await getENSFromAddress(address);
 
         this.setState({ tokens, address, ens: ens.valid ? ens.ens : null });
+      } else if (isValidEmail(address)) {
+        // TODO: Uncomment next line when backend supports email
+        // const tokens = await getTokensFor(address);
+
+        // TODO: Remove next line when backend supports email
+        const bla = '0x5A384227B65FA093DEC03Ec34e111Db80A040615';
+        const tokens = await getTokensFor(bla);
+
+        this.setState({ tokens, address, ens: null });
       } else {
         const ensResponse = await resolveENS(address);
 
@@ -88,7 +97,7 @@ export class AddressTokensPage extends React.Component<
         tokensByYear.set(t.event.year, [t]);
       }
     }
-    const lastYear = Math.min(...this.state.tokens.map(t => t.event.year));
+    const lastYear = Math.min(...this.state.tokens.map((t) => t.event.year));
     const res: {
       year: number;
       tokens: TokenInfo[];
@@ -111,7 +120,7 @@ export class AddressTokensPage extends React.Component<
             <h2>{year}</h2>
             {tokens.length > 0 ? (
               <div className="events-logos">
-                {tokens.map(t => (
+                {tokens.map((t) => (
                   <Link
                     key={t.tokenId}
                     to={{
@@ -121,9 +130,7 @@ export class AddressTokensPage extends React.Component<
                     className="event-circle"
                     data-aos="fade-up"
                   >
-                    {typeof t.event.image_url === 'string' && (
-                      <img src={t.event.image_url} alt={t.event.name} />
-                    )}
+                    {typeof t.event.image_url === 'string' && <img src={t.event.image_url} alt={t.event.name} />}
                   </Link>
                 ))}
               </div>
@@ -155,6 +162,18 @@ export class AddressTokensPage extends React.Component<
           <div className="content-event years" data-aos="fade-up" data-aos-delay="300">
             {!error && !loading && <h1>{message}</h1>}
 
+            {!error && !loading && address && isValidEmail(address) && (
+              <div className="scan-email-badge-container">
+                <span className="scan-email-badge">
+                  This badges are not in an Ethereum Wallet yet. When you're ready to claim your POAPS, please click on
+                  the button below
+                </span>
+                <div className="scan-email-badge-button-container">
+                  <button className="scan-email-badge-button">Redeem</button>
+                </div>
+              </div>
+            )}
+
             {error && !loading && (
               <div className="bk-msg-error">
                 There was an error.
@@ -173,9 +192,7 @@ export class AddressTokensPage extends React.Component<
             {tokens && tokens.length === 0 && (
               <div className={classNames('event-year', 'empty-year')} style={{ marginTop: '30px' }}>
                 <img src={NoEventsImg} alt="" />
-                <p className="image-description">
-                  You don't seem to have any tokens. You're quite a couch potato!
-                </p>
+                <p className="image-description">You don't seem to have any tokens. You're quite a couch potato!</p>
               </div>
             )}
 

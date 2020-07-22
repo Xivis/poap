@@ -24,6 +24,7 @@ export const ScanPage: React.FC<RouteComponentProps> = ({ match, history, locati
     },
     [history, match],
   );
+
   useBodyClassName('poap-app');
 
   const resolvePathname = (): string => {

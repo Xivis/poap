@@ -148,7 +148,7 @@ const AddressInput: React.FC<AddressInputProps> = ({ onAddress }) => {
       const addressResponse = await getENSFromAddress(address);
       onAddress(addressResponse.valid ? addressResponse.ens : address, address);
     } else if (isValidEmail(address)) {
-      console.log('onSubmit:React.FormEventHandler -> address', address);
+      onAddress(address, address);
     } else {
       setEnsError(false);
       const ensResponse = await resolveENS(address);
@@ -165,33 +165,29 @@ const AddressInput: React.FC<AddressInputProps> = ({ onAddress }) => {
 
   return (
     <Formik onSubmit={onSubmit} initialValues={initialValues} validationSchema={AddressPageSchema}>
-      {({ values, handleSubmit, errors, setFieldValue }) => {
-        console.log('errors', errors);
-
-        return (
-          <Form className="login-form">
-            <input
-              type="text"
-              id="address"
-              name="address"
-              placeholder="matoken.eth or alison@google.com"
-              onChange={(e) => setFieldValue('address', e.target.value, true)}
-              autoComplete="off"
-              value={values.address}
-              className={classNames(ensError && 'error')}
-            />
-            {ensError && <p className="text-error">Invalid ENS name</p>}
-            <input
-              type="submit"
-              id="submit"
-              value={working ? '' : 'Display Badges'}
-              disabled={Boolean(errors.address) || !values.address}
-              className={classNames(working && 'loading')}
-              name="submit"
-            />
-          </Form>
-        );
-      }}
+      {({ values, errors, setFieldValue }) => (
+        <Form className="login-form">
+          <input
+            type="text"
+            id="address"
+            name="address"
+            placeholder="matoken.eth or alison@google.com"
+            onChange={(e) => setFieldValue('address', e.target.value, true)}
+            autoComplete="off"
+            value={values.address}
+            className={classNames(ensError && 'error')}
+          />
+          {ensError && <p className="text-error">Invalid ENS name</p>}
+          <input
+            type="submit"
+            id="submit"
+            value={working ? '' : 'Display Badges'}
+            disabled={Boolean(errors.address) || !values.address}
+            className={classNames(working && 'loading')}
+            name="submit"
+          />
+        </Form>
+      )}
     </Formik>
   );
 };
