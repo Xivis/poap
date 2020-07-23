@@ -87,29 +87,31 @@ export const AddressTokensPage: FC<Props> = ({ location, match }) => {
       .finally(() => setState((oldState) => ({ ...oldState, isRedeemLoading: false })));
   };
 
-  type Bla = {
+  type TokenByYear = {
     year: number;
     tokens: TokenInfo[];
   };
 
-  const getTokensByYear = (): Bla[] => {
+  const getTokensByYear = (): TokenByYear[] => {
     if (state.tokens == null) {
       throw new Error('There are no tokens');
     }
 
     const tokensByYear: Map<number, TokenInfo[]> = new Map();
 
-    for (const t of state.tokens) {
-      if (tokensByYear.has(t.event.year)) {
-        tokensByYear.get(t.event.year)!.push(t);
+    for (const token of state.tokens) {
+      const { year } = token.event;
+
+      if (tokensByYear.has(year)) {
+        tokensByYear.get(year)!.push(token);
       } else {
-        tokensByYear.set(t.event.year, [t]);
+        tokensByYear.set(year, [token]);
       }
     }
 
     const lastYear = Math.min(...state.tokens.map((t) => t.event.year));
 
-    const res: Bla[] = [];
+    const res: TokenByYear[] = [];
 
     for (let year = new Date().getFullYear(); year >= lastYear; year--) {
       res.push({

@@ -1,4 +1,5 @@
 import * as yup from 'yup';
+import emailRegex from 'email-regex';
 
 import { IMAGE_SUPPORTED_FORMATS } from './constants';
 
@@ -10,7 +11,6 @@ const GasPriceSchema = yup.object().shape({
   gasPrice: yup.number().required().positive(),
 });
 
-const EMAIL_REGEX = /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/;
 const ETH_REGEX = /.*\.eth$/;
 
 const AddressPageSchema = yup.object().shape({
@@ -18,7 +18,7 @@ const AddressPageSchema = yup.object().shape({
     .mixed()
     .test({
       test: (value) => {
-        if (EMAIL_REGEX.test(value) || ETH_REGEX.test(value)) {
+        if (emailRegex({ exact: true }).test(value) || ETH_REGEX.test(value)) {
           return true;
         }
 
@@ -83,6 +83,11 @@ const IssueForUserFormValueSchema = yup.object().shape({
 
 const ClaimHashSchema = yup.object().shape({
   hash: yup.string().required().length(6),
+  // Possible solution. Not working
+  // hash: yup
+  //   .mixed()
+  //   .oneOf([yup.string().length(6), yup.string().email()])
+  //   .required(),
 });
 
 const InboxFormSchema = yup.object().shape({

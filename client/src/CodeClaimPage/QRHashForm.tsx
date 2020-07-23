@@ -1,4 +1,4 @@
-import React  from 'react';
+import React from 'react';
 import classNames from 'classnames';
 
 import { Formik, Form, Field, FieldProps } from 'formik';
@@ -14,14 +14,15 @@ type HashFormValues = {
 };
 
 /*
-* @dev: Form component to get the QR if code was not scanned
-* */
-const QRHashForm: React.FC<{error: boolean, loading: boolean, checkClaim: (hash: string) => void}> = ({error, loading, checkClaim}) => {
-
-  const handleForm = (
-    values: HashFormValues
-  ) => {
-    checkClaim(values.hash)
+ * @dev: Form component to get the QR if code was not scanned
+ * */
+const QRHashForm: React.FC<{ error: boolean; loading: boolean; checkClaim: (hash: string) => void }> = ({
+  error,
+  loading,
+  checkClaim,
+}) => {
+  const handleForm = (values: HashFormValues) => {
+    checkClaim(values.hash);
   };
 
   return (
@@ -36,9 +37,7 @@ const QRHashForm: React.FC<{error: boolean, loading: boolean, checkClaim: (hash:
           {({ dirty, isValid }) => {
             return (
               <Form className="claim-form">
-                <div className={'web3-browser'}>
-                  Please complete the form below to continue
-                </div>
+                <div className={'web3-browser'}>Please complete the form below to continue</div>
                 <Field
                   name="hash"
                   render={({ field, form }: FieldProps) => {
@@ -47,22 +46,14 @@ const QRHashForm: React.FC<{error: boolean, loading: boolean, checkClaim: (hash:
                         type="text"
                         autoComplete="off"
                         className={classNames(!!form.errors[field.name] && 'error')}
-                        placeholder={'Six-digit code'}
+                        placeholder="Six-digit code or email"
                         {...field}
                       />
                     );
                   }}
                 />
-                {error && (
-                  <p className={'bk-msg-error'}>
-                    We couldn't find the code, please try again.
-                  </p>
-                )}
-                <SubmitButton
-                  text="Continue"
-                  isSubmitting={loading}
-                  canSubmit={isValid && dirty}
-                />
+                {error && <p className={'bk-msg-error'}>We couldn't find the code, please try again.</p>}
+                <SubmitButton text="Continue" isSubmitting={loading} canSubmit={isValid && dirty} />
               </Form>
             );
           }}

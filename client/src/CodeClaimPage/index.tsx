@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { RouteComponentProps } from 'react-router';
-import Web3 from 'web3'
+import Web3 from 'web3';
 import { useToasts } from 'react-toast-notifications';
 
 /* Helpers */
 import { HashClaim, getClaimHash, getTokensFor } from '../api';
+import { isValidEmail } from '../lib/helpers';
 
 /* Components*/
 import ClaimHeader from './ClaimHeader';
@@ -21,12 +22,12 @@ import { ClaimFooter } from '../components/ClaimFooter';
 import { TX_STATUS } from '../lib/constants';
 
 /* Assets */
-import abi from '../abis/PoapDelegatedMint.json'
+import abi from '../abis/PoapDelegatedMint.json';
 import EmptyBadge from '../images/empty-badge.svg';
 
 const NETWORK = process.env.REACT_APP_ETH_NETWORK;
 
-export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string, method: string }>> = ({ match }) => {
+export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string; method: string }>> = ({ match }) => {
   const [claim, setClaim] = useState<null | HashClaim>(null);
   const [claimError, setClaimError] = useState<boolean>(false);
   const [networkError, setNetworkError] = useState<boolean>(false);
@@ -35,7 +36,7 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string, method:
   const [isClaimLoading, setIsClaimLoading] = useState<boolean>(false);
   const [beneficiaryHasToken, setBeneficiaryHasToken] = useState<boolean>(false);
 
-  const { addToast } = useToasts()
+  const { addToast } = useToasts();
 
   let { hash, method } = match.params;
   let title = 'POAP Claim';
@@ -47,65 +48,76 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string, method:
 
   useEffect(() => {
     if (claim && claim.delegated_mint && !isVerified) {
-      verifySignedMessage()
+      verifySignedMessage();
     }
   }, [claim]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   const fetchClaim = (hash: string) => {
     setIsClaimLoading(true);
+
+    if (isValidEmail(hash)) {
+      console.log('fetchClaim -> hash', hash);
+      return;
+      // Aca logica de posteo
+    }
+
     getClaimHash(hash.toLowerCase())
-      .then(claim => {
+      .then((claim) => {
         setClaim(claim);
         setClaimError(false);
       })
-      .catch(error => {
+      .catch((error) => {
         setClaimError(true);
       })
       .finally(() => setIsClaimLoading(false));
-  }
+  };
 
   const continueClaim = (claim: HashClaim) => {
-    setClaim(claim)
-    setInitialStep(false)
-  }
+    setClaim(claim);
+    setInitialStep(false);
+  };
 
   const checkUserTokens = () => {
-    if (!claim || !claim.beneficiary) return
-    getTokensFor(claim.beneficiary)
-      .then(tokens => {
-        if(tokens.filter(token => token.event.id === claim.event_id).length > 0) {
-          setBeneficiaryHasToken(true)
-        }
-      })
-  }
+    if (!claim || !claim.beneficiary) return;
+    getTokensFor(claim.beneficiary).then((tokens) => {
+      if (tokens.filter((token) => token.event.id === claim.event_id).length > 0) {
+        setBeneficiaryHasToken(true);
+      }
+    });
+  };
 
   const verifySignedMessage = async () => {
-    if (!claim || !claim.delegated_signed_message || networkError) return
+    if (!claim || !claim.delegated_signed_message || networkError) return;
 
     // Initiate the contract and check if the message was processed
-    const web3 = new Web3(Web3.givenProvider || process.env.REACT_APP_INFURA_PROVIDER)
-    const network = await web3.eth.net.getNetworkType()
+    const web3 = new Web3(Web3.givenProvider || process.env.REACT_APP_INFURA_PROVIDER);
+    const network = await web3.eth.net.getNetworkType();
 
     if (NETWORK && network && NETWORK.indexOf(network) === -1) {
-      let message = `Wrong network, please connect to ${NETWORK}.\nCurrently on ${network}`
+      let message = `Wrong network, please connect to ${NETWORK}.\nCurrently on ${network}`;
       addToast(message, {
         appearance: 'error',
         autoDismiss: false,
       });
-      setNetworkError(true)
-      setIsVerified(true)
-      return
+      setNetworkError(true);
+      setIsVerified(true);
+      return;
     }
 
-    const contract = new web3.eth.Contract(abi as any, process.env.REACT_APP_MINT_DELEGATE_CONTRACT)
-    contract.methods.processed(claim.delegated_signed_message).call().then((processed: boolean) => {
-      if (processed) setBeneficiaryHasToken(processed)
-    }).catch(() => {
-      checkUserTokens()
-    }).finally(() => {
-      setIsVerified(true)
-    });
-  }
+    const contract = new web3.eth.Contract(abi as any, process.env.REACT_APP_MINT_DELEGATE_CONTRACT);
+    contract.methods
+      .processed(claim.delegated_signed_message)
+      .call()
+      .then((processed: boolean) => {
+        if (processed) setBeneficiaryHasToken(processed);
+      })
+      .catch(() => {
+        checkUserTokens();
+      })
+      .finally(() => {
+        setIsVerified(true);
+      });
+  };
 
   let body = <QRHashForm loading={isClaimLoading} checkClaim={fetchClaim} error={claimError} />;
 

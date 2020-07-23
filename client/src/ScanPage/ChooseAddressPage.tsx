@@ -76,8 +76,8 @@ export const ChooseAddressPage: React.FC<ChooseAddressPageProps> = ({ onAccountD
                 or{' '}
                 <a
                   href="/"
-                  onClick={(e) => {
-                    e.preventDefault();
+                  onClick={(event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+                    event.preventDefault();
                     toggleEnterByHand();
                   }}
                 >
