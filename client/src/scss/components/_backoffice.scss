@@ -2,7 +2,6 @@
   &.backoffice {
     padding-bottom: 200px;
 
-
     /* Tooltips */
     .backoffice-tooltip {
       text-align: center;
@@ -17,7 +16,6 @@
         width: 250px;
       }
     }
-
   }
 }
 
@@ -62,7 +60,6 @@
       margin-left: 10px;
       margin-bottom: 3px;
     }
-
   }
 
   input,
@@ -88,7 +85,6 @@
       font-size: 0.8rem;
       color: $color-grey;
     }
-
   }
 
   .bk-form-row:nth-of-type(1),
@@ -620,6 +616,68 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.redeem-modal {
+  position: relative;
+
+  &.submitting {
+    opacity: 0.6;
+  }
+}
+
+.redeem-modal-loading {
+  position: absolute;
+  margin: 0 auto;
+  top: 50%;
+  right: 34%;
+
+  padding: 8px 16px;
+
+  background-color: $color-light-violet;
+  color: $color-primary;
+
+  border: 1px solid $color-primary;
+  border-radius: 4px;
+}
+
+.redeem-modal-paragraph {
+  line-height: 20px;
+  width: 100% !important;
+
+  margin: 0;
+}
+
+.redeem-modal-email {
+  color: $color-primary;
+  font-weight: 600;
+}
+
+.redeem-modal-buttons-container {
+  display: flex;
+  justify-content: center;
+
+  margin-top: 12px;
+}
+
+.redeem-modal-button {
+  min-width: 96px;
+  padding: 8px 16px;
+  border-radius: 4px;
+
+  &.confirm {
+    color: $color-primary;
+    border: 1px solid $color-primary;
+    background-color: $color-light-violet;
+
+    margin-left: 12px;
+  }
+
+  &.cancel {
+    color: $color-error;
+    border: 1px solid $color-error;
+    background-color: $color-fourth-background;
+  }
 }
 
 .price-gas-modal-form {

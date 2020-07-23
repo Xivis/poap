@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { FC, useState, useEffect } from 'react';
+import { useToasts } from 'react-toast-notifications';
+import ReactModal from 'react-modal';
 
 // routing
-import { RouteComponentProps } from 'react-router';
 import { Link } from 'react-router-dom';
 
 // libraries
@@ -9,11 +10,12 @@ import classNames from 'classnames';
 import delve from 'dlv';
 
 /* Helpers */
-import { TokenInfo, getTokensFor, resolveENS, getENSFromAddress } from '../api';
+import { TokenInfo, getTokensFor, resolveENS, getENSFromAddress, redeemPoaps } from '../api';
 import { isValidAddress, isValidEmail } from '../lib/helpers';
 
 /* Assets */
 import NoEventsImg from '../images/event-2019.svg';
+import spinner from '../images/etherscan-spinner.svg';
 
 /* Components */
 import { Loading } from '../components/Loading';
@@ -24,98 +26,106 @@ type AddressTokensPageState = {
   ens: null | string;
   error: boolean;
   loading: boolean;
+  isRedeemModalOpen: boolean;
+  isRedeemLoading: boolean;
 };
 
-export class AddressTokensPage extends React.Component<
-  RouteComponentProps<{
-    account: string;
-  }>,
-  AddressTokensPageState
-> {
-  state: AddressTokensPageState = {
+type Props = {
+  location: any;
+  match: any;
+};
+
+export const AddressTokensPage: FC<Props> = ({ location, match }) => {
+  const [state, setState] = useState<AddressTokensPageState>({
     tokens: null,
     error: false,
     address: null,
     ens: null,
     loading: false,
+    isRedeemModalOpen: false,
+    isRedeemLoading: false,
+  });
+
+  const { addToast } = useToasts();
+
+  const { tokens, error, address, ens, loading, isRedeemLoading, isRedeemModalOpen } = state;
+
+  useEffect(() => {
+    getTokens();
+  }, []); // eslint-disable-line 
+
+  const handleOpenReedemModalClick = () => {
+    setState((oldState) => ({ ...oldState, isRedeemModalOpen: true }));
   };
 
-  componentDidMount() {
-    this.getTokens();
-  }
+  const handleCloseReedemModalClick = () => {
+    setState((oldState) => ({ ...oldState, isRedeemModalOpen: false }));
+  };
 
-  async getTokens() {
-    try {
-      this.setState({ loading: true });
+  const handleRedeemConfirm = () => {
+    setState((oldState) => ({ ...oldState, isRedeemLoading: true }));
 
-      const { location, match } = this.props;
-      const account = delve(match, 'params.account');
-      const addressFromHistory = delve(location, 'state.address');
-      const address = account || addressFromHistory;
+    redeemPoaps()
+      .then(() => {
+        setState((oldState) => ({ ...oldState, isRedeemModalOpen: false }));
 
-      if (isValidAddress(address)) {
-        const tokens = await getTokensFor(address);
-        const ens = await getENSFromAddress(address);
+        const successMessage = 'Your Poaps were redeemed successfully';
 
-        this.setState({ tokens, address, ens: ens.valid ? ens.ens : null });
-      } else if (isValidEmail(address)) {
-        // TODO: Uncomment next line when backend supports email
-        // const tokens = await getTokensFor(address);
+        addToast(successMessage, {
+          appearance: 'success',
+          autoDismiss: true,
+        });
+      })
+      .catch(() => {
+        const errorMessage = 'An error occurred redeeming your Poaps';
 
-        // TODO: Remove next line when backend supports email
-        const bla = '0x5A384227B65FA093DEC03Ec34e111Db80A040615';
-        const tokens = await getTokensFor(bla);
+        addToast(errorMessage, {
+          appearance: 'error',
+          autoDismiss: false,
+        });
+      })
+      .finally(() => setState((oldState) => ({ ...oldState, isRedeemLoading: false })));
+  };
 
-        this.setState({ tokens, address, ens: null });
-      } else {
-        const ensResponse = await resolveENS(address);
-
-        if (ensResponse.valid) {
-          const tokens = await getTokensFor(ensResponse.ens);
-          this.setState({ tokens, address: ensResponse.ens, ens: address });
-        }
-      }
-    } catch (err) {
-      this.setState({ error: true });
-    } finally {
-      this.setState({ loading: false });
-    }
-  }
-
-  getTokensByYear(): {
+  type Bla = {
     year: number;
     tokens: TokenInfo[];
-  }[] {
-    if (this.state.tokens == null) {
+  };
+
+  const getTokensByYear = (): Bla[] => {
+    if (state.tokens == null) {
       throw new Error('There are no tokens');
     }
+
     const tokensByYear: Map<number, TokenInfo[]> = new Map();
-    for (const t of this.state.tokens) {
+
+    for (const t of state.tokens) {
       if (tokensByYear.has(t.event.year)) {
         tokensByYear.get(t.event.year)!.push(t);
       } else {
         tokensByYear.set(t.event.year, [t]);
       }
     }
-    const lastYear = Math.min(...this.state.tokens.map((t) => t.event.year));
-    const res: {
-      year: number;
-      tokens: TokenInfo[];
-    }[] = [];
+
+    const lastYear = Math.min(...state.tokens.map((t) => t.event.year));
+
+    const res: Bla[] = [];
+
     for (let year = new Date().getFullYear(); year >= lastYear; year--) {
       res.push({
         year,
         tokens: tokensByYear.get(year) || [],
       });
     }
-    return res;
-  }
 
-  renderTokens() {
+    return res;
+  };
+
+  const renderTokens = () => {
     return (
       <>
         <p>These are the events you have attended in the past</p>
-        {this.getTokensByYear().map(({ year, tokens }, i) => (
+        {getTokensByYear().map(({ year, tokens }, i) => (
           <div key={year} className={classNames('event-year', tokens.length === 0 && 'empty-year')}>
             <h2>{year}</h2>
             {tokens.length > 0 ? (
@@ -144,62 +154,129 @@ export class AddressTokensPage extends React.Component<
         ))}
       </>
     );
-  }
+  };
 
-  render() {
-    const { error, loading, address, ens, tokens } = this.state;
-    const message = ens ? (
-      <>
-        Hey <span>{ens}!</span> ({address})
-      </>
-    ) : (
-      <>Hey {address}!</>
-    );
+  const getTokens = async () => {
+    try {
+      setState((oldState) => ({ ...oldState, loading: true }));
 
-    return (
-      <main id="site-main" role="main" className="app-content">
-        <div className="container">
-          <div className="content-event years" data-aos="fade-up" data-aos-delay="300">
-            {!error && !loading && <h1>{message}</h1>}
+      const account = delve(match, 'params.account');
+      const addressFromHistory = delve(location, 'state.address');
+      const address = account || addressFromHistory;
 
-            {!error && !loading && address && isValidEmail(address) && (
-              <div className="scan-email-badge-container">
-                <span className="scan-email-badge">
-                  This badges are not in an Ethereum Wallet yet. When you're ready to claim your POAPS, please click on
-                  the button below
-                </span>
-                <div className="scan-email-badge-button-container">
-                  <button className="scan-email-badge-button">Redeem</button>
-                </div>
+      if (isValidAddress(address)) {
+        const tokens = await getTokensFor(address);
+        const ens = await getENSFromAddress(address);
+
+        setState((oldState) => ({ ...oldState, tokens, address, ens: ens.valid ? ens.ens : null }));
+      } else if (isValidEmail(address)) {
+        // TODO: Uncomment next line when backend supports email
+        // const tokens = await getTokensFor(address);
+
+        // TODO: Remove next line when backend supports email
+        const mockAddress = '0x5A384227B65FA093DEC03Ec34e111Db80A040615';
+        const tokens = await getTokensFor(mockAddress);
+
+        setState((oldState) => ({ ...oldState, tokens, address, ens: null }));
+      } else {
+        const ensResponse = await resolveENS(address);
+
+        if (ensResponse.valid) {
+          const tokens = await getTokensFor(ensResponse.ens);
+          setState((oldState) => ({ ...oldState, tokens, address: ensResponse.ens, ens: address }));
+        }
+      }
+    } catch (err) {
+      setState((oldState) => ({ ...oldState, error: true }));
+    } finally {
+      setState((oldState) => ({ ...oldState, loading: false }));
+    }
+  };
+
+  return (
+    <main id="site-main" role="main" className="app-content">
+      <div className="container">
+        <div className="content-event years" data-aos="fade-up" data-aos-delay="300">
+          {!error && !loading && (
+            <h1>
+              {ens ? (
+                <>
+                  Hey <span>{ens}!</span> ({address})
+                </>
+              ) : (
+                <>Hey {address}!</>
+              )}
+            </h1>
+          )}
+
+          {!error && !loading && address && isValidEmail(address) && (
+            <div className="scan-email-badge-container">
+              <span className="scan-email-badge">
+                This badges are not in an Ethereum Wallet yet. When you're ready to claim your POAPS, please click on
+                the button below
+              </span>
+              <div className="scan-email-badge-button-container">
+                <button onClick={handleOpenReedemModalClick} className="scan-email-badge-button">
+                  Redeem
+                </button>
               </div>
-            )}
+            </div>
+          )}
 
-            {error && !loading && (
-              <div className="bk-msg-error">
-                There was an error.
-                <br />
-                Check the address and try again
-              </div>
-            )}
+          {error && !loading && (
+            <div className="bk-msg-error">
+              There was an error.
+              <br />
+              Check the address and try again
+            </div>
+          )}
 
-            {loading === true && (
-              <>
-                <Loading />
-                <div style={{ textAlign: 'center' }}>Waiting for your tokens... Hang tight</div>
-              </>
-            )}
+          {loading === true && (
+            <>
+              <Loading />
+              <div style={{ textAlign: 'center' }}>Waiting for your tokens... Hang tight</div>
+            </>
+          )}
 
-            {tokens && tokens.length === 0 && (
-              <div className={classNames('event-year', 'empty-year')} style={{ marginTop: '30px' }}>
-                <img src={NoEventsImg} alt="" />
-                <p className="image-description">You don't seem to have any tokens. You're quite a couch potato!</p>
-              </div>
-            )}
+          {tokens && tokens.length === 0 && (
+            <div className={classNames('event-year', 'empty-year')} style={{ marginTop: '30px' }}>
+              <img src={NoEventsImg} alt="" />
+              <p className="image-description">You don't seem to have any tokens. You're quite a couch potato!</p>
+            </div>
+          )}
 
-            {tokens && tokens.length > 0 && this.renderTokens()}
+          {tokens && tokens.length > 0 && renderTokens()}
+        </div>
+      </div>
+
+      <ReactModal isOpen={isRedeemModalOpen} shouldFocusAfterRender={true}>
+        <div className={classNames('redeem-modal', isRedeemLoading && 'submitting')}>
+          <span className="redeem-modal-paragraph">
+            To transfer your POAPs to your Ethereum wallet you will need access to the email{' '}
+            <span className="redeem-modal-email">{address}</span> and the address of your wallet. You will receive an
+            email to verify that you own that email and instructions to redeem your POAPs
+          </span>
+          <div className="redeem-modal-buttons-container">
+            <button
+              disabled={isRedeemLoading}
+              className="redeem-modal-button cancel"
+              onClick={handleCloseReedemModalClick}
+            >
+              Cancel
+            </button>
+            <button disabled={isRedeemLoading} className="redeem-modal-button confirm" onClick={handleRedeemConfirm}>
+              Confirm
+            </button>
           </div>
         </div>
-      </main>
-    );
-  }
-}
+
+        {isRedeemLoading && (
+          <div className="info-tx info-pending redeem-modal-loading">
+            <img src={spinner} alt={'Mining'} />
+            Loading
+          </div>
+        )}
+      </ReactModal>
+    </main>
+  );
+};

@@ -31,7 +31,7 @@ export interface PoapEvent {
   end_date: string;
   virtual_event: boolean;
 }
-export interface PoapFullEvent extends PoapEvent{
+export interface PoapFullEvent extends PoapEvent {
   secret_code?: number;
 }
 export interface Claim extends ClaimProof {
@@ -209,21 +209,25 @@ export function getTokensFor(address: string): Promise<TokenInfo[]> {
   return fetchJson(`${API_BASE}/actions/scan/${address}`);
 }
 
+export function redeemPoaps(): Promise<void> {
+  // return fetchJson(`${API_BASE}/redeem`)
+
+  // Change this fetchs to try 200 and 400 responses
+  // return fetchJsonNoResponse(`https://run.mocky.io/v3/f635c818-eb2a-4b48-a72d-ad10ffea86db`);
+  return fetchJsonNoResponse(`https://run.mocky.io/v3/7a30084d-39df-442e-bf76-24cd5964a0de`);
+}
+
 export function getTokenInfo(tokenId: string): Promise<TokenInfo> {
   return fetchJson(`${API_BASE}/token/${tokenId}`);
 }
 
 export async function getEvents(): Promise<PoapEvent[]> {
-  return authClient.isAuthenticated()
-    ? secureFetch(`${API_BASE}/events`)
-    : fetchJson(`${API_BASE}/events`);
+  return authClient.isAuthenticated() ? secureFetch(`${API_BASE}/events`) : fetchJson(`${API_BASE}/events`);
 }
 
 export async function getEvent(fancyId: string): Promise<null | PoapFullEvent> {
   const isAdmin = authClient.isAuthenticated();
-  return isAdmin
-    ? secureFetch(`${API_BASE}/events-admin/${fancyId}`)
-    : fetchJson(`${API_BASE}/events/${fancyId}`);
+  return isAdmin ? secureFetch(`${API_BASE}/events-admin/${fancyId}`) : fetchJson(`${API_BASE}/events/${fancyId}`);
 }
 
 export async function getSetting(settingName: string): Promise<null | PoapSetting> {
@@ -270,11 +274,7 @@ export async function checkSigner(signerIp: string, eventId: number): Promise<bo
   }
 }
 
-export async function requestProof(
-  signerIp: string,
-  eventId: number,
-  claimer: string
-): Promise<ClaimProof> {
+export async function requestProof(signerIp: string, eventId: number, claimer: string): Promise<ClaimProof> {
   return fetchJson(`${signerIp}/api/proof`, {
     method: 'POST',
     body: JSON.stringify({ eventId, claimer }),
@@ -298,7 +298,7 @@ export async function sendNotification(
   title: string,
   description: string,
   notificationType: string,
-  selectedEventId: number | null
+  selectedEventId: number | null,
 ): Promise<any> {
   return secureFetchNoResponse(`${API_BASE}/notifications`, {
     method: 'POST',
@@ -312,11 +312,7 @@ export async function sendNotification(
   });
 }
 
-export async function mintEventToManyUsers(
-  eventId: number,
-  addresses: string[],
-  signer_address: string
-): Promise<any> {
+export async function mintEventToManyUsers(eventId: number, addresses: string[], signer_address: string): Promise<any> {
   return secureFetchNoResponse(`${API_BASE}/actions/mintEventToManyUsers`, {
     method: 'POST',
     body: JSON.stringify({
@@ -328,11 +324,7 @@ export async function mintEventToManyUsers(
   });
 }
 
-export async function mintUserToManyEvents(
-  eventIds: number[],
-  address: string,
-  signer_address: string
-): Promise<any> {
+export async function mintUserToManyEvents(eventIds: number[], address: string, signer_address: string): Promise<any> {
   return secureFetchNoResponse(`${API_BASE}/actions/mintUserToManyEvents`, {
     method: 'POST',
     body: JSON.stringify({
@@ -376,7 +368,7 @@ export function getNotifications(
   offset: number,
   type?: string,
   recipientFilter?: string,
-  eventId?: number
+  eventId?: number,
 ): Promise<PaginatedNotifications> {
   let paramsObject = { limit, offset };
 
@@ -401,23 +393,18 @@ export async function getQrCodes(
   passphrase: string,
   claimed?: boolean,
   scanned?: boolean,
-  event_id?: number
+  event_id?: number,
 ): Promise<PaginatedQrCodes> {
   const isAdmin = authClient.isAuthenticated();
-  const params = queryString.stringify(
-    { limit, offset, claimed, event_id, scanned, passphrase },
-    { sort: false }
-  );
-  return isAdmin
-    ? secureFetch(`${API_BASE}/qr-code?${params}`)
-    : fetchJson(`${API_BASE}/qr-code?${params}`);
+  const params = queryString.stringify({ limit, offset, claimed, event_id, scanned, passphrase }, { sort: false });
+  return isAdmin ? secureFetch(`${API_BASE}/qr-code?${params}`) : fetchJson(`${API_BASE}/qr-code?${params}`);
 }
 
 export async function qrCodesRangeAssign(
   from: number,
   to: number,
   eventId: number | null,
-  passphrase?: string
+  passphrase?: string,
 ): Promise<void> {
   const isAdmin = authClient.isAuthenticated();
 
@@ -445,7 +432,7 @@ export async function qrCodesRangeAssign(
 
 export async function qrCodesListAssign(
   qrHashes: string[],
-  eventId: number | null
+  eventId: number | null,
 ): Promise<QrCodesListAssignResponse> {
   console.log(eventId);
   return secureFetch(`${API_BASE}/qr-code/list-assign`, {
@@ -462,12 +449,12 @@ export async function qrCreateMassive(
   qrHashes: string[],
   qrIds: string[],
   delegated_mint: boolean,
-  event?: string
+  event?: string,
 ): Promise<void> {
   let unstringifiedBody = {
     qr_list: qrHashes,
     numeric_list: qrIds,
-    delegated_mint
+    delegated_mint,
   };
 
   if (Number(event) !== 0) Object.assign(unstringifiedBody, { event_id: Number(event) });
@@ -484,7 +471,7 @@ export async function qrCreateMassive(
 export async function qrCodesSelectionUpdate(
   qrCodesIds: string[],
   eventId: number | null,
-  passphrase?: string
+  passphrase?: string,
 ): Promise<void> {
   const isAdmin = authClient.isAuthenticated();
 
@@ -512,13 +499,9 @@ export function getTransactions(
   limit: number,
   offset: number,
   status: string,
-  signer: string
+  signer: string,
 ): Promise<PaginatedTransactions> {
-
-  const params = queryString.stringify(
-    { limit, offset, status, signer },
-    { sort: false }
-  );
+  const params = queryString.stringify({ limit, offset, status, signer }, { sort: false });
   return secureFetch(`${API_BASE}/transactions?${params}`);
 }
 
@@ -538,9 +521,9 @@ export async function postClaimHash(
   qr_hash: string,
   address: string,
   secret: string,
-  method: string
+  method: string,
 ): Promise<HashClaim> {
-  let delegated = method === 'web3'
+  let delegated = method === 'web3';
   return fetchJson(`${API_BASE}/actions/claim-qr`, {
     method: 'POST',
     body: JSON.stringify({ qr_hash, address, secret, delegated }),
