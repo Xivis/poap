@@ -19,6 +19,21 @@ const AddressSchema = yup.object().shape({
     .required(),
 });
 
+const RedeemSchema = yup.object().shape({
+  address: yup
+    .mixed()
+    .test({
+      test: (value) => {
+        if (ETH_REGEX.test(value) || isValidAddress(value)) {
+          return true;
+        }
+
+        return false;
+      },
+    })
+    .required(),
+});
+
 const GasPriceSchema = yup.object().shape({
   gasPrice: yup.number().required().positive(),
 });
@@ -138,4 +153,5 @@ export {
   UpdateModalWithFormikSelectedQrsSchema,
   UpdateModalWithFormikListSchema,
   AddressPageSchema,
+  RedeemSchema,
 };

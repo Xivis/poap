@@ -366,6 +366,18 @@ export function setSigner(id: number, gasPrice: string): Promise<any> {
   });
 }
 
+export async function redeemWithEmail(address: string, uid: string): Promise<void> {
+  // TODO: Uncommnet next block of code and replace for correct endpoint
+  // return fetchJson(`${API_BASE}/redeem`, {
+  //   method: 'POST',
+  //   body: JSON.stringify({ beneficiary: address, uid }),
+  //   headers: { 'Content-Type': 'application/json' },
+  // });
+
+  // TODO: Remove mocky in favor of post to the new /redeem endpoint (not implemented yet)
+  return fetchJsonNoResponse('https://run.mocky.io/v3/0e462626-29af-40fe-9130-dd6724271fee');
+}
+
 export function getNotifications(
   limit: number,
   offset: number,

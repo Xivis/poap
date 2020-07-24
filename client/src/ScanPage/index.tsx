@@ -36,7 +36,7 @@ export const ScanPage: React.FC<RouteComponentProps> = ({ match, history, locati
 
   return (
     <div className="landing">
-      <ScanHeader />
+      <ScanHeader sectionName="Scan" />
       <Route exact path={ROUTES.home} render={() => <ChooseAddressPage onAccountDetails={showBadges} />} />
       <Route path={ROUTES.scan} component={AddressTokensPage} />
       <Route path={ROUTES.token} component={TokenDetailPage} />
@@ -45,7 +45,11 @@ export const ScanPage: React.FC<RouteComponentProps> = ({ match, history, locati
   );
 };
 
-const ScanHeader: React.FC = () => (
+type ScanHeaderProps = {
+  sectionName: string;
+};
+
+export const ScanHeader: React.FC<ScanHeaderProps> = ({ sectionName }) => (
   <header id="site-header" role="banner">
     <div className="container">
       <div className="col-xs-6 col-sm-6 col-md-6">
@@ -54,13 +58,13 @@ const ScanHeader: React.FC = () => (
         </Link>
       </div>
       <div className="col-xs-6 col-sm-6 col-md-6">
-        <p className="page-title">Scan</p>
+        <p className="page-title">{sectionName}</p>
       </div>
     </div>
   </header>
 );
 
-const ScanFooter: React.FC<ScanFooterProps> = ({ path }) => (
+export const ScanFooter: React.FC<ScanFooterProps> = ({ path }) => (
   <footer
     role="contentinfo"
     className={`footer-events 

@@ -29,6 +29,7 @@ const LABELS = {
 const ROUTES = {
   home: '/',
   scan: '/scan/:account',
+  redeem: '/redeem/:uid/:email',
   token: '/token/:tokenId',
   callback: '/callback',
   signerClaimPage: '/signer/claim/:event',
@@ -117,7 +118,7 @@ const TX_STATUS = {
   bumped: 'bumped',
 };
 
-const prefix = process.env.REACT_APP_ETH_NETWORK === 'mainnet' ? '' : `${process.env.REACT_APP_ETH_NETWORK}.`
+const prefix = process.env.REACT_APP_ETH_NETWORK === 'mainnet' ? '' : `${process.env.REACT_APP_ETH_NETWORK}.`;
 const etherscanLinks = {
   tx: (hash: string): string => `https://${prefix}etherscan.io/tx/${hash}`,
   address: (address: string): string => `https://${prefix}etherscan.io/address/${address}`,

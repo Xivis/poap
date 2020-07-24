@@ -55,7 +55,7 @@ export const CheckAccount: React.FC<{
 export const SignerClaimPage: React.FC<RouteComponentProps<{ event: string }>> = ({ match }) => {
   return (
     <>
-      <LoadEvent fancyId={match.params.event} render={event => <ClaimPageInner event={event} />} />
+      <LoadEvent fancyId={match.params.event} render={(event) => <ClaimPageInner event={event} />} />
       <ClaimFooter />
     </>
   );
@@ -99,14 +99,9 @@ const ClaimPageInner: React.FC<{ event: PoapEvent }> = React.memo(({ event }) =>
         </div>
         <div className="main-content">
           <div className="container">
-            <div
-              className="content-event"
-              data-aos="fade-up"
-              data-aos-delay="300"
-              style={{ minHeight: 65 }}
-            >
+            <div className="content-event" data-aos="fade-up" data-aos-delay="300" style={{ minHeight: 65 }}>
               <CheckAccount
-                render={account => (
+                render={(account) => (
                   <>
                     <h2>Wallet</h2>
                     <p className="wallet-number">{account}</p>
@@ -129,9 +124,7 @@ const ClaimPageInner: React.FC<{ event: PoapEvent }> = React.memo(({ event }) =>
                         <p>Smash that refresh button</p>
                       </>
                     )}
-                    {claimState === ClaimState.Failed && (
-                      <p className="error">There was an error with your claim</p>
-                    )}
+                    {claimState === ClaimState.Failed && <p className="error">There was an error with your claim</p>}
                   </>
                 )}
               />
@@ -143,14 +136,12 @@ const ClaimPageInner: React.FC<{ event: PoapEvent }> = React.memo(({ event }) =>
   );
 });
 
-const ResponsiveImg: React.FC<{ mobile: string; desktop: string }> = React.memo(
-  ({ mobile, desktop }) => (
-    <>
-      <img alt="" src={mobile} className="mobile" />
-      <img alt="" src={desktop} className="desktop" />
-    </>
-  )
-);
+const ResponsiveImg: React.FC<{ mobile: string; desktop: string }> = React.memo(({ mobile, desktop }) => (
+  <>
+    <img alt="" src={mobile} className="mobile" />
+    <img alt="" src={desktop} className="desktop" />
+  </>
+));
 
 type ClaimButtonProps = {
   obtainBadge: () => void;
@@ -183,7 +174,7 @@ const ClaimButton: React.FC<ClaimButtonProps> = React.memo(
         <span className="small-text">so give me by badge</span>
       </button>
     );
-  }
+  },
 );
 
 const ClaimHeader: React.FC<{ event: PoapEvent }> = React.memo(({ event }) => (
