@@ -32,10 +32,10 @@ const ClaimForm: React.FC<{
 
   const getAddress = () => {
     tryGetAccount()
-      .then(address => {
+      .then((address) => {
         if (address) setAccount(address);
       })
-      .catch(e => {
+      .catch((e) => {
         console.log('Error while fetching account: ', e);
       });
   };
@@ -47,7 +47,7 @@ const ClaimForm: React.FC<{
         claim.qr_hash.toLowerCase(),
         values.address.toLowerCase(),
         claim.secret,
-        method
+        method,
       );
       onSubmit(newClaim);
     } catch (error) {
@@ -92,16 +92,12 @@ const ClaimForm: React.FC<{
                 <div className={'web3-browser'}>
                   {enabledWeb3 && (
                     <div>
-                    Web3 browser? <span onClick={getAddress}>Get my address</span>
+                      Web3 browser? <span onClick={getAddress}>Get my address</span>
                     </div>
-                    )}
+                  )}
                 </div>
 
-                <SubmitButton
-                  text="Claim POAP token"
-                  isSubmitting={isSubmitting}
-                  canSubmit={isValid}
-                />
+                <SubmitButton text="Claim POAP token" isSubmitting={isSubmitting} canSubmit={isValid} />
               </Form>
             );
           }}

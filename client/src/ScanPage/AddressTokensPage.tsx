@@ -15,10 +15,10 @@ import { isValidAddress, isValidEmail } from '../lib/helpers';
 
 /* Assets */
 import NoEventsImg from '../images/event-2019.svg';
-import spinner from '../images/etherscan-spinner.svg';
 
 /* Components */
 import { Loading } from '../components/Loading';
+import { SubmitButton } from '../components/SubmitButton';
 
 type AddressTokensPageState = {
   tokens: null | TokenInfo[];
@@ -259,25 +259,18 @@ export const AddressTokensPage: FC<Props> = ({ location, match }) => {
             email to verify that you own that email and instructions to redeem your POAPs
           </span>
           <div className="redeem-modal-buttons-container">
-            <button
-              disabled={isRedeemLoading}
-              className="redeem-modal-button cancel"
-              onClick={handleCloseReedemModalClick}
-            >
+            <SubmitButton
+              canSubmit={true}
+              text="Confirm"
+              isSubmitting={isRedeemLoading}
+              onClick={handleRedeemConfirm}
+            />
+
+            <div onClick={handleCloseReedemModalClick} className={'close-modal'}>
               Cancel
-            </button>
-            <button disabled={isRedeemLoading} className="redeem-modal-button confirm" onClick={handleRedeemConfirm}>
-              Confirm
-            </button>
+            </div>
           </div>
         </div>
-
-        {isRedeemLoading && (
-          <div className="info-tx info-pending redeem-modal-loading">
-            <img src={spinner} alt={'Mining'} />
-            Loading
-          </div>
-        )}
       </ReactModal>
     </main>
   );
