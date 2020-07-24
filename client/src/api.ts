@@ -213,11 +213,10 @@ export function redeemPoaps(): Promise<void> {
   // TODO: Uncomment next 4 lines when Backend supports redeem endpoint with email
   // return fetchJson(`${API_BASE}/redeem`)
 
+  // TODO: Delete next block containing Mocky code when Backend supports redeem endpoint with email
   // Change this fetchs to try 200 and 400 responses
-  // return fetchJsonNoResponse(`https://run.mocky.io/v3/f635c818-eb2a-4b48-a72d-ad10ffea86db`);
-
-  // TODO: Delete next line when Backend supports redeem endpoint with email
-  return fetchJsonNoResponse(`https://run.mocky.io/v3/7a30084d-39df-442e-bf76-24cd5964a0de`);
+  return fetchJsonNoResponse(`https://run.mocky.io/v3/f635c818-eb2a-4b48-a72d-ad10ffea86db`);
+  // return fetchJsonNoResponse(`https://run.mocky.io/v3/7a30084d-39df-442e-bf76-24cd5964a0de`);
 }
 
 export function getTokenInfo(tokenId: string): Promise<TokenInfo> {
