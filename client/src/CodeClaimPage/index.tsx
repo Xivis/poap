@@ -126,23 +126,19 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string; method:
     }
     if (claim.claimed) {
       // Delegated minting
-      if (claim.email_claimed) {
-        body = <ClaimFinished claim={claim} />;
-      } else {
-        if (claim.delegated_mint) {
-          body = <ClaimDelegated claim={claim} verifyClaim={verifySignedMessage} initialStep={initialStep} />;
-        }
+      if (claim.delegated_mint) {
+        body = <ClaimDelegated claim={claim} verifyClaim={verifySignedMessage} initialStep={initialStep} />;
+      }
 
-        // POAP minting
-        if (claim.tx_status && claim.tx_status === TX_STATUS.pending) {
-          body = <ClaimPending claim={claim} checkClaim={fetchClaim} />;
-        }
-        if ((claim.tx_status && claim.tx_status === TX_STATUS.passed) || beneficiaryHasToken) {
-          body = <ClaimFinished claim={claim} />;
-        }
-        if (claim.tx_status && claim.tx_status === TX_STATUS.bumped) {
-          body = <ClaimBumped claim={claim} />;
-        }
+      // POAP minting
+      if (claim.tx_status && claim.tx_status === TX_STATUS.pending) {
+        body = <ClaimPending claim={claim} checkClaim={fetchClaim} />;
+      }
+      if ((claim.tx_status && claim.tx_status === TX_STATUS.passed) || beneficiaryHasToken || claim.email_claimed) {
+        body = <ClaimFinished claim={claim} />;
+      }
+      if (claim.tx_status && claim.tx_status === TX_STATUS.bumped) {
+        body = <ClaimBumped claim={claim} />;
       }
     }
   }
