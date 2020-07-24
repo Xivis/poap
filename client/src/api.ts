@@ -53,6 +53,7 @@ export interface HashClaim {
   beneficiary: Address;
   user_input: string | null;
   signer: Address;
+  email_claimed: boolean;
   claimed: boolean;
   claimed_date: string;
   created_date: string;
@@ -526,9 +527,11 @@ export async function postClaimHash(
   method: string,
 ): Promise<HashClaim> {
   let delegated = method === 'web3';
-  return fetchJson(`${API_BASE}/actions/claim-qr`, {
-    method: 'POST',
-    body: JSON.stringify({ qr_hash, address, secret, delegated }),
-    headers: { 'Content-Type': 'application/json' },
-  });
+  // TODO: Uncomment next code block when Backend support email as possible address
+  // return fetchJson(`${API_BASE}/actions/claim-qr`, {
+  //   method: 'POST',
+  //   body: JSON.stringify({ qr_hash, address, secret, delegated }),
+  //   headers: { 'Content-Type': 'application/json' },
+  // });
+  return fetchJson('https://run.mocky.io/v3/08d501a4-1085-49ca-a7bc-c1aabbaf4c45');
 }

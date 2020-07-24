@@ -1,10 +1,22 @@
 import * as yup from 'yup';
+import { isValidAddress } from '../lib/helpers';
 import emailRegex from 'email-regex';
 
 import { IMAGE_SUPPORTED_FORMATS } from './constants';
 
 const AddressSchema = yup.object().shape({
-  address: yup.string().required(),
+  address: yup
+    .mixed()
+    .test({
+      test: (value) => {
+        if (emailRegex({ exact: true }).test(value) || ETH_REGEX.test(value) || isValidAddress(value)) {
+          return true;
+        }
+
+        return false;
+      },
+    })
+    .required(),
 });
 
 const GasPriceSchema = yup.object().shape({

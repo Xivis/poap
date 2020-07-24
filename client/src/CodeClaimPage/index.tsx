@@ -5,7 +5,6 @@ import { useToasts } from 'react-toast-notifications';
 
 /* Helpers */
 import { HashClaim, getClaimHash, getTokensFor } from '../api';
-import { isValidEmail } from '../lib/helpers';
 
 /* Components*/
 import ClaimHeader from './ClaimHeader';
@@ -47,19 +46,17 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string; method:
   }, []); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
-    if (claim && claim.delegated_mint && !isVerified) {
+    if (claim && claim.email_claimed) {
+      setIsVerified(true);
+    }
+
+    if (claim && claim.delegated_mint && !isVerified && !claim.email_claimed) {
       verifySignedMessage();
     }
   }, [claim]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   const fetchClaim = (hash: string) => {
     setIsClaimLoading(true);
-
-    if (isValidEmail(hash)) {
-      console.log('fetchClaim -> hash', hash);
-      return;
-      // Aca logica de posteo
-    }
 
     getClaimHash(hash.toLowerCase())
       .then((claim) => {
@@ -129,19 +126,23 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string; method:
     }
     if (claim.claimed) {
       // Delegated minting
-      if (claim.delegated_mint) {
-        body = <ClaimDelegated claim={claim} verifyClaim={verifySignedMessage} initialStep={initialStep} />;
-      }
-
-      // POAP minting
-      if (claim.tx_status && claim.tx_status === TX_STATUS.pending) {
-        body = <ClaimPending claim={claim} checkClaim={fetchClaim} />;
-      }
-      if ((claim.tx_status && claim.tx_status === TX_STATUS.passed) || beneficiaryHasToken) {
+      if (claim.email_claimed) {
         body = <ClaimFinished claim={claim} />;
-      }
-      if (claim.tx_status && claim.tx_status === TX_STATUS.bumped) {
-        body = <ClaimBumped claim={claim} />;
+      } else {
+        if (claim.delegated_mint) {
+          body = <ClaimDelegated claim={claim} verifyClaim={verifySignedMessage} initialStep={initialStep} />;
+        }
+
+        // POAP minting
+        if (claim.tx_status && claim.tx_status === TX_STATUS.pending) {
+          body = <ClaimPending claim={claim} checkClaim={fetchClaim} />;
+        }
+        if ((claim.tx_status && claim.tx_status === TX_STATUS.passed) || beneficiaryHasToken) {
+          body = <ClaimFinished claim={claim} />;
+        }
+        if (claim.tx_status && claim.tx_status === TX_STATUS.bumped) {
+          body = <ClaimBumped claim={claim} />;
+        }
       }
     }
   }

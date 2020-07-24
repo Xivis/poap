@@ -120,46 +120,6 @@
       }
     }
 
-    .scan-email-badge-container {
-      display: flex;
-      flex-direction: column;
-
-      background-color: $color-light-violet;
-      border: 1px solid $color-primary;
-      border-radius: 4px;
-
-      padding: 16px;
-
-      margin-bottom: 12px;
-    }
-
-    .scan-email-badge {
-      color: $color-primary;
-    }
-
-    .scan-email-badge-button-container {
-      display: flex;
-      justify-content: center;
-
-      margin-top: 12px;
-    }
-
-    .scan-email-badge-button {
-      display: flex;
-      justify-content: center;
-
-      color: $color-primary;
-
-      background-color: $color-invert;
-
-      border: 1px solid $color-primary;
-      border-radius: 4px;
-
-      padding: 8px 16px;
-
-      cursor: pointer;
-    }
-
     .login-form {
       text-align: center;
 
@@ -297,4 +257,48 @@
   img {
     max-width: 38px;
   }
+}
+
+.scan-email-badge-container {
+  display: flex;
+  flex-direction: column;
+
+  background-color: $color-light-violet;
+  border: 1px solid $color-primary;
+  border-radius: 4px;
+
+  padding: 16px;
+
+  margin-bottom: 12px;
+}
+
+.scan-email-badge {
+  color: $color-primary;
+}
+
+.width-700 {
+  max-width: 700px;
+}
+
+.scan-email-badge-button-container {
+  display: flex;
+  justify-content: center;
+
+  margin-top: 12px;
+}
+
+.scan-email-badge-button {
+  display: flex;
+  justify-content: center;
+
+  color: $color-primary;
+
+  background-color: $color-invert;
+
+  border: 1px solid $color-primary;
+  border-radius: 4px;
+
+  padding: 8px 16px;
+
+  cursor: pointer;
 }

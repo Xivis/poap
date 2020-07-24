@@ -460,7 +460,8 @@
         padding: 25px 0;
         font-family: $font-family-narrow;
         color: $color-medium-violet;
-        span, a {
+        span,
+        a {
           text-decoration: underline;
           cursor: pointer;
           font-family: inherit;
@@ -471,6 +472,9 @@
 
     .claim-info {
       text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       margin: auto;
 
       .claim-preloader {
@@ -531,7 +535,6 @@
             top: 13px;
           }
         }
-
       }
 
       .text-info {
@@ -558,7 +561,6 @@
           }
         }
       }
-
     }
   }
 
@@ -604,7 +606,7 @@
         text-transform: uppercase;
         font-size: 0.85rem;
         color: $color-grey;
-        margin-bottom: 20px
+        margin-bottom: 20px;
       }
       &:first-child {
         border-right: 1px solid rgb(226, 232, 240);
@@ -616,7 +618,6 @@
         }
       }
     }
-
   }
 }
 

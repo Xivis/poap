@@ -81,7 +81,7 @@ const ClaimForm: React.FC<{
                         type="text"
                         autoComplete="off"
                         className={classNames(!!form.errors[field.name] && 'error')}
-                        placeholder={'Input your Ethereum address or ENS name'}
+                        placeholder={'Input your Ethereum address or ENS name or email'}
                         {...field}
                       />
                     );
