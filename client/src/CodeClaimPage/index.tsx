@@ -59,12 +59,17 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string; method:
     setIsClaimLoading(true);
 
     getClaimHash(hash.toLowerCase())
-      .then((claim) => {
+      .then((claim: HashClaim) => {
         setClaim(claim);
         setClaimError(false);
       })
-      .catch((error) => {
+      .catch((error: Error) => {
         setClaimError(true);
+
+        addToast(error.message, {
+          appearance: 'error',
+          autoDismiss: false,
+        });
       })
       .finally(() => setIsClaimLoading(false));
   };
