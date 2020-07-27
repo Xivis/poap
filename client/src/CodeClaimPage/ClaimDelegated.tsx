@@ -36,7 +36,9 @@ const ClaimDelegated: React.FC<{
   claim: HashClaim;
   verifyClaim: () => void;
   initialStep: boolean;
-}> = ({ claim, verifyClaim, initialStep }) => {
+  setIsModalOpen: (state: boolean) => void;
+  canGetPoap: boolean;
+}> = ({ claim, verifyClaim, initialStep, setIsModalOpen, canGetPoap }) => {
   const [web3, setWeb3] = useState<any>(null)
   const [network, setNetwork] = useState<string | null>(null)
   const [connectStatus, setConnectStatus] = useState<string>(!initialStep ? PAGE_STATUS.LOADING : PAGE_STATUS.DISCONNECTED)
@@ -45,6 +47,10 @@ const ClaimDelegated: React.FC<{
   const [txReceipt, setTxReceipt] = useState<null | TransactionReceipt>(null)
 
   const { addToast } = useToasts()
+
+  useEffect(() => {
+    if (canGetPoap) claimPoap()
+  }, [canGetPoap]) // eslint-disable-line
 
   useEffect(() => {
     if (initialStep) {
@@ -103,6 +109,8 @@ const ClaimDelegated: React.FC<{
       return null
     }
   };
+
+  const showInformativeGasModal = () => setIsModalOpen(true);
 
   const claimPoap = async () => {
     let _web3 = web3
@@ -206,7 +214,7 @@ const ClaimDelegated: React.FC<{
       {connectStatus !== PAGE_STATUS.LOADING && !txHash &&
         <Button
           text={'Claim POAP token'}
-          action={claimPoap}
+          action={showInformativeGasModal}
           extraClass={'link-btn'}
         />
       }

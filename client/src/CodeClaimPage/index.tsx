@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import ReactModal from 'react-modal';
 import { RouteComponentProps } from 'react-router';
 import Web3 from 'web3'
 import { useToasts } from 'react-toast-notifications';
@@ -27,7 +28,11 @@ import EmptyBadge from '../images/empty-badge.svg';
 const NETWORK = process.env.REACT_APP_ETH_NETWORK;
 
 export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string, method: string }>> = ({ match }) => {
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
+  const [shouldContinueClaim, setShouldContinueClaim] = useState<boolean>(false)
+  const [canGetPoap, setCanGetPoap] = useState<boolean>(false)
   const [claim, setClaim] = useState<null | HashClaim>(null);
+  const [initialClaim, setInitialClaim] = useState<null | HashClaim>(null);
   const [claimError, setClaimError] = useState<boolean>(false);
   const [networkError, setNetworkError] = useState<boolean>(false);
   const [isVerified, setIsVerified] = useState<boolean>(false);
@@ -42,19 +47,33 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string, method:
   let image = EmptyBadge;
 
   useEffect(() => {
+    if (initialClaim?.beneficiary) {
+      setShouldContinueClaim(true);
+      setInitialStep(true);
+    }
+  }, [initialClaim])
+
+  useEffect(() => {
     if (hash) fetchClaim(hash);
   }, []); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
-    if (claim && claim.delegated_mint && !isVerified) {
+    if (claim && claim.delegated_mint && !isVerified && shouldContinueClaim) {
       verifySignedMessage()
     }
-  }, [claim]); /* eslint-disable-line react-hooks/exhaustive-deps */
+  }, [claim, shouldContinueClaim]); /* eslint-disable-line react-hooks/exhaustive-deps */
+
+  const handleModal = () => {
+    setIsModalOpen(false)
+    setCanGetPoap(true)
+    setShouldContinueClaim(true)
+  };
 
   const fetchClaim = (hash: string) => {
     setIsClaimLoading(true);
     getClaimHash(hash.toLowerCase())
       .then(claim => {
+        setInitialClaim(claim);
         setClaim(claim);
         setClaimError(false);
       })
@@ -65,6 +84,7 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string, method:
   }
 
   const continueClaim = (claim: HashClaim) => {
+    setIsModalOpen(true)
     setClaim(claim)
     setInitialStep(false)
   }
@@ -118,7 +138,13 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string, method:
     if (claim.claimed) {
       // Delegated minting
       if (claim.delegated_mint) {
-        body = <ClaimDelegated claim={claim} verifyClaim={verifySignedMessage} initialStep={initialStep} />;
+        body = <ClaimDelegated 
+        claim={claim} 
+        verifyClaim={verifySignedMessage} 
+        initialStep={initialStep} 
+        setIsModalOpen={setIsModalOpen} 
+        canGetPoap={canGetPoap}  
+        />;
       }
 
       // POAP minting
@@ -146,6 +172,26 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string, method:
         claimed={!!(claim && (claim.tx_status === TX_STATUS.passed || beneficiaryHasToken))}
       />
       <div className={'claim-body'}>{body}</div>
+
+      <ReactModal isOpen={isModalOpen} shouldFocusAfterRender={true}>
+        <div className="admin-list-modal">
+          <div className='claim-modal-text-container'>
+            <p>The current surge in gas prices makes a POAP minting have a cost of between $2 and $6 in mining fees.</p>
+            <p>We are working hard on a scaling solution that should be ready in 6-8 weeks. </p>
+            <p>In the meantime please input your address in the field below and click on claim. 
+              That’s going to block this POAP to be minted for free once our new deployment is ready. 
+              Afterwards you can continue the process at your expense or just close this page. 
+              For learning more about what our plans are visit our discord. 
+            </p>
+            <p><a href="http://poap.xyz/discord" target="_blank" rel="noopener noreferrer">http://poap.xyz/discord</a></p>
+          </div>
+          <div className="claim-modal-cancel-container">
+            <div onClick={() => handleModal()} className={'close-modal'}>
+              Close
+            </div>
+          </div>
+        </div>
+      </ReactModal>
       <ClaimFooter />
     </div>
   );
