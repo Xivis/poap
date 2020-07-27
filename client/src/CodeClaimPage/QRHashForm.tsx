@@ -46,7 +46,7 @@ const QRHashForm: React.FC<{ error: boolean; loading: boolean; checkClaim: (hash
                         type="text"
                         autoComplete="off"
                         className={classNames(!!form.errors[field.name] && 'error')}
-                        placeholder="Six-digit code or email"
+                        placeholder="Six-digit code"
                         {...field}
                       />
                     );

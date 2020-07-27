@@ -494,6 +494,10 @@
         line-height: 30px;
         max-width: 300px;
         margin: 30px auto;
+
+        p {
+          margin: 0;
+        }
       }
 
       .info-tx {

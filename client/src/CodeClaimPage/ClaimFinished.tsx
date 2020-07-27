@@ -22,8 +22,8 @@ const ClaimFinished: React.FC<Props> = ({ claim }) => {
   return (
     <div className={'claim-info'} data-aos="fade-up" data-aos-delay="300">
       <div className={'info-title'}>
-        Congratulations! <br />
-        {claim.event.name} badge is now in your wallet
+        <p>Congratulations!</p>
+        <p>{claim.event.name} badge is now in your wallet</p>
       </div>
       <div className={'text-info'}>Keep growing your POAP collection!</div>
       {isEmailClaimed && (
