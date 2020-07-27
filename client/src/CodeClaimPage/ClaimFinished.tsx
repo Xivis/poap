@@ -17,7 +17,7 @@ type Props = {
 
 const ClaimFinished: React.FC<Props> = ({ claim }) => {
   const appLink = `/scan/${claim.beneficiary}`;
-  const isEmailClaimed = claim?.email_claimed;
+  const isEmailClaimed = claim.email_claimed;
 
   return (
     <div className={'claim-info'} data-aos="fade-up" data-aos-delay="300">

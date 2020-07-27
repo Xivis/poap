@@ -4,7 +4,7 @@ import { ErrorMessage, Field, FieldProps, Form, Formik, FormikActions } from 'fo
 
 /* Helpers */
 import { tryGetAccount } from '../poap-eth';
-import { HashClaim, postClaimHash } from '../api';
+import { HashClaim, postClaimHash, Address } from '../api';
 import { AddressSchema } from '../lib/schemas';
 import { hasWeb3 } from '../poap-eth';
 
@@ -32,11 +32,11 @@ const ClaimForm: React.FC<{
 
   const getAddress = () => {
     tryGetAccount()
-      .then((address) => {
+      .then((address: Address | null) => {
         if (address) setAccount(address);
       })
-      .catch((e) => {
-        console.log('Error while fetching account: ', e);
+      .catch((error: Error) => {
+        console.log('Error while fetching account: ', error);
       });
   };
 
