@@ -4,7 +4,7 @@ import Web3 from 'web3';
 import { useToasts } from 'react-toast-notifications';
 
 /* Helpers */
-import { HashClaim, getClaimHash, getTokensFor } from '../api';
+import { HashClaim, getClaimHash, getTokensFor, TokenInfo } from '../api';
 
 /* Components*/
 import ClaimHeader from './ClaimHeader';
@@ -81,8 +81,10 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string; method:
 
   const checkUserTokens = () => {
     if (!claim || !claim.beneficiary) return;
-    getTokensFor(claim.beneficiary).then((tokens) => {
-      if (tokens.filter((token) => token.event.id === claim.event_id).length > 0) {
+    getTokensFor(claim.beneficiary).then((tokens: TokenInfo[]) => {
+      const beneficiaryHasToken = tokens.filter((token) => token.event.id === claim.event_id).length > 0;
+
+      if (beneficiaryHasToken) {
         setBeneficiaryHasToken(true);
       }
     });

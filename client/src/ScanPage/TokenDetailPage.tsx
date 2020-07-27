@@ -62,9 +62,7 @@ export const TokenDetailPage: React.FC<RouteComponentProps<{
             <b>{token.event.start_date}</b>
           </p>
           <div className="logo-event" data-aos="fade-up">
-            {typeof token.event.image_url === 'string' && (
-              <img src={token.event.image_url} alt="Event" />
-            )}
+            {typeof token.event.image_url === 'string' && <img src={token.event.image_url} alt="Event" />}
           </div>
         </div>
       </div>
@@ -92,18 +90,12 @@ export const TokenDetailPage: React.FC<RouteComponentProps<{
                   </TwitterShareButton>
                 </li>
                 <li>
-                  <TelegramShareButton
-                    url={window.location.toString()}
-                    title={`Look at my ${token.event.name} badge!`}
-                  >
+                  <TelegramShareButton url={window.location.toString()} title={`Look at my ${token.event.name} badge!`}>
                     <TelegramIcon size={40} round iconBgStyle={{ fill: '#6534FF' }} />
                   </TelegramShareButton>
                 </li>
                 <li>
-                  <RedditShareButton
-                    url={window.location.toString()}
-                    title={`Look at my ${token.event.name} badge!`}
-                  >
+                  <RedditShareButton url={window.location.toString()} title={`Look at my ${token.event.name} badge!`}>
                     <RedditIcon size={40} round iconBgStyle={{ fill: '#6534FF' }} />
                   </RedditShareButton>
                 </li>

@@ -32,9 +32,7 @@ export const RedeemPage: FC<RouteComponentProps> = ({ match }) => {
 
   // constants
   const uid = delve(match, 'params.uid');
-  console.log('uid ', uid);
   const email = delve(match, 'params.email');
-  console.log('email', email);
 
   // effects
   useEffect(() => {
@@ -68,8 +66,6 @@ export const RedeemPage: FC<RouteComponentProps> = ({ match }) => {
 
     redeemWithEmail(address, uid)
       .then(() => {
-        setIsRedeemLoading(false);
-
         addToast('POAPs loaded successfully', {
           appearance: 'error',
           autoDismiss: false,
@@ -80,7 +76,8 @@ export const RedeemPage: FC<RouteComponentProps> = ({ match }) => {
           appearance: 'error',
           autoDismiss: false,
         });
-      });
+      })
+      .finally(() => setIsRedeemLoading(false));
   };
 
   return (
@@ -129,13 +126,10 @@ export const RedeemPage: FC<RouteComponentProps> = ({ match }) => {
 
         <div className="redeem-poaps-container events-logos">
           {tokens.length > 0 ? (
-            tokens.map((token) => (
+            tokens.map((token: TokenInfo) => (
               <Link
                 key={token.tokenId}
-                to={{
-                  pathname: `/token/${token.tokenId}`,
-                  state: token,
-                }}
+                to={{ pathname: `/token/${token.tokenId}` }}
                 className="event-circle"
                 data-aos="fade-up"
               >

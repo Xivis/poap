@@ -1,5 +1,6 @@
 import React, { FC, useState, useEffect } from 'react';
 import { useToasts } from 'react-toast-notifications';
+import { RouteComponentProps } from 'react-router';
 import ReactModal from 'react-modal';
 
 // routing
@@ -30,12 +31,7 @@ type AddressTokensPageState = {
   isRedeemLoading: boolean;
 };
 
-type Props = {
-  location: any;
-  match: any;
-};
-
-export const AddressTokensPage: FC<Props> = ({ location, match }) => {
+export const AddressTokensPage: FC<RouteComponentProps> = ({ location, match }) => {
   const [state, setState] = useState<AddressTokensPageState>({
     tokens: null,
     error: false,
