@@ -45,6 +45,11 @@ const ROUTES = {
     roles: [ROLES.administrator],
     title: 'Many Users',
   },
+  template: {
+    path: '/admin/template',
+    roles: [ROLES.eventHost],
+    title: 'Manage Templates',
+  },
   issueForUser: {
     path: '/admin/issue-for-user',
     roles: [ROLES.administrator],

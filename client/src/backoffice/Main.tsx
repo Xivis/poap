@@ -107,6 +107,8 @@ const NavigationMenu = withRouter(({ history }) => {
       <SidebarLink route={ROUTES.events} handleClick={closeMenu} />
 
       <SidebarLink route={ROUTES.qr} handleClick={closeMenu} />
+      
+      <SidebarLink route={ROUTES.template} handleClick={closeMenu} />
 
       {!isAdmin && <SidebarLink route={ROUTES.adminLogin} handleClick={closeMenu} />}
 
