@@ -447,12 +447,14 @@
 
     .claim-form {
       text-align: center;
+      width: 100%;
 
       input {
         font-size: 16px;
         text-align: center;
         border: 1px solid $color-primary;
-        width: 500px;
+        width: 100%;
+        max-width: 500px;
       }
 
       .web3-browser {
@@ -645,6 +647,7 @@
     font-size: 16px;
     text-align: center;
     border: 1px solid $color-primary;
-    width: 500px;
+    width: 100%;
+    max-width: 500px;
   }
 }

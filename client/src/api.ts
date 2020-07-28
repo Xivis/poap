@@ -538,8 +538,8 @@ export async function postClaimHash(
   secret: string,
   method: string,
 ): Promise<HashClaim> {
-  let delegated = method === 'web3';
   // TODO: Uncomment next code block when Backend support email as possible address
+  // let delegated = method === 'web3';
   // return fetchJson(`${API_BASE}/actions/claim-qr`, {
   //   method: 'POST',
   //   body: JSON.stringify({ qr_hash, address, secret, delegated }),
