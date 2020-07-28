@@ -191,7 +191,9 @@ const ClaimDelegated: React.FC<{
 
   if (claim.user_input) {
     beneficiary =
-      claim.user_input === beneficiary ? beneficiary : `${claim.user_input} (${reduceAddress(claim.beneficiary)})`;
+      claim.user_input === beneficiary.toLowerCase()
+        ? beneficiary
+        : `${claim.user_input} (${reduceAddress(claim.beneficiary)})`;
   }
 
   return (
