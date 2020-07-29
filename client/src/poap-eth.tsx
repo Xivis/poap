@@ -53,7 +53,7 @@ export async function getUserWallet(): Promise<Signer> {
 // const isAndroid = ua.includes('Android');
 
 export function hasWeb3(): Promise<boolean> {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     let aborted = false;
     function checkForWeb3() {
       if (!aborted) {

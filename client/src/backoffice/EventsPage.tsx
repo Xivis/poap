@@ -129,8 +129,10 @@ export const EditEventForm: React.FC<RouteComponentProps<{
 };
 
 const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ create, event }) => {
-  const [virtualEvent, setVirtualEvent] =  useState<boolean>(event ? event.virtual_event : false);
-  const [multiDay, setMultiDay] =  useState<boolean>(event ? event.start_date !== event.end_date : false);
+  const [virtualEvent, setVirtualEvent] = useState<boolean>(event ? event.virtual_event : false);
+  const [multiDay, setMultiDay] = useState<boolean>(
+    event ? event.start_date !== event.end_date : false
+  );
   const history = useHistory();
   const veryOldDate = new Date('1900-01-01');
   const veryFutureDate = new Date('2200-01-01');
@@ -146,13 +148,13 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
 
   const initialValues = useMemo(() => {
     if (event) {
-      let {virtual_event, secret_code, ...eventKeys} = event
+      let { virtual_event, secret_code, ...eventKeys } = event;
       return {
         ...eventKeys,
         start_date: event.start_date.replace(dateRegex, '-'),
         end_date: event.end_date.replace(dateRegex, '-'),
         isFile: false,
-        secret_code: secret_code ? secret_code.toString().padStart(6, '0') : ''
+        secret_code: secret_code ? secret_code.toString().padStart(6, '0') : '',
       };
     } else {
       const now = new Date();
@@ -169,7 +171,9 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
         event_url: '',
         image: new Blob(),
         isFile: true,
-        secret_code: Math.floor(Math.random()*999999).toString().padStart(6, '0')
+        secret_code: Math.floor(Math.random() * 999999)
+          .toString()
+          .padStart(6, '0'),
       };
       return values;
     }
@@ -188,34 +192,46 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
     setFieldValue('image', firstFile);
   };
 
-  const toggleVirtualEvent = () => setVirtualEvent(!virtualEvent)
+  const toggleVirtualEvent = () => setVirtualEvent(!virtualEvent);
   const toggleMultiDay = (setFieldValue: SetFieldValue, start_date: string) => {
-    if(start_date && multiDay) {
+    if (start_date && multiDay) {
       setFieldValue('end_date', start_date);
     }
-    setMultiDay(!multiDay)
-  }
+    setMultiDay(!multiDay);
+  };
 
   const handleDayClick = (day: Date, dayToSetup: DatePickerDay, setFieldValue: SetFieldValue) => {
     setFieldValue(dayToSetup, dateFormatter(day));
     if (!multiDay && dayToSetup === 'start_date') {
       setFieldValue('end_date', dateFormatter(day));
     }
-  }
+  };
 
-  const day = 60 * 60 * 24 * 1000
+  const day = 60 * 60 * 24 * 1000;
 
-  const warning = <div className={"backoffice-tooltip"}> { create ?
-    <>Be sure to save the 6 digit <b>Edit Code</b> to make any further updates</> :
-    <>Be sure to complete the 6 digit <b>Edit Code</b> that was originally used</>
-  }</div>
+  const warning = (
+    <div className={'backoffice-tooltip'}>
+      {' '}
+      {create ? (
+        <>
+          Be sure to save the 6 digit <b>Edit Code</b> to make any further updateTemplates
+        </>
+      ) : (
+        <>
+          Be sure to complete the 6 digit <b>Edit Code</b> that was originally used
+        </>
+      )}
+    </div>
+  );
 
-  const editLabel = <>
-    <b>Edit Code</b>
-    <Tooltip content={warning}>
-      <img src={infoButton} className={'info-button'} alt={'Help'} />
-    </Tooltip>
-  </>
+  const editLabel = (
+    <>
+      <b>Edit Code</b>
+      <Tooltip content={warning}>
+        <img src={infoButton} className={'info-button'} alt={'Help'} />
+      </Tooltip>
+    </>
+  );
 
   return (
     <div className={'bk-container'}>
@@ -239,10 +255,10 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
             }
 
             Object.entries(othersKeys).forEach(([key, value]) => {
-              formData.append(key, typeof value === 'number' ? String(value) : value)
+              formData.append(key, typeof value === 'number' ? String(value) : value);
             });
 
-            formData.append('virtual_event', String(virtualEvent))
+            formData.append('virtual_event', String(virtualEvent));
 
             if (create) {
               await createEvent(formData!);
@@ -276,13 +292,39 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
               </>
             )}
             <EventField disabled={false} title="Description" type="textarea" name="description" />
-            <CheckboxField title="Virtual Event" name="virtual_event" action={toggleVirtualEvent} checked={virtualEvent} />
+            <CheckboxField
+              title="Virtual Event"
+              name="virtual_event"
+              action={toggleVirtualEvent}
+              checked={virtualEvent}
+            />
             <div className="bk-group">
-              <EventField disabled={false} title={<>City <i>Optional</i></>} name="city" />
-              <EventField disabled={false} title={<>Country <i>Optional</i></>} name="country" />
+              <EventField
+                disabled={false}
+                title={
+                  <>
+                    City <i>Optional</i>
+                  </>
+                }
+                name="city"
+              />
+              <EventField
+                disabled={false}
+                title={
+                  <>
+                    Country <i>Optional</i>
+                  </>
+                }
+                name="country"
+              />
             </div>
 
-            <CheckboxField title="Multi-day event" name="multi_day" action={() => toggleMultiDay(setFieldValue, values.start_date)} checked={multiDay} />
+            <CheckboxField
+              title="Multi-day event"
+              name="multi_day"
+              action={() => toggleMultiDay(setFieldValue, values.start_date)}
+              checked={multiDay}
+            />
             <div className="bk-group">
               <DayPickerContainer
                 text="Start Date"
@@ -290,7 +332,11 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
                 handleDayClick={handleDayClick}
                 setFieldValue={setFieldValue}
                 placeholder={values.start_date}
-                value={values.start_date !== '' ? new Date(dateFormatterString(values.start_date).getTime() + day) : ''}
+                value={
+                  values.start_date !== ''
+                    ? new Date(dateFormatterString(values.start_date).getTime() + day)
+                    : ''
+                }
                 disabled={false}
                 disabledDays={
                   values.end_date !== ''
@@ -307,7 +353,11 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
                 handleDayClick={handleDayClick}
                 setFieldValue={setFieldValue}
                 placeholder={values.end_date}
-                value={values.end_date !== '' ? new Date(dateFormatterString(values.end_date).getTime() + day) : ''}
+                value={
+                  values.end_date !== ''
+                    ? new Date(dateFormatterString(values.end_date).getTime() + day)
+                    : ''
+                }
                 disabled={!multiDay}
                 disabledDays={
                   values.start_date !== ''
@@ -353,7 +403,7 @@ const DayPickerContainer = ({
   placeholder,
   disabledDays,
   disabled,
-  value
+  value,
 }: DatePickerContainerProps) => {
   const handleDayChange = (day: Date) => handleDayClick(day, dayToSetup, setFieldValue);
   return (
@@ -425,7 +475,7 @@ const EventField: React.FC<EventFieldProps> = ({ title, name, disabled, type, pl
 const CheckboxField: React.FC<EventFieldProps> = ({ title, action, checked }) => {
   return (
     <div className={'checkbox-field'} onClick={action}>
-      <input type='checkbox' checked={checked} readOnly />
+      <input type="checkbox" checked={checked} readOnly />
       <label>{title}</label>
     </div>
   );
@@ -450,12 +500,10 @@ export const EventList: React.FC = () => {
     setCreatedBy(value);
   };
 
-  const handleLimitChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ): void => {
+  const handleLimitChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
     const { value } = e.target;
     setLimit(parseInt(value, 10));
-  }
+  };
 
   const isAdmin = authClient.isAuthenticated();
 
@@ -491,7 +539,14 @@ export const EventList: React.FC = () => {
 
       {fetchEventsError && <div>There was a problem fetching events</div>}
 
-      {events && <EventTable createdBy={createdBy} criteria={criteria} initialEvents={events} limit={limit} />}
+      {events && (
+        <EventTable
+          createdBy={createdBy}
+          criteria={criteria}
+          initialEvents={events}
+          limit={limit}
+        />
+      )}
     </div>
   );
 };
@@ -504,7 +559,7 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, create
   const [nameSort, setNameSort] = useState<number>(0);
 
   useEffect(() => {
-    const eventsByCreator = initialEvents.filter(event =>
+    const eventsByCreator = initialEvents.filter((event) =>
       createdBy === 'admin' ? event.from_admin : !event.from_admin
     );
 
@@ -534,13 +589,13 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, create
   const eventsToShowManager = (events: PoapEvent[]): PoapEvent[] => {
     if (idSort !== 0) {
       events = events.sort((a, b) => {
-        return a.id > b.id ? idSort : (-1 * idSort);
-      })
+        return a.id > b.id ? idSort : -1 * idSort;
+      });
     }
     if (nameSort !== 0) {
       events = events.sort((a, b) => {
-        return a.name > b.name ? nameSort : (-1 * nameSort);
-      })
+        return a.name > b.name ? nameSort : -1 * nameSort;
+      });
     }
     if (events.length <= 10) return events;
     return events.slice(page * limit, page * limit + limit);
@@ -573,11 +628,15 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, create
         <div className={'row table-header visible-md'}>
           <div className={'col-md-1 center pointer'} onClick={handleIdSort}>
             #
-            {idSort !== 0 && <img className={'img-sort'} src={idSort > 0 ? sortUp : sortDown} alt={'sort'} />}
+            {idSort !== 0 && (
+              <img className={'img-sort'} src={idSort > 0 ? sortUp : sortDown} alt={'sort'} />
+            )}
           </div>
           <div className={`col-md-6 pointer`} onClick={handleNameSort}>
             Name of the POAP
-            {nameSort !== 0 && <img className={'img-sort'} src={nameSort > 0 ? sortUp : sortDown} alt={'sort'} />}
+            {nameSort !== 0 && (
+              <img className={'img-sort'} src={nameSort > 0 ? sortUp : sortDown} alt={'sort'} />
+            )}
           </div>
           <div className={'col-md-2 center'}>Start Date</div>
           <div className={'col-md-2 center'}>Image</div>
@@ -591,8 +650,15 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, create
                 {event.id}
               </div>
               <div className={`col-md-6 ellipsis`}>
-                <span className={'visible-sm'}>Name of the POAP: <br/></span>
-                <a href={event.event_url} title={event.name} target="_blank" rel="noopener noreferrer">
+                <span className={'visible-sm'}>
+                  Name of the POAP: <br />
+                </span>
+                <a
+                  href={event.event_url}
+                  title={event.name}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   {event.name}
                 </a>
               </div>
@@ -601,13 +667,14 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, create
                 <span>{event.start_date}</span>
               </div>
               <div className={'col-md-2 center logo-image-container'}>
-                <Tooltip content={
-                  [
+                <Tooltip
+                  content={[
+                    // eslint-disable-next-line
                     <div className={'event-table-tooltip'}>
                       <img alt={event.image_url} src={event.image_url} className={'tooltipped'} />
-                    </div>
-                  ]
-                }>
+                    </div>,
+                  ]}
+                >
                   <img alt={event.image_url} className={'logo-image'} src={event.image_url} />
                 </Tooltip>
               </div>

@@ -71,7 +71,7 @@ export const withAuthentication = <T extends Object>(
   };
 };
 
-const NavigationMenu = withRouter(({ history }) => {
+export const NavigationMenu = withRouter(({ history }) => {
   const [isOpen, setIsOpen] = useState(false);
   const auth = useContext(AuthContext);
 

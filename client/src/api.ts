@@ -1,8 +1,20 @@
 import queryString from 'query-string';
 
 import { authClient } from './auth';
+import { Template } from './TemplatePage/types';
 
 export type Address = string;
+
+export type Params = {
+  [key: string]: string | number | boolean | undefined;
+};
+export interface DjangoResponse<Result> {
+  count: number;
+
+  next?: string;
+  previous?: string;
+  results: Result[];
+}
 export interface TokenInfo {
   tokenId: string;
   owner: string;
@@ -31,7 +43,7 @@ export interface PoapEvent {
   end_date: string;
   virtual_event: boolean;
 }
-export interface PoapFullEvent extends PoapEvent{
+export interface PoapFullEvent extends PoapEvent {
   secret_code?: number;
 }
 export interface Claim extends ClaimProof {
@@ -217,6 +229,20 @@ export async function getEvents(): Promise<PoapEvent[]> {
   return authClient.isAuthenticated()
     ? secureFetch(`${API_BASE}/events`)
     : fetchJson(`${API_BASE}/events`);
+}
+
+export type TemplateResponse = DjangoResponse<Template>;
+
+export async function getTemplates({
+  limit = 10,
+  page = 0,
+  name = '',
+}: Params): Promise<TemplateResponse> {
+  // TODO: Unccomment next code block when templates endpoint is implemented
+  // return authClient.isAuthenticated()
+  //   ? secureFetch(`${API_BASE}/templates/?limit=${limit}&page=${page}&name__icontains=${name}`)
+  //   : fetchJson(`${API_BASE}/templates/?limit=${limit}&page=${page}&name__icontains=${name}`);
+  return fetchJson('https://run.mocky.io/v3/c46afed8-7d79-43c7-b0b0-32336f17b6c4');
 }
 
 export async function getEvent(fancyId: string): Promise<null | PoapFullEvent> {
@@ -467,7 +493,7 @@ export async function qrCreateMassive(
   let unstringifiedBody = {
     qr_list: qrHashes,
     numeric_list: qrIds,
-    delegated_mint
+    delegated_mint,
   };
 
   if (Number(event) !== 0) Object.assign(unstringifiedBody, { event_id: Number(event) });
@@ -514,11 +540,7 @@ export function getTransactions(
   status: string,
   signer: string
 ): Promise<PaginatedTransactions> {
-
-  const params = queryString.stringify(
-    { limit, offset, status, signer },
-    { sort: false }
-  );
+  const params = queryString.stringify({ limit, offset, status, signer }, { sort: false });
   return secureFetch(`${API_BASE}/transactions?${params}`);
 }
 
@@ -540,7 +562,7 @@ export async function postClaimHash(
   secret: string,
   method: string
 ): Promise<HashClaim> {
-  let delegated = method === 'web3'
+  let delegated = method === 'web3';
   return fetchJson(`${API_BASE}/actions/claim-qr`, {
     method: 'POST',
     body: JSON.stringify({ qr_hash, address, secret, delegated }),
