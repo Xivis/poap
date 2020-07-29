@@ -1,6 +1,25 @@
 import { format } from 'date-fns';
 import pgPromise from 'pg-promise';
-import { PoapEvent, PoapFullEvent, PoapSetting, Omit, Signer, Address, Transaction, TransactionStatus, ClaimQR, Task, UnlockTask, TaskCreator, Services, Notification, NotificationType, eventHost, qrRoll } from '../types';
+import {
+  PoapEvent,
+  PoapFullEvent,
+  PoapSetting,
+  Omit,
+  Signer,
+  Address,
+  Transaction,
+  TransactionStatus,
+  ClaimQR,
+  Task,
+  UnlockTask,
+  TaskCreator,
+  Services,
+  Notification,
+  NotificationType,
+  eventHost,
+  qrRoll,
+  EventTemplate
+} from '../types';
 import { ContractTransaction } from 'ethers';
 
 const db = pgPromise()({
@@ -11,7 +30,7 @@ const db = pgPromise()({
 });
 
 const publicEventColumns = 'id, fancy_id, name, description, city, country, event_url, image_url, year, start_date, ' +
-  'end_date, event_host_id, from_admin, virtual_event'
+  'end_date, event_host_id, from_admin, virtual_event, event_template_id'
 
 function formatDate(dbDate: string): string {
   return format(new Date(dbDate), 'DD-MMM-YYYY');
@@ -125,6 +144,7 @@ export async function getEvent(id: number | string): Promise<null | PoapEvent> {
       ...res,
       start_date: formatDate(res.start_date),
       end_date: formatDate(res.end_date),
+      event_template_id: res.event_template_id,
     }
   }
   return res;
@@ -158,7 +178,7 @@ export async function getFullEventByFancyId(fancyId: string): Promise<null | Poa
 
 export async function updateEvent(
   fancyId: string,
-  changes: Pick<PoapFullEvent, 'event_url' | 'image_url' | 'name' | 'description' | 'city' | 'country' | 'start_date' | 'end_date' | 'virtual_event' | 'secret_code'>
+  changes: Pick<PoapFullEvent, 'event_url' | 'image_url' | 'name' | 'description' | 'city' | 'country' | 'start_date' | 'end_date' | 'virtual_event' | 'secret_code' | 'event_template_id'>
 ): Promise<boolean> {
   const res = await db.result(
     'UPDATE EVENTS SET ' +
@@ -171,7 +191,8 @@ export async function updateEvent(
     'event_url=${event_url}, ' +
     'image_url=${image_url}, ' +
     'virtual_event=${virtual_event}, ' +
-    'secret_code=${secret_code} ' +
+    'secret_code=${secret_code}, ' +
+    'event_template_id=${event_template_id} ' +
     'WHERE fancy_id = ${fancyId}',
     {
       fancyId,
@@ -433,6 +454,11 @@ export async function createNotification(data: any): Promise<null | Notification
 
 export async function getEventHost(userId: string): Promise<null | eventHost> {
   const res = await db.oneOrNone<eventHost>('SELECT * FROM event_host WHERE user_id=${userId} AND is_active = true', { userId });
+  return res;
+}
+
+export async function getEventTemplate(id: string | number): Promise<null | EventTemplate> {
+  const res = await db.oneOrNone<EventTemplate>('SELECT * FROM event_templates WHERE id=${id} AND is_active = true', { id });
   return res;
 }
 

@@ -45,7 +45,7 @@ import {
   createQrClaims,
   checkNumericIdExists,
   checkQrHashExists,
-  updateDelegatedQrClaim
+  updateDelegatedQrClaim, getEventTemplate
 } from './db';
 
 import {
@@ -509,6 +509,31 @@ export default async function routes(fastify: FastifyInstance) {
                   created_date: { type: 'string' }
                 }
               },
+              event_template: {
+                type: 'object',
+                properties: {
+                  id: { type: 'number' },
+                  name: { type: 'string' },
+                  title_image: { type: 'string' },
+                  title_link: { type: 'string' },
+                  header_link_text: { type: 'string' },
+                  header_link_url: { type: 'string' },
+                  header_color: { type: 'string' },
+                  header_link_color: { type: 'string' },
+                  main_color: { type: 'string' },
+                  footer_color: { type: 'string' },
+                  left_image_url: { type: 'string' },
+                  left_image_link: { type: 'string' },
+                  right_image_url: { type: 'string' },
+                  right_image_link: { type: 'string' },
+                  mobile_image_url: { type: 'string' },
+                  mobile_image_link: { type: 'string' },
+                  footer_icon: { type: 'string' },
+                  secret_code: { type: 'string' },
+                  created_date: { type: 'string' },
+                  is_active: { type: 'boolean' },
+                }
+              },
               tx_status: { type: 'string' },
               delegated_mint: { type: 'boolean' },
               delegated_signed_message: { type: 'string' }
@@ -535,6 +560,11 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.InternalServerError('Qr Claim does not have any event');
       }
       qr_claim.event = event;
+      console.log(qr_claim.event.event_template_id);
+      console.log(event.event_template_id);
+      if (event.event_template_id) {
+        qr_claim.event_template = await getEventTemplate(event.event_template_id);
+      }
 
       const env = getEnv();
       qr_claim.secret = crypto.createHmac('sha256', env.secretKey).update(qr_hash).digest('hex');
@@ -1092,6 +1122,7 @@ export default async function routes(fastify: FastifyInstance) {
             virtual_event: { type: 'boolean' },
             image: { type: 'string', format: 'binary' },
             secret_code: { type: 'string' },
+            event_template_id: { type: 'integer' },
           },
         },
         response: {
@@ -1111,7 +1142,8 @@ export default async function routes(fastify: FastifyInstance) {
               image_url: { type: 'string' },
               event_host_id: { type: 'number' },
               from_admin: { type: 'boolean' },
-              virtual_event: { type: 'string' }
+              virtual_event: { type: 'string' },
+              event_template_id: { type: 'number' }
             },
           }
         },
@@ -1136,6 +1168,7 @@ export default async function routes(fastify: FastifyInstance) {
       const parsed_fancy_id = slugCode + '-' + req.body.year;
 
       let eventHost = null;
+      let eventTemplate = null;
       let is_admin: boolean = false;
 
       if (req.user && req.user.hasOwnProperty('sub')) {
@@ -1145,7 +1178,13 @@ export default async function routes(fastify: FastifyInstance) {
         if (getUserRoles(req.user).indexOf(UserRole.administrator) != -1) {
           is_admin = true
         }
+      }
 
+      if(req.body.event_template_id) {
+        eventTemplate = await getEventTemplate(req.body.event_template_id);
+        if (!eventTemplate) {
+          return new createError.InternalServerError('event_template_id does not exist in the database');
+        }
       }
 
       const image = req.body[Symbol.for('image')][0];
@@ -1182,7 +1221,8 @@ export default async function routes(fastify: FastifyInstance) {
         event_host_id: eventHost ? eventHost.id : null,
         from_admin: is_admin,
         virtual_event: req.body.virtual_event,
-        secret_code: req.body.secret_code
+        secret_code: req.body.secret_code,
+        event_template_id: eventTemplate ? eventTemplate.id : null
       }
 
       const event = await createEvent(newEvent);
@@ -1226,7 +1266,8 @@ export default async function routes(fastify: FastifyInstance) {
             end_date: { type: 'string' },
             event_url: { type: 'string' },
             image: { type: 'string', format: 'binary' },
-            virtual_event: { type: 'boolean' }
+            virtual_event: { type: 'boolean' },
+            event_template_id: { type: 'integer' }
           },
         },
         response: {
@@ -1241,6 +1282,7 @@ export default async function routes(fastify: FastifyInstance) {
     },
     async (req: any, res) => {
       let isAdmin: boolean = false;
+      let eventTemplate = null;
       let secretCode: number = parseInt(req.body.secret_code)
 
       if (req.user && req.user.hasOwnProperty('sub')) {
@@ -1248,7 +1290,6 @@ export default async function routes(fastify: FastifyInstance) {
           isAdmin = true
         }
       }
-
 
       // Check if event exists
       const event = await getFullEventByFancyId(req.params.fancyid);
@@ -1264,6 +1305,13 @@ export default async function routes(fastify: FastifyInstance) {
         if (!isEventEditable(event.start_date)) {
           await sleep(3000)
           return new createError.InternalServerError('Event is not editable');
+        }
+      }
+
+      if(req.body.event_template_id) {
+        eventTemplate = await getEventTemplate(req.body.event_template_id);
+        if (!eventTemplate) {
+          return new createError.InternalServerError('event_template_id does not exist in the database');
         }
       }
 
@@ -1290,7 +1338,8 @@ export default async function routes(fastify: FastifyInstance) {
         event_url: req.body.event_url,
         virtual_event: req.body.virtual_event,
         image_url: ((google_image_url === null) ? event.image_url : google_image_url),
-        secret_code: secretCode
+        secret_code: secretCode,
+        event_template_id: eventTemplate ? eventTemplate.id : null
       });
       if (!isOk) {
         return new createError.NotFound('Invalid event');
