@@ -47,17 +47,6 @@ export async function getEvents(): Promise<PoapEvent[]> {
   });
 }
 
-export async function getEventTemplates(): Promise<PoapEvent[]> {
-  const res = await db.manyOrNone<PoapEvent>('SELECT ' + publicEventColumns + ' FROM events ORDER BY start_date DESC');
-  return res.map(event => {
-    return {
-      ...event,
-      start_date: formatDate(event.start_date),
-      end_date: formatDate(event.end_date),
-    }
-  });
-}
-
 export async function getTransactions(limit: number, offset: number, statusList: string[], signer: string | null): Promise<Transaction[]> {
   let signerCondition = '';
   let order = ' ORDER BY created_date DESC ';
@@ -154,8 +143,7 @@ export async function getEvent(id: number | string): Promise<null | PoapEvent> {
     return {
       ...res,
       start_date: formatDate(res.start_date),
-      end_date: formatDate(res.end_date),
-      event_template_id: res.event_template_id,
+      end_date: formatDate(res.end_date)
     }
   }
   return res;
@@ -468,11 +456,6 @@ export async function getEventHost(userId: string): Promise<null | eventHost> {
   return res;
 }
 
-export async function getEventTemplate(id: string | number): Promise<null | EventTemplate> {
-  const res = await db.oneOrNone<EventTemplate>('SELECT * FROM event_templates WHERE id=${id} AND is_active = true', { id });
-  return res;
-}
-
 export async function getEventHostByPassphrase(passphrase: string): Promise<null | eventHost> {
   const res = await db.oneOrNone<eventHost>('SELECT * FROM event_host WHERE passphrase=${passphrase} AND is_active = true', { passphrase });
   return res;
@@ -639,6 +622,11 @@ export async function getTotalQrClaims(eventId: number, qrRollId: number, claime
   return res.rowCount;
 }
 
+export async function getEventTemplate(id: string | number): Promise<null | EventTemplate> {
+  const res = await db.oneOrNone<EventTemplate>('SELECT * FROM event_templates WHERE id=${id} AND is_active = true', { id });
+  return res;
+}
+
 export async function getPaginatedEventTemplates(limit: number, offset: number, name: string|null): Promise<EventTemplate[]> {
   let query = `SELECT * FROM event_templates WHERE is_active = true `
 
@@ -647,8 +635,6 @@ export async function getPaginatedEventTemplates(limit: number, offset: number, 
   }
 
   query = query + 'ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}';
-
-  console.log(query);
 
   const res = await db.manyOrNone<EventTemplate>(query, { limit, offset });
   return res
@@ -660,7 +646,6 @@ export async function getTotalEventTemplates(name: string): Promise<number> {
   if (name) {
     query = query + `AND name ILIKE '${name}' `;
   }
-  console.log(query);
   const res = await db.result(query);
   return res.rowCount;
 }

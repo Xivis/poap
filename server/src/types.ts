@@ -43,19 +43,19 @@ export interface EventTemplate {
   name: string;
   title_image: string;
   title_link: string;
-  header_link_text: string;
-  header_link_url: string;
-  header_color: string;
   header_link_color: string;
+  header_color: string;
   main_color: string;
-  footer_color: string;
-  left_image_url: string;
-  left_image_link: string;
-  right_image_url: string;
-  right_image_link: string;
-  mobile_image_url: string;
-  mobile_image_link: string;
-  footer_icon: string;
+  footer_icon: string
+  header_link_text: string | null;
+  header_link_url: string | null;
+  footer_color: string | null;
+  left_image_url: string | null;
+  left_image_link: string | null;
+  right_image_url: string | null;
+  right_image_link: string | null;
+  mobile_image_url: string | null;
+  mobile_image_link: string | null;
 }
 
 export interface FullEventTemplate extends EventTemplate {

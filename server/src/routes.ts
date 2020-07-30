@@ -511,11 +511,12 @@ export default async function routes(fastify: FastifyInstance) {
                   year: { type: 'number' },
                   start_date: { type: 'string' },
                   end_date: { type: 'string' },
-                  created_date: { type: 'string' }
+                  created_date: { type: 'string' },
                 }
               },
               event_template: {
                 type: 'object',
+                nullable: true,
                 properties: {
                   id: { type: 'number' },
                   name: { type: 'string' },
@@ -534,7 +535,6 @@ export default async function routes(fastify: FastifyInstance) {
                   mobile_image_url: { type: 'string' },
                   mobile_image_link: { type: 'string' },
                   footer_icon: { type: 'string' },
-                  secret_code: { type: 'string' },
                   created_date: { type: 'string' },
                   is_active: { type: 'boolean' },
                 }
@@ -565,6 +565,7 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.InternalServerError('Qr Claim does not have any event');
       }
       qr_claim.event = event;
+      qr_claim.event_template = null;
       if (event.event_template_id) {
         qr_claim.event_template = await getEventTemplate(event.event_template_id);
       }
@@ -2281,6 +2282,43 @@ export default async function routes(fastify: FastifyInstance) {
           offset: { type: 'number' },
           name: { type: 'string' },
         },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              limit: { type: 'number' },
+              offset: { type: 'number' },
+              total: { type: 'number' },
+              event_templates: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'number' },
+                    name: { type: 'string' },
+                    title_image: { type: 'string' },
+                    title_link: { type: 'string' },
+                    header_link_text: { type: 'string' },
+                    header_link_url: { type: 'string' },
+                    header_color: { type: 'string' },
+                    header_link_color: { type: 'string' },
+                    main_color: { type: 'string' },
+                    footer_color: { type: 'string' },
+                    left_image_url: { type: 'string' },
+                    left_image_link: { type: 'string' },
+                    right_image_url: { type: 'string' },
+                    right_image_link: { type: 'string' },
+                    mobile_image_url: { type: 'string' },
+                    mobile_image_link: { type: 'string' },
+                    footer_icon: { type: 'string' },
+                    created_date: { type: 'string' },
+                    is_active: { type: 'boolean' },
+                  },
+                }
+              },
+            }
+          }
+        },
       },
     },
     async (req: any, res) => {
@@ -2295,7 +2333,7 @@ export default async function routes(fastify: FastifyInstance) {
         limit: limit,
         offset: offset,
         total: totalEventTemplates,
-        event_template: eventTemplates,
+        event_templates: eventTemplates,
       };
     }
   );
@@ -2330,9 +2368,56 @@ export default async function routes(fastify: FastifyInstance) {
                 mobile_image_url: { type: 'string' },
                 mobile_image_link: { type: 'string' },
                 footer_icon: { type: 'string' },
-                secret_code: { type: 'string' },
                 created_date: { type: 'string' },
                 is_active: { type: 'boolean' },
+              },
+            }
+          },
+        },
+      },
+      async (req, res) => {
+        const event_template = await getEventTemplate(req.params.id);
+        if (!event_template) {
+          return new createError.NotFound('Invalid Event Template');
+        }
+        return event_template;
+      }
+  );
+
+  fastify.get(
+      '/event-templates-admin/:id',
+      {
+        preValidation: [fastify.authenticate, fastify.isAdmin],
+        schema: {
+          description: 'Endpoint for admins to get an specific event template',
+          tags: ['Event Templates',],
+          params: {
+            id: { type: 'string' },
+          },
+          response: {
+            200: {
+              type: 'object',
+              properties: {
+                id: { type: 'number' },
+                name: { type: 'string' },
+                title_image: { type: 'string' },
+                title_link: { type: 'string' },
+                header_link_text: { type: 'string' },
+                header_link_url: { type: 'string' },
+                header_color: { type: 'string' },
+                header_link_color: { type: 'string' },
+                main_color: { type: 'string' },
+                footer_color: { type: 'string' },
+                left_image_url: { type: 'string' },
+                left_image_link: { type: 'string' },
+                right_image_url: { type: 'string' },
+                right_image_link: { type: 'string' },
+                mobile_image_url: { type: 'string' },
+                mobile_image_link: { type: 'string' },
+                footer_icon: { type: 'string' },
+                created_date: { type: 'string' },
+                is_active: { type: 'boolean' },
+                secret_code: { type: 'number' },
               },
             }
           },
@@ -2344,7 +2429,7 @@ export default async function routes(fastify: FastifyInstance) {
         },
       },
       async (req, res) => {
-        const event_template = await getEventTemplate(req.params.id);
+        const event_template = await getFullEventTemplateById(req.params.id);
         if (!event_template) {
           return new createError.NotFound('Invalid Event Template');
         }
@@ -2387,18 +2472,9 @@ export default async function routes(fastify: FastifyInstance) {
               'name',
               'title_image',
               'title_link',
-              'header_link_text',
-              'header_link_url',
               'header_color',
               'header_link_color',
               'main_color',
-              'footer_color',
-              'left_image_url',
-              'left_image_link',
-              'right_image_url',
-              'right_image_link',
-              'mobile_image_url',
-              'mobile_image_link',
               'footer_icon',
               'secret_code'
             ],
@@ -2464,49 +2540,10 @@ export default async function routes(fastify: FastifyInstance) {
         if (title_image.mimetype != 'image/png') {
           return new createError.BadRequest('title_image must be png');
         }
-        const filename = 'title-image-' + (new Date().getTime()) + '.png'
+        const filename = 'templates/title-image-' + (new Date().getTime()) + '.png'
         const title_image_url = await uploadFile(filename, title_image.mimetype, title_image.data);
         if (!title_image_url) {
           return new createError.InternalServerError('Error uploading title_image');
-        }
-
-        const right_image = req.body[Symbol.for('right_image_url')][0];
-        if (!right_image) {
-          return new createError.BadRequest('An image is required for field right_image');
-        }
-        if (right_image.mimetype != 'image/png') {
-          return new createError.BadRequest('right_image must be png');
-        }
-        const right_image_filename = 'right-image-' + (new Date().getTime()) + '.png'
-        const right_image_url = await uploadFile(right_image_filename, right_image.mimetype, right_image.data);
-        if (!right_image_url) {
-          return new createError.InternalServerError('Error uploading right_image_url');
-        }
-
-        const left_image = req.body[Symbol.for('left_image_url')][0];
-        if (!left_image) {
-          return new createError.BadRequest('An image is required for field left_image_url');
-        }
-        if (left_image.mimetype != 'image/png') {
-          return new createError.BadRequest('left_image_url must be png');
-        }
-        const left_image_filename = 'left-image-' + (new Date().getTime()) + '.png'
-        const left_image_url = await uploadFile(left_image_filename, left_image.mimetype, left_image.data);
-        if (!left_image_url) {
-          return new createError.InternalServerError('Error uploading left_image_url');
-        }
-
-        const mobile_image = req.body[Symbol.for('mobile_image_url')][0];
-        if (!mobile_image) {
-          return new createError.BadRequest('An image is required for field mobile_image_url');
-        }
-        if (mobile_image.mimetype != 'image/png') {
-          return new createError.BadRequest('mobile_image_url must be png');
-        }
-        const mobile_image_filename = 'mobile-image-' + (new Date().getTime()) + '.png'
-        const mobile_image_url = await uploadFile(mobile_image_filename, mobile_image.mimetype, mobile_image.data);
-        if (!mobile_image_url) {
-          return new createError.InternalServerError('Error uploading mobile_image_url');
         }
 
         const footer_icon = req.body[Symbol.for('footer_icon')][0];
@@ -2516,10 +2553,49 @@ export default async function routes(fastify: FastifyInstance) {
         if (footer_icon.mimetype != 'image/png') {
           return new createError.BadRequest('footer_icon must be png');
         }
-        const footer_icon_filename = 'footer-icon-' + (new Date().getTime()) + '.png'
+        const footer_icon_filename = 'templates/footer-icon-' + (new Date().getTime()) + '.png'
         const footer_icon_url = await uploadFile(footer_icon_filename, footer_icon.mimetype, footer_icon.data);
         if (!footer_icon_url) {
           return new createError.InternalServerError('Error uploading footer_icon');
+        }
+
+        let right_image_url:string|null = null;
+        const right_image = req.body[Symbol.for('right_image_url')][0];
+        if (right_image) {
+          if (right_image.mimetype != 'image/png') {
+            return new createError.BadRequest('right_image must be png');
+          }
+          const right_image_filename = 'templates/right-image-' + (new Date().getTime()) + '.png'
+          right_image_url = await uploadFile(right_image_filename, right_image.mimetype, right_image.data);
+          if (!right_image_url) {
+            return new createError.InternalServerError('Error uploading right_image_url');
+          }
+        }
+
+        let left_image_url:string|null = null;
+        const left_image = req.body[Symbol.for('left_image_url')][0];
+        if (left_image) {
+          if (left_image.mimetype != 'image/png') {
+            return new createError.BadRequest('left_image_url must be png');
+          }
+          const left_image_filename = 'templates/left-image-' + (new Date().getTime()) + '.png'
+          left_image_url = await uploadFile(left_image_filename, left_image.mimetype, left_image.data);
+          if (!left_image_url) {
+            return new createError.InternalServerError('Error uploading left_image_url');
+          }
+        }
+
+        let mobile_image_url:string|null = null;
+        const mobile_image = req.body[Symbol.for('mobile_image_url')][0];
+        if (mobile_image) {
+          if (mobile_image.mimetype != 'image/png') {
+            return new createError.BadRequest('mobile_image_url must be png');
+          }
+          const mobile_image_filename = 'templates/mobile-image-' + (new Date().getTime()) + '.png'
+          mobile_image_url = await uploadFile(mobile_image_filename, mobile_image.mimetype, mobile_image.data);
+          if (!mobile_image_url) {
+            return new createError.InternalServerError('Error uploading mobile_image_url');
+          }
         }
 
         // image_url: google_image_url,
@@ -2567,18 +2643,9 @@ export default async function routes(fastify: FastifyInstance) {
               'name',
               'title_image',
               'title_link',
-              'header_link_text',
-              'header_link_url',
               'header_color',
               'header_link_color',
               'main_color',
-              'footer_color',
-              'left_image_url',
-              'left_image_link',
-              'right_image_url',
-              'right_image_link',
-              'mobile_image_url',
-              'mobile_image_link',
               'footer_icon',
               'secret_code'
             ],
@@ -2642,49 +2709,10 @@ export default async function routes(fastify: FastifyInstance) {
         if (title_image.mimetype != 'image/png') {
           return new createError.BadRequest('title_image must be png');
         }
-        const filename = 'title-image-' + (new Date().getTime()) + '.png'
+        const filename = 'templates/title-image-' + (new Date().getTime()) + '.png'
         const title_image_url = await uploadFile(filename, title_image.mimetype, title_image.data);
         if (!title_image_url) {
           return new createError.InternalServerError('Error uploading title_image');
-        }
-
-        const right_image = req.body[Symbol.for('right_image_url')][0];
-        if (!right_image) {
-          return new createError.BadRequest('An image is required for field right_image');
-        }
-        if (right_image.mimetype != 'image/png') {
-          return new createError.BadRequest('right_image must be png');
-        }
-        const right_image_filename = 'right-image-' + (new Date().getTime()) + '.png'
-        const right_image_url = await uploadFile(right_image_filename, right_image.mimetype, right_image.data);
-        if (!right_image_url) {
-          return new createError.InternalServerError('Error uploading right_image_url');
-        }
-
-        const left_image = req.body[Symbol.for('left_image_url')][0];
-        if (!left_image) {
-          return new createError.BadRequest('An image is required for field left_image_url');
-        }
-        if (left_image.mimetype != 'image/png') {
-          return new createError.BadRequest('left_image_url must be png');
-        }
-        const left_image_filename = 'left-image-' + (new Date().getTime()) + '.png'
-        const left_image_url = await uploadFile(left_image_filename, left_image.mimetype, left_image.data);
-        if (!left_image_url) {
-          return new createError.InternalServerError('Error uploading left_image_url');
-        }
-
-        const mobile_image = req.body[Symbol.for('mobile_image_url')][0];
-        if (!mobile_image) {
-          return new createError.BadRequest('An image is required for field mobile_image_url');
-        }
-        if (mobile_image.mimetype != 'image/png') {
-          return new createError.BadRequest('mobile_image_url must be png');
-        }
-        const mobile_image_filename = 'mobile-image-' + (new Date().getTime()) + '.png'
-        const mobile_image_url = await uploadFile(mobile_image_filename, mobile_image.mimetype, mobile_image.data);
-        if (!mobile_image_url) {
-          return new createError.InternalServerError('Error uploading mobile_image_url');
         }
 
         const footer_icon = req.body[Symbol.for('footer_icon')][0];
@@ -2694,10 +2722,49 @@ export default async function routes(fastify: FastifyInstance) {
         if (footer_icon.mimetype != 'image/png') {
           return new createError.BadRequest('footer_icon must be png');
         }
-        const footer_icon_filename = 'footer-icon-' + (new Date().getTime()) + '.png'
+        const footer_icon_filename = 'templates/footer-icon-' + (new Date().getTime()) + '.png'
         const footer_icon_url = await uploadFile(footer_icon_filename, footer_icon.mimetype, footer_icon.data);
         if (!footer_icon_url) {
           return new createError.InternalServerError('Error uploading footer_icon');
+        }
+
+        let right_image_url:string|null = null;
+        const right_image = req.body[Symbol.for('right_image_url')][0];
+        if (right_image) {
+          if (right_image.mimetype != 'image/png') {
+            return new createError.BadRequest('right_image must be png');
+          }
+          const right_image_filename = 'templates/right-image-' + (new Date().getTime()) + '.png'
+          right_image_url = await uploadFile(right_image_filename, right_image.mimetype, right_image.data);
+          if (!right_image_url) {
+            return new createError.InternalServerError('Error uploading right_image_url');
+          }
+        }
+
+        let left_image_url:string|null = null;
+        const left_image = req.body[Symbol.for('left_image_url')][0];
+        if (left_image) {
+          if (left_image.mimetype != 'image/png') {
+            return new createError.BadRequest('left_image_url must be png');
+          }
+          const left_image_filename = 'templates/left-image-' + (new Date().getTime()) + '.png'
+          left_image_url = await uploadFile(left_image_filename, left_image.mimetype, left_image.data);
+          if (!left_image_url) {
+            return new createError.InternalServerError('Error uploading left_image_url');
+          }
+        }
+
+        let mobile_image_url:string|null = null;
+        const mobile_image = req.body[Symbol.for('mobile_image_url')][0];
+        if (mobile_image) {
+          if (mobile_image.mimetype != 'image/png') {
+            return new createError.BadRequest('mobile_image_url must be png');
+          }
+          const mobile_image_filename = 'templates/mobile-image-' + (new Date().getTime()) + '.png'
+          mobile_image_url = await uploadFile(mobile_image_filename, mobile_image.mimetype, mobile_image.data);
+          if (!mobile_image_url) {
+            return new createError.InternalServerError('Error uploading mobile_image_url');
+          }
         }
 
         const isOk = await updateEventTemplate(req.params.id, {
