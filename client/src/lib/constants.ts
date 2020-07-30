@@ -50,6 +50,10 @@ const ROUTES = {
     roles: [ROLES.eventHost],
     title: 'Manage Templates',
   },
+  templateForm: {
+    path: '/admin/template/form/:id?',
+    roles: [ROLES.eventHost],
+  },
   issueForUser: {
     path: '/admin/issue-for-user',
     roles: [ROLES.administrator],
@@ -122,7 +126,8 @@ const TX_STATUS = {
   bumped: 'bumped',
 };
 
-const prefix = process.env.REACT_APP_ETH_NETWORK === 'mainnet' ? '' : `${process.env.REACT_APP_ETH_NETWORK}.`
+const prefix =
+  process.env.REACT_APP_ETH_NETWORK === 'mainnet' ? '' : `${process.env.REACT_APP_ETH_NETWORK}.`;
 const etherscanLinks = {
   tx: (hash: string): string => `https://${prefix}etherscan.io/tx/${hash}`,
   address: (address: string): string => `https://${prefix}etherscan.io/address/${address}`,

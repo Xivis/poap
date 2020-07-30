@@ -85,11 +85,13 @@ type EventFieldProps = {
   checked?: boolean;
 };
 
-type ImageContainerProps = {
+export type ImageContainerProps = {
   text: string;
   handleFileChange: Function;
   setFieldValue: Function;
   errors: any;
+  name: string;
+  shouldShowInfo?: boolean;
 };
 export interface RangeModifier {
   from: Date;
@@ -181,7 +183,8 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
 
   const handleFileChange = (
     event: React.ChangeEvent<HTMLInputElement>,
-    setFieldValue: SetFieldValue
+    setFieldValue: SetFieldValue,
+    name: string
   ) => {
     event.preventDefault();
     const { files } = event.target;
@@ -189,7 +192,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
     if (!files || !files.length) return;
 
     const firstFile = files[0];
-    setFieldValue('image', firstFile);
+    setFieldValue(name, firstFile);
   };
 
   const toggleVirtualEvent = () => setVirtualEvent(!virtualEvent);
@@ -228,7 +231,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
     <>
       <b>Edit Code</b>
       <Tooltip content={warning}>
-        <img src={infoButton} className={'info-button'} alt={'Help'} />
+        <img alt="Informative message" src={infoButton} className={'info-button'} />
       </Tooltip>
     </>
   );
@@ -377,6 +380,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
                 handleFileChange={handleFileChange}
                 setFieldValue={setFieldValue}
                 errors={errors}
+                name="image"
               />
               <div>
                 <EventField disabled={false} title={editLabel} name="secret_code" />
@@ -421,27 +425,42 @@ const DayPickerContainer = ({
   );
 };
 
-const ImageContainer = ({ text, handleFileChange, setFieldValue, errors }: ImageContainerProps) => (
-  <div className="date-picker-container">
+export const ImageContainer = ({
+  text,
+  handleFileChange,
+  setFieldValue,
+  errors,
+  shouldShowInfo = true,
+  name,
+}: ImageContainerProps) => (
+  <div className={classNames('date-picker-container', !shouldShowInfo && 'h78')}>
     <label>{text}</label>
     <input
       type="file"
       accept="image/png"
       className={classNames(Boolean(errors.image) && 'error')}
-      onChange={(e: ChangeEvent<HTMLInputElement>) => handleFileChange(e, setFieldValue)}
+      onChange={(e: ChangeEvent<HTMLInputElement>) => handleFileChange(e, setFieldValue, name)}
     />
     <ErrorMessage name="image" component="p" className="bk-error" />
-    <div className="input-field-helper">
-      Badge specs:
-      <ul>
-        <li>Mandatory: PNG format</li>
-        <li>Recommended: measures 500x500px, round shape, size less than 200KB</li>
-      </ul>
-    </div>
+    {shouldShowInfo && (
+      <div className="input-field-helper">
+        Badge specs:
+        <ul>
+          <li>Mandatory: PNG format</li>
+          <li>Recommended: measures 500x500px, round shape, size less than 200KB</li>
+        </ul>
+      </div>
+    )}
   </div>
 );
 
-const EventField: React.FC<EventFieldProps> = ({ title, name, disabled, type, placeholder }) => {
+export const EventField: React.FC<EventFieldProps> = ({
+  title,
+  name,
+  disabled = false,
+  type,
+  placeholder,
+}) => {
   return (
     <Field
       name={name}

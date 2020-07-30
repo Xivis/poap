@@ -1,7 +1,7 @@
 import queryString from 'query-string';
 
 import { authClient } from './auth';
-import { Template } from './TemplatePage/types';
+import { Template } from './templates/TemplatePage/types';
 
 export type Address = string;
 
@@ -383,6 +383,15 @@ export async function createEvent(event: FormData) {
     method: 'POST',
     body: event,
   });
+}
+
+export async function createTemplate(event: FormData) {
+  // TODO: Unccomment next code block when backend accepts creating template
+  // return fetchJson(`${API_BASE}/template`, {
+  //   method: 'POST',
+  //   body: event,
+  // });
+  return fetchJson(`https://run.mocky.io/v3/1d8db90e-76f1-4964-8d83-fdec36186e62`);
 }
 
 export async function getSigners(): Promise<AdminAddress[]> {

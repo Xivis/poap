@@ -2,18 +2,18 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 
 /* Assets */
-import PoapLogo from '../images/POAP.svg';
+import PoapLogo from '../../images/POAP.svg';
 
 // components
-import { NavigationMenu } from '../backoffice/Main';
+import { NavigationMenu } from '../../backoffice/Main';
 import { TemplatesFilters } from './components/TemplatesFilters';
 import { TemplatesTable } from './components/TemplatesTable';
 
 // helpers
-import { useAsync } from '../react-helpers';
+import { useAsync } from '../../react-helpers';
 
 // api
-import { getTemplates, TemplateResponse } from '../api';
+import { getTemplates, TemplateResponse } from '../../api';
 
 type PaginateAction = {
   selected: number;
@@ -61,7 +61,6 @@ export const TemplatePage = () => {
           </div>
         </div>
       </header>
-
       <div className="container">
         <div className={'admin-table qr'}>
           <h2>Templates</h2>

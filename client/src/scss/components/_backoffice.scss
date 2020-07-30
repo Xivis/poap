@@ -76,6 +76,19 @@
 .bk-group {
   display: flex;
 
+  > * {
+    flex: 1;
+    width: 486px;
+
+    &:first-of-type {
+      margin-right: 10px;
+    }
+
+    &:not(:first-of-type) {
+      margin-left: 10px;
+    }
+  }
+
   label {
     margin-bottom: 10px;
     display: block;
@@ -830,4 +843,17 @@
     height: auto;
     margin: 5px 0;
   }
+}
+
+.backoffice-tooltip {
+  text-align: center;
+  padding: 0 5px;
+}
+
+.color-picker-container {
+  position: relative;
+}
+
+.h78 {
+  height: 78px;
 }

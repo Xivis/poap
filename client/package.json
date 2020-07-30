@@ -5,6 +5,7 @@
   "dependencies": {
     "@portis/web3": "^2.0.0-beta.57",
     "@walletconnect/web3-provider": "1.1.0",
+    "@types/react-color": "^3.0.4",
     "aos": "^2.3.4",
     "auth0-js": "^9.11.2",
     "classnames": "^2.2.6",
@@ -17,6 +18,7 @@
     "query-string": "^6.8.3",
     "react": "^16.8.6",
     "react-burger-menu": "^2.6.10",
+    "react-color": "^2.18.1",
     "react-day-picker": "^7.4.0",
     "react-dom": "^16.8.6",
     "react-lightweight-tooltip": "^1.0.0",

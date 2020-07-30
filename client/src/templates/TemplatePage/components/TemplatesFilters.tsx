@@ -2,7 +2,7 @@ import React, { FC } from 'react';
 import { Link } from 'react-router-dom';
 
 // ui components
-import FilterButton from '../../components/FilterButton';
+import FilterButton from '../../../components/FilterButton';
 
 type Props = {
   setLimit: (value: number) => void;
@@ -27,7 +27,7 @@ export const TemplatesFilters: FC<Props> = ({ setLimit, setName }) => {
         <input type="text" placeholder="Search by name" onChange={handleNameChange} />
         <div className="action-buttons-container">
           <div className="action-button-container ">
-            <Link to="/admin/template/new">
+            <Link to="/admin/template/form">
               <FilterButton text="Create" />
             </Link>
           </div>

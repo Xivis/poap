@@ -4,14 +4,14 @@ import { Tooltip } from 'react-lightweight-tooltip';
 import ReactPaginate from 'react-paginate';
 
 // ui components
-import { Loading } from '../../components/Loading';
+import { Loading } from '../../../components/Loading';
 
 // types
 import { Template } from '../types';
-import { DjangoResponse } from '../../api';
+import { DjangoResponse } from '../../../api';
 
 // assets
-import { ReactComponent as EditIcon } from '../../images/edit.svg';
+import { ReactComponent as EditIcon } from '../../../images/edit.svg';
 
 type Props = {
   isFetchingTemplates: boolean;
