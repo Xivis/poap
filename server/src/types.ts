@@ -56,9 +56,10 @@ export interface EventTemplate {
   mobile_image_url: string;
   mobile_image_link: string;
   footer_icon: string;
-  secret_code: string;
-  created_date: string;
-  is_active: boolean;
+}
+
+export interface FullEventTemplate extends EventTemplate {
+  secret_code: number
 }
 
 export interface PoapEvent {

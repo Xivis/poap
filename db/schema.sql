@@ -16,7 +16,7 @@ CREATE TABLE event_templates (
     "mobile_image_url" varchar(256),
     "mobile_image_link" varchar(256),
     "footer_icon" varchar(256),
-    "secret_code" varchar(256),
+    "secret_code" integer,
     "created_date" timestamp with time zone not null default now(),
     "is_active" boolean default true
 );
@@ -49,8 +49,8 @@ CREATE TABLE events (
     "from_admin" boolean default false,
     "virtual_event" boolean default false,
     "created_date" timestamp with time zone not null default now(),
-    "secret_code" integer
-    "event_template_id" INTEGER NULL REFERENCES event_templates (id),
+    "secret_code" integer,
+    "event_template_id" INTEGER NULL REFERENCES event_templates (id)
 );
 
 CREATE TABLE events_history (
@@ -104,8 +104,8 @@ CREATE TABLE qr_claims (
     "scanned" boolean default false,
     "claimed_date" timestamp with time zone,
     "created_date" timestamp with time zone not null default now(),
-    "qr_roll_id": integer,
-    "numeric_id": integer UNIQUE,
+    "qr_roll_id" integer,
+    "numeric_id" integer UNIQUE,
     "is_active" boolean default true,
     "delegated_mint" boolean default false,
     "delegated_signed_message" varchar(256)
@@ -128,7 +128,7 @@ CREATE TABLE tasks (
     "id" SERIAL PRIMARY KEY,
     "name" varchar(100),
     "task_data" json,
-    "status" varchar(100) constraint default_satus DEFAULT 'PENDING',
+    "status" varchar(100) constraint default_status DEFAULT 'PENDING',
     "return_data" varchar(256),
     CONSTRAINT chk_status CHECK (status IN ('FINISH', 'FINISH_WITH_ERROR', 'IN_PROCESS', 'PENDING'))
 );
@@ -149,7 +149,7 @@ CREATE TABLE event_host (
     "user_id" varchar(256) UNIQUE,
     "is_active" boolean default true,
     "passphrase" varchar(256) UNIQUE
-)
+);
 
 CREATE TABLE qr_roll (
     "id" SERIAL PRIMARY KEY,

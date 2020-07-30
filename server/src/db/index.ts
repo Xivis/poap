@@ -18,7 +18,7 @@ import {
   NotificationType,
   eventHost,
   qrRoll,
-  EventTemplate
+  EventTemplate, FullEventTemplate
 } from '../types';
 import { ContractTransaction } from 'ethers';
 
@@ -37,6 +37,17 @@ function formatDate(dbDate: string): string {
 }
 
 export async function getEvents(): Promise<PoapEvent[]> {
+  const res = await db.manyOrNone<PoapEvent>('SELECT ' + publicEventColumns + ' FROM events ORDER BY start_date DESC');
+  return res.map(event => {
+    return {
+      ...event,
+      start_date: formatDate(event.start_date),
+      end_date: formatDate(event.end_date),
+    }
+  });
+}
+
+export async function getEventTemplates(): Promise<PoapEvent[]> {
   const res = await db.manyOrNone<PoapEvent>('SELECT ' + publicEventColumns + ' FROM events ORDER BY start_date DESC');
   return res.map(event => {
     return {
@@ -626,4 +637,88 @@ export async function getTotalQrClaims(eventId: number, qrRollId: number, claime
 
   const res = await db.result(query);
   return res.rowCount;
+}
+
+export async function getPaginatedEventTemplates(limit: number, offset: number, name: string|null): Promise<EventTemplate[]> {
+  let query = `SELECT * FROM event_templates WHERE is_active = true `
+
+  if (name) {
+    query = query + `AND name ILIKE '${name}' `;
+  }
+
+  query = query + 'ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}';
+
+  console.log(query);
+
+  const res = await db.manyOrNone<EventTemplate>(query, { limit, offset });
+  return res
+}
+
+export async function getTotalEventTemplates(name: string): Promise<number> {
+  let query = `SELECT * FROM event_templates WHERE is_active = true `
+
+  if (name) {
+    query = query + `AND name ILIKE '${name}' `;
+  }
+  console.log(query);
+  const res = await db.result(query);
+  return res.rowCount;
+}
+
+export async function createEventTemplate(event_template: Omit<FullEventTemplate, 'id'>): Promise<EventTemplate> {
+  const data = await db.one(
+      'INSERT INTO event_templates(${this:name}) VALUES(${this:csv}) RETURNING id',
+      event_template
+  );
+
+  return {
+    ...event_template,
+    id: data.id as number,
+  };
+}
+
+export async function getFullEventTemplateById(id: string): Promise<null | FullEventTemplate> {
+  let query = 'SELECT * FROM event_templates WHERE id = ${id}'
+  const res = await db.oneOrNone<FullEventTemplate>(query, {id});
+  return res;
+}
+
+export async function updateEventTemplate(
+    id: string,
+    changes: Pick<FullEventTemplate, 'name' | 'title_link' | 'header_link_text' | 'header_link_url' | 'header_color' | 'header_link_color' | 'main_color' | 'footer_color' | 'left_image_link' | 'right_image_link' | 'mobile_image_link' | 'title_image' | 'right_image_url' | 'left_image_url' | 'mobile_image_url' | 'footer_icon' | 'secret_code'>
+): Promise<boolean> {
+  const res = await db.result(
+      'UPDATE event_templates SET ' +
+      'name=${name}, ' +
+      'title_link=${title_link}, ' +
+      'header_link_text=${header_link_text}, ' +
+      'header_link_url=${header_link_url}, ' +
+      'header_color=${header_color}, ' +
+      'header_link_color=${header_link_color}, ' +
+      'main_color=${main_color}, ' +
+      'footer_color=${footer_color}, ' +
+      'left_image_link=${left_image_link}, ' +
+      'right_image_link=${right_image_link}, ' +
+      'mobile_image_link=${mobile_image_link}, ' +
+      'title_image=${title_image}, ' +
+      'right_image_url=${right_image_url}, ' +
+      'left_image_url=${left_image_url}, ' +
+      'mobile_image_url=${mobile_image_url}, ' +
+      'footer_icon=${footer_icon}, ' +
+      'secret_code=${secret_code}' +
+      'WHERE id = ${id}',
+      {
+        id,
+        ...changes,
+      }
+  );
+  return res.rowCount === 1;
+}
+
+export async function saveEventTemplateUpdate(eventTemplateId: number, field: string, newValue: string, oldValue: string, isAdmin: boolean): Promise<boolean> {
+  let query = 'INSERT INTO event_templates_history (event_template_id, field, old_value, new_value, from_admin) ' +
+      'VALUES (${eventTemplateId}, ${field}, ${oldValue}, ${newValue}, ${isAdmin}) RETURNING id'
+
+  await db.one(query, {eventTemplateId, field, oldValue, newValue, isAdmin})
+  return true
 }

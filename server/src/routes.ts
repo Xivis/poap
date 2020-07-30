@@ -45,7 +45,12 @@ import {
   createQrClaims,
   checkNumericIdExists,
   checkQrHashExists,
-  updateDelegatedQrClaim, getEventTemplate
+  updateDelegatedQrClaim,
+  getEventTemplate,
+  getPaginatedEventTemplates,
+  getTotalEventTemplates,
+  createEventTemplate,
+  getFullEventTemplateById, updateEventTemplate, saveEventTemplateUpdate
 } from './db';
 
 import {
@@ -69,7 +74,7 @@ import {
 
 import {
   Omit, Claim, PoapEvent, PoapFullEvent, TransactionStatus, Address,
-  NotificationType, Notification, ClaimQR, UserRole, TokenInfo
+  NotificationType, Notification, ClaimQR, UserRole, TokenInfo, FullEventTemplate
 } from './types';
 import { TypedValue } from 'eth-crypto';
 import crypto from 'crypto';
@@ -560,8 +565,6 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.InternalServerError('Qr Claim does not have any event');
       }
       qr_claim.event = event;
-      console.log(qr_claim.event.event_template_id);
-      console.log(event.event_template_id);
       if (event.event_template_id) {
         qr_claim.event_template = await getEventTemplate(event.event_template_id);
       }
@@ -1353,7 +1356,6 @@ export default async function routes(fastify: FastifyInstance) {
         for (const key of keys) {
           if (initialEvent[key] !== editedEvent[key]) {
             await saveEventUpdate(event.id, key, editedEvent[key], initialEvent[key], isAdmin)
-            console.log('Updated: ', key)
           }
         }
       }
@@ -2262,6 +2264,480 @@ export default async function routes(fastify: FastifyInstance) {
       res.status(204);
       return;
     }
+  );
+
+  //********************************************************************
+  // EVENT TEMPLATES
+  //********************************************************************
+
+  fastify.get(
+    '/event-templates',
+    {
+      schema: {
+        description: 'List paginated event templates, you can filter by name',
+        tags: ['Event Templates',],
+        querystring: {
+          limit: { type: 'number' },
+          offset: { type: 'number' },
+          name: { type: 'string' },
+        },
+      },
+    },
+    async (req: any, res) => {
+      const limit = req.query.limit || 10;
+      const offset = req.query.offset || 0;
+      const name = req.query.name || null;
+
+      let eventTemplates = await getPaginatedEventTemplates(limit, offset, name);
+      const totalEventTemplates = await getTotalEventTemplates(name) || 0;
+
+      return {
+        limit: limit,
+        offset: offset,
+        total: totalEventTemplates,
+        event_template: eventTemplates,
+      };
+    }
+  );
+
+  fastify.get(
+      '/event-templates/:id',
+      {
+        schema: {
+          description: 'Endpoint to get an specific event template',
+          tags: ['Event Templates',],
+          params: {
+            id: { type: 'string' },
+          },
+          response: {
+            200: {
+              type: 'object',
+              properties: {
+                id: { type: 'number' },
+                name: { type: 'string' },
+                title_image: { type: 'string' },
+                title_link: { type: 'string' },
+                header_link_text: { type: 'string' },
+                header_link_url: { type: 'string' },
+                header_color: { type: 'string' },
+                header_link_color: { type: 'string' },
+                main_color: { type: 'string' },
+                footer_color: { type: 'string' },
+                left_image_url: { type: 'string' },
+                left_image_link: { type: 'string' },
+                right_image_url: { type: 'string' },
+                right_image_link: { type: 'string' },
+                mobile_image_url: { type: 'string' },
+                mobile_image_link: { type: 'string' },
+                footer_icon: { type: 'string' },
+                secret_code: { type: 'string' },
+                created_date: { type: 'string' },
+                is_active: { type: 'boolean' },
+              },
+            }
+          },
+          security: [
+            {
+              "authorization": []
+            }
+          ]
+        },
+      },
+      async (req, res) => {
+        const event_template = await getEventTemplate(req.params.id);
+        if (!event_template) {
+          return new createError.NotFound('Invalid Event Template');
+        }
+        return event_template;
+      }
+  );
+
+  async function validate_template_images(req: any) {
+    const title_image = { ...req.body.title_image };
+    req.body.title_image = '@title_image';
+    req.body[Symbol.for('title_image')] = title_image;
+
+    const right_image_url = { ...req.body.right_image_url };
+    req.body.right_image_url = '@right_image_url';
+    req.body[Symbol.for('right_image_url')] = right_image_url;
+
+    const left_image_url = { ...req.body.left_image_url };
+    req.body.left_image_url = '@left_image_url';
+    req.body[Symbol.for('left_image_url')] = left_image_url;
+
+    const mobile_image_url = { ...req.body.mobile_image_url };
+    req.body.mobile_image_url = '@mobile_image_url';
+    req.body[Symbol.for('mobile_image_url')] = mobile_image_url;
+
+    const footer_icon = { ...req.body.footer_icon };
+    req.body.footer_icon = '@footer_icon';
+    req.body[Symbol.for('footer_icon')] = footer_icon;
+  }
+
+  fastify.post(
+      '/event-templates',
+      {
+        preValidation: [fastify.optionalAuthenticate, validate_template_images,],
+        schema: {
+          description: 'Endpoint to create new event templates',
+          tags: ['Event Templates',],
+          body: {
+            type: 'object',
+            required: [
+              'name',
+              'title_image',
+              'title_link',
+              'header_link_text',
+              'header_link_url',
+              'header_color',
+              'header_link_color',
+              'main_color',
+              'footer_color',
+              'left_image_url',
+              'left_image_link',
+              'right_image_url',
+              'right_image_link',
+              'mobile_image_url',
+              'mobile_image_link',
+              'footer_icon',
+              'secret_code'
+            ],
+            properties: {
+              name: { type: 'string' },
+              title_image: { type: 'string', format: 'binary' },
+              title_link: { type: 'string' },
+              header_link_text: { type: 'string' },
+              header_link_url: { type: 'string' },
+              header_color: { type: 'string' },
+              header_link_color: { type: 'string' },
+              main_color: { type: 'string' },
+              footer_color: { type: 'string' },
+              left_image_url: { type: 'string', format: 'binary' },
+              left_image_link: { type: 'string' },
+              right_image_url: { type: 'string', format: 'binary' },
+              right_image_link: { type: 'string' },
+              mobile_image_url: { type: 'string', format: 'binary' },
+              mobile_image_link: { type: 'string' },
+              footer_icon: { type: 'string', format: 'binary' },
+              secret_code: { type: 'number' },
+            },
+          },
+          response: {
+            200: {
+              type: 'object',
+              properties: {
+                id: { type: 'number' },
+                name: { type: 'string' },
+                title_image: { type: 'string' },
+                title_link: { type: 'string' },
+                header_link_text: { type: 'string' },
+                header_link_url: { type: 'string' },
+                header_color: { type: 'string' },
+                header_link_color: { type: 'string' },
+                main_color: { type: 'string' },
+                footer_color: { type: 'string' },
+                left_image_url: { type: 'string' },
+                left_image_link: { type: 'string' },
+                right_image_url: { type: 'string' },
+                right_image_link: { type: 'string' },
+                mobile_image_url: { type: 'string' },
+                mobile_image_link: { type: 'string' },
+                footer_icon: { type: 'string' },
+                secret_code: { type: 'number' },
+                created_date: { type: 'string' },
+                is_active: { type: 'boolean' },
+              },
+            }
+          },
+          security: [
+            {
+              "authorization": []
+            }
+          ]
+        },
+      },
+      async (req: any, res) => {
+        const title_image = req.body[Symbol.for('title_image')][0];
+        if (!title_image) {
+          return new createError.BadRequest('An image is required for field title_image');
+        }
+        if (title_image.mimetype != 'image/png') {
+          return new createError.BadRequest('title_image must be png');
+        }
+        const filename = 'title-image-' + (new Date().getTime()) + '.png'
+        const title_image_url = await uploadFile(filename, title_image.mimetype, title_image.data);
+        if (!title_image_url) {
+          return new createError.InternalServerError('Error uploading title_image');
+        }
+
+        const right_image = req.body[Symbol.for('right_image_url')][0];
+        if (!right_image) {
+          return new createError.BadRequest('An image is required for field right_image');
+        }
+        if (right_image.mimetype != 'image/png') {
+          return new createError.BadRequest('right_image must be png');
+        }
+        const right_image_filename = 'right-image-' + (new Date().getTime()) + '.png'
+        const right_image_url = await uploadFile(right_image_filename, right_image.mimetype, right_image.data);
+        if (!right_image_url) {
+          return new createError.InternalServerError('Error uploading right_image_url');
+        }
+
+        const left_image = req.body[Symbol.for('left_image_url')][0];
+        if (!left_image) {
+          return new createError.BadRequest('An image is required for field left_image_url');
+        }
+        if (left_image.mimetype != 'image/png') {
+          return new createError.BadRequest('left_image_url must be png');
+        }
+        const left_image_filename = 'left-image-' + (new Date().getTime()) + '.png'
+        const left_image_url = await uploadFile(left_image_filename, left_image.mimetype, left_image.data);
+        if (!left_image_url) {
+          return new createError.InternalServerError('Error uploading left_image_url');
+        }
+
+        const mobile_image = req.body[Symbol.for('mobile_image_url')][0];
+        if (!mobile_image) {
+          return new createError.BadRequest('An image is required for field mobile_image_url');
+        }
+        if (mobile_image.mimetype != 'image/png') {
+          return new createError.BadRequest('mobile_image_url must be png');
+        }
+        const mobile_image_filename = 'mobile-image-' + (new Date().getTime()) + '.png'
+        const mobile_image_url = await uploadFile(mobile_image_filename, mobile_image.mimetype, mobile_image.data);
+        if (!mobile_image_url) {
+          return new createError.InternalServerError('Error uploading mobile_image_url');
+        }
+
+        const footer_icon = req.body[Symbol.for('footer_icon')][0];
+        if (!footer_icon) {
+          return new createError.BadRequest('An image is required for field footer_icon');
+        }
+        if (footer_icon.mimetype != 'image/png') {
+          return new createError.BadRequest('footer_icon must be png');
+        }
+        const footer_icon_filename = 'footer-icon-' + (new Date().getTime()) + '.png'
+        const footer_icon_url = await uploadFile(footer_icon_filename, footer_icon.mimetype, footer_icon.data);
+        if (!footer_icon_url) {
+          return new createError.InternalServerError('Error uploading footer_icon');
+        }
+
+        // image_url: google_image_url,
+        let newEventTemplate: Omit<FullEventTemplate, 'id'> = {
+          name: req.body.name,
+          title_link: req.body.title_link,
+          header_link_text: req.body.header_link_text,
+          header_link_url: req.body.header_link_url,
+          header_color: req.body.header_color,
+          header_link_color: req.body.header_link_color,
+          main_color: req.body.main_color,
+          footer_color: req.body.footer_color,
+          left_image_link: req.body.left_image_link,
+          right_image_link: req.body.right_image_link,
+          mobile_image_link: req.body.mobile_image_link,
+          secret_code: req.body.secret_code,
+          title_image: title_image_url,
+          right_image_url: right_image_url,
+          left_image_url: left_image_url,
+          mobile_image_url: mobile_image_url,
+          footer_icon: footer_icon_url,
+        }
+
+        const event_template = await createEventTemplate(newEventTemplate);
+        if (event_template == null) {
+          return new createError.BadRequest('Invalid event template');
+        }
+        return event_template;
+      }
+  );
+
+  fastify.put(
+      '/event-templates/:id',
+      {
+        preValidation: [fastify.optionalAuthenticate, validate_template_images],
+        schema: {
+          description: 'Endpoint to modify several attributes of selected event template',
+          tags: ['Event Templates',],
+          params: {
+            id: { type: 'string' },
+          },
+          body: {
+            type: 'object',
+            required: [
+              'name',
+              'title_image',
+              'title_link',
+              'header_link_text',
+              'header_link_url',
+              'header_color',
+              'header_link_color',
+              'main_color',
+              'footer_color',
+              'left_image_url',
+              'left_image_link',
+              'right_image_url',
+              'right_image_link',
+              'mobile_image_url',
+              'mobile_image_link',
+              'footer_icon',
+              'secret_code'
+            ],
+            properties: {
+              name: { type: 'string' },
+              title_image: { type: 'string', format: 'binary' },
+              title_link: { type: 'string' },
+              header_link_text: { type: 'string' },
+              header_link_url: { type: 'string' },
+              header_color: { type: 'string' },
+              header_link_color: { type: 'string' },
+              main_color: { type: 'string' },
+              footer_color: { type: 'string' },
+              left_image_url: { type: 'string', format: 'binary' },
+              left_image_link: { type: 'string' },
+              right_image_url: { type: 'string', format: 'binary' },
+              right_image_link: { type: 'string' },
+              mobile_image_url: { type: 'string', format: 'binary' },
+              mobile_image_link: { type: 'string' },
+              secret_code: { type: 'number' },
+              footer_icon: { type: 'string', format: 'binary' },
+            },
+          },
+          response: {
+            204: { type: 'string' },
+          },
+          security: [
+            {
+              "authorization": []
+            }
+          ]
+        },
+      },
+      async (req: any, res) => {
+        let isAdmin: boolean = false;
+        let secretCode: number = parseInt(req.body.secret_code)
+
+        if (req.user && req.user.hasOwnProperty('sub')) {
+          if (getUserRoles(req.user).indexOf(UserRole.administrator) != -1) {
+            isAdmin = true
+          }
+        }
+
+        // Check if event exists
+        const event_template = await getFullEventTemplateById(req.params.id);
+        if (!event_template) {
+          return new createError.NotFound('Invalid Event Template');
+        }
+
+        if (!isAdmin) {
+          if (event_template.secret_code !== secretCode) {
+            await sleep(3000)
+            return new createError.InternalServerError('Incorrect Edit Code');
+          }
+        }
+
+        const title_image = req.body[Symbol.for('title_image')][0];
+        if (!title_image) {
+          return new createError.BadRequest('An image is required for field title_image');
+        }
+        if (title_image.mimetype != 'image/png') {
+          return new createError.BadRequest('title_image must be png');
+        }
+        const filename = 'title-image-' + (new Date().getTime()) + '.png'
+        const title_image_url = await uploadFile(filename, title_image.mimetype, title_image.data);
+        if (!title_image_url) {
+          return new createError.InternalServerError('Error uploading title_image');
+        }
+
+        const right_image = req.body[Symbol.for('right_image_url')][0];
+        if (!right_image) {
+          return new createError.BadRequest('An image is required for field right_image');
+        }
+        if (right_image.mimetype != 'image/png') {
+          return new createError.BadRequest('right_image must be png');
+        }
+        const right_image_filename = 'right-image-' + (new Date().getTime()) + '.png'
+        const right_image_url = await uploadFile(right_image_filename, right_image.mimetype, right_image.data);
+        if (!right_image_url) {
+          return new createError.InternalServerError('Error uploading right_image_url');
+        }
+
+        const left_image = req.body[Symbol.for('left_image_url')][0];
+        if (!left_image) {
+          return new createError.BadRequest('An image is required for field left_image_url');
+        }
+        if (left_image.mimetype != 'image/png') {
+          return new createError.BadRequest('left_image_url must be png');
+        }
+        const left_image_filename = 'left-image-' + (new Date().getTime()) + '.png'
+        const left_image_url = await uploadFile(left_image_filename, left_image.mimetype, left_image.data);
+        if (!left_image_url) {
+          return new createError.InternalServerError('Error uploading left_image_url');
+        }
+
+        const mobile_image = req.body[Symbol.for('mobile_image_url')][0];
+        if (!mobile_image) {
+          return new createError.BadRequest('An image is required for field mobile_image_url');
+        }
+        if (mobile_image.mimetype != 'image/png') {
+          return new createError.BadRequest('mobile_image_url must be png');
+        }
+        const mobile_image_filename = 'mobile-image-' + (new Date().getTime()) + '.png'
+        const mobile_image_url = await uploadFile(mobile_image_filename, mobile_image.mimetype, mobile_image.data);
+        if (!mobile_image_url) {
+          return new createError.InternalServerError('Error uploading mobile_image_url');
+        }
+
+        const footer_icon = req.body[Symbol.for('footer_icon')][0];
+        if (!footer_icon) {
+          return new createError.BadRequest('An image is required for field footer_icon');
+        }
+        if (footer_icon.mimetype != 'image/png') {
+          return new createError.BadRequest('footer_icon must be png');
+        }
+        const footer_icon_filename = 'footer-icon-' + (new Date().getTime()) + '.png'
+        const footer_icon_url = await uploadFile(footer_icon_filename, footer_icon.mimetype, footer_icon.data);
+        if (!footer_icon_url) {
+          return new createError.InternalServerError('Error uploading footer_icon');
+        }
+
+        const isOk = await updateEventTemplate(req.params.id, {
+          name: req.body.name,
+          title_link: req.body.title_link,
+          header_link_text: req.body.header_link_text,
+          header_link_url: req.body.header_link_url,
+          header_color: req.body.header_color,
+          header_link_color: req.body.header_link_color,
+          main_color: req.body.main_color,
+          footer_color: req.body.footer_color,
+          left_image_link: req.body.left_image_link,
+          right_image_link: req.body.right_image_link,
+          mobile_image_link: req.body.mobile_image_link,
+          title_image: ((title_image_url === null) ? event_template.title_image : title_image_url),
+          right_image_url: ((right_image_url === null) ? event_template.right_image_url : right_image_url),
+          left_image_url: ((left_image_url === null) ? event_template.left_image_url : left_image_url),
+          mobile_image_url: ((mobile_image_url === null) ? event_template.mobile_image_url : mobile_image_url),
+          footer_icon: ((footer_icon_url === null) ? event_template.footer_icon : footer_icon_url),
+          secret_code: secretCode,
+        });
+        if (!isOk) {
+          return new createError.NotFound('Invalid event template');
+        }
+
+        const updatedEventTemplate = await getFullEventTemplateById(req.params.id);
+        if (updatedEventTemplate) {
+          let initialEventTemplate = JSON.parse(JSON.stringify(event_template))
+          let editedEventTemplate = JSON.parse(JSON.stringify(updatedEventTemplate))
+          let keys = Object.keys(initialEventTemplate)
+          for (const key of keys) {
+            if (initialEventTemplate[key] !== editedEventTemplate[key]) {
+              await saveEventTemplateUpdate(event_template.id, key, editedEventTemplate[key], initialEventTemplate[key], isAdmin)
+            }
+          }
+        }
+
+        res.status(204);
+        return;
+      }
   );
 
   //********************************************************************
