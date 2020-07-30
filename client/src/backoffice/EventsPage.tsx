@@ -213,7 +213,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
   const editLabel = <>
     <b>Edit Code</b>
     <Tooltip content={warning}>
-      <img src={infoButton} className={'info-button'} />
+      <img src={infoButton} className={'info-button'} alt={'Help'} />
     </Tooltip>
   </>
 

@@ -3,6 +3,7 @@ import Web3 from 'web3'
 import Web3Modal from 'web3modal'
 // @ts-ignore
 import WalletConnectProvider from '@walletconnect/web3-provider'
+import Portis from '@portis/web3'
 // @ts-ignore
 import { TransactionReceipt } from 'web3-core'
 import ReactModal from 'react-modal';
@@ -81,6 +82,12 @@ const ClaimDelegated: React.FC<{
         package: WalletConnectProvider,
         options: {
           infuraId: process.env.REACT_APP_INFURA_ID
+        }
+      },
+      portis: {
+        package: Portis,
+        options: {
+          id: process.env.REACT_APP_PORTIS_APP_ID
         }
       }
     }
