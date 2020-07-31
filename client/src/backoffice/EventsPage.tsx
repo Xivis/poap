@@ -303,7 +303,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
   let templateOptions: TemplateOptionType[] = [];
 
   if (templates) {
-    templateOptions = templates?.results?.map((template) => {
+    templateOptions = templates?.event_templates?.map((template) => {
       const label = `${template.name ? template.name : 'No name'}`;
       return { value: template.id, label };
     });

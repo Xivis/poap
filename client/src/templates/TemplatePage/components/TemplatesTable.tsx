@@ -8,14 +8,14 @@ import { Loading } from '../../../components/Loading';
 
 // types
 import { Template } from '../types';
-import { DjangoResponse } from '../../../api';
+import { TemplatesResponse } from '../../../api';
 
 // assets
 import { ReactComponent as EditIcon } from '../../../images/edit.svg';
 
 type Props = {
   isFetchingTemplates: boolean;
-  templates: DjangoResponse<Template> | null;
+  templates: TemplatesResponse<Template> | null;
   total: number;
   limit: number;
   // TODO: type this handler
@@ -44,7 +44,7 @@ export const TemplatesTable: FC<Props> = ({
             <div className={'col-md-2 center'}>Edit</div>
           </div>
           <div className={'admin-table-row qr-table'}>
-            {templates?.results?.map((template, index) => {
+            {templates?.event_templates?.map((template, index) => {
               console.log('template', template);
               return (
                 <div className={`row ${index % 2 === 0 ? 'even' : 'odd'}`} key={template.id}>

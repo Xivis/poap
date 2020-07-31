@@ -38,7 +38,7 @@ export const TemplatePage = () => {
   // effects
   useEffect(() => {
     if (templates) {
-      setTotal(templates?.results?.length);
+      setTotal(templates?.event_templates?.length);
     }
   }, [templates]);
 

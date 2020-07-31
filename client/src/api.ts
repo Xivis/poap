@@ -8,12 +8,12 @@ export type Address = string;
 export type Params = {
   [key: string]: string | number | boolean | undefined;
 };
-export interface DjangoResponse<Result> {
+export interface TemplatesResponse<Result> {
   count: number;
 
   next?: string;
   previous?: string;
-  results: Result[];
+  event_templates: Result[];
 }
 export interface TokenInfo {
   tokenId: string;
@@ -231,16 +231,16 @@ export async function getEvents(): Promise<PoapEvent[]> {
     : fetchJson(`${API_BASE}/events`);
 }
 
-export type TemplateResponse = DjangoResponse<Template>;
+export type TemplateResponse = TemplatesResponse<Template>;
 
-export async function getTemplates({ limit = 10, page = 0, name = '' }: Params = {}): Promise<
+export async function getTemplates({ limit = 10, page = 1, name = '' }: Params = {}): Promise<
   TemplateResponse
 > {
-  // TODO: Unccomment next code block when templates endpoint is implemented
-  // return authClient.isAuthenticated()
-  //   ? secureFetch(`${API_BASE}/templates/?limit=${limit}&page=${page}&name__icontains=${name}`)
-  //   : fetchJson(`${API_BASE}/templates/?limit=${limit}&page=${page}&name__icontains=${name}`);
-  return fetchJson('https://run.mocky.io/v3/c46afed8-7d79-43c7-b0b0-32336f17b6c4');
+  console.log('page', page);
+  console.log('limit', limit);
+  return fetchJson(
+    `${API_BASE}/event-templates?limit=${limit}&offset=${page}&name__icontains=${name}`
+  );
 }
 
 export async function getTemplateById(id?: number): Promise<Template> {
