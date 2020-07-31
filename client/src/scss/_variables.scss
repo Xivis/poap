@@ -25,9 +25,9 @@ $red-select-arrow: linear-gradient(45deg, transparent 50%, $color-error 50%),
   linear-gradient(135deg, $color-error 50%, transparent 50%);
 
 // Transactions
-$tx-success-background: rgba(0,201,167,.1);
-$tx-success-color: #3BB54A;
-$tx-error-background: rgba(222,68,55,.1);
+$tx-success-background: rgba(0, 201, 167, 0.1);
+$tx-success-color: #3bb54a;
+$tx-error-background: rgba(222, 68, 55, 0.1);
 $tx-error-color: #de4437;
 
 // Typography

@@ -1,7 +1,25 @@
-import React, { useState, useEffect, useMemo, ChangeEvent, ReactNode } from 'react';
+import React, {
+  FC,
+  useCallback,
+  useState,
+  useEffect,
+  useMemo,
+  ChangeEvent,
+  ReactNode,
+} from 'react';
 import { Link, Route, RouteComponentProps, Switch } from 'react-router-dom';
+import debounce from 'lodash.debounce';
 import classNames from 'classnames';
-import { Formik, Form, Field, ErrorMessage, FieldProps, FormikActions } from 'formik';
+import {
+  Formik,
+  Form,
+  Field,
+  ErrorMessage,
+  FieldProps,
+  FormikActions,
+  FormikHandlers,
+  FormikValues,
+} from 'formik';
 import DayPickerInput from 'react-day-picker/DayPickerInput';
 import 'react-day-picker/lib/style.css';
 import { format } from 'date-fns';
@@ -19,6 +37,7 @@ import { SubmitButton } from '../components/SubmitButton';
 import { Loading } from '../components/Loading';
 import FilterButton from '../components/FilterButton';
 import FilterSelect from '../components/FilterSelect';
+import FilterReactSelect from '../components/FilterReactSelect';
 
 // constants
 import { ROUTES } from '../lib/constants';
@@ -32,7 +51,16 @@ import infoButton from '../images/info-button.svg';
 /* Helpers */
 import { useAsync } from '../react-helpers';
 import { PoapEventSchema } from '../lib/schemas';
-import { PoapFullEvent, PoapEvent, getEvent, getEvents, updateEvent, createEvent } from '../api';
+import {
+  PoapFullEvent,
+  PoapEvent,
+  getEvent,
+  getEvents,
+  updateEvent,
+  createEvent,
+  getTemplates,
+} from '../api';
+import FormFilterReactSelect from '../components/FormFilterReactSelect';
 
 type EventEditValues = {
   name: string;
@@ -52,6 +80,8 @@ type EventEditValues = {
 type DatePickerDay = 'start_date' | 'end_date';
 
 type SetFieldValue = (field: string, value: any) => void;
+
+type HandleChange = FormikHandlers['handleChange'];
 
 type DatePickerContainerProps = {
   text: string;
@@ -98,6 +128,28 @@ export interface RangeModifier {
   to: Date;
 }
 
+type SelectProps = {
+  name: string;
+  options?: any[];
+  disabled: boolean;
+  handleChange: HandleChange;
+  values: FormikValues;
+  label: string;
+};
+
+const Select: FC<SelectProps> = ({ name, options, label, disabled, handleChange, values }) => (
+  <div>
+    <label>{label}</label>
+    <select disabled={disabled} value={values?.[name]} onChange={handleChange} name={name}>
+      {options?.map((option: any) => (
+        <option key={option.id} value={option.id}>
+          {option.name}
+        </option>
+      ))}
+    </select>
+  </div>
+);
+
 export const EventsPage = () => (
   <Switch>
     <Route exact path={ROUTES.events.path} component={EventList} />
@@ -130,8 +182,14 @@ export const EditEventForm: React.FC<RouteComponentProps<{
   return <EventForm event={event} />;
 };
 
+type TemplateOptionType = {
+  value: string | number;
+  label: string;
+};
+
 const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ create, event }) => {
   const [virtualEvent, setVirtualEvent] = useState<boolean>(event ? event.virtual_event : false);
+  const [templateName, setTemplateName] = useState<string>('');
   const [multiDay, setMultiDay] = useState<boolean>(
     event ? event.start_date !== event.end_date : false
   );
@@ -143,6 +201,10 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
     const parts = date.split('-');
     return new Date(`${parts[2]}-${parts[0]}-${parts[1]}`);
   };
+
+  const fetchTemplates = useCallback(() => getTemplates({ name: templateName }), [templateName]);
+
+  const [templates, fetchingTemplates] = useAsync(fetchTemplates);
 
   const { addToast } = useToasts();
 
@@ -236,6 +298,17 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
     </>
   );
 
+  let templateOptions: TemplateOptionType[] = [];
+
+  if (templates) {
+    templateOptions = templates?.results?.map((template) => {
+      const label = `${template.name ? template.name : 'No name'}`;
+      return { value: template.id, label };
+    });
+  }
+
+  const debounceFunction = useMemo(() => debounce(setTemplateName, 1000), [setTemplateName]);
+
   return (
     <div className={'bk-container'}>
       <Formik
@@ -279,121 +352,138 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
           }
         }}
       >
-        {({ values, errors, isSubmitting, setFieldValue }) => (
-          <Form>
-            {create ? (
-              <>
-                <h2>Create Event</h2>
-                <EventField disabled={!create} title="Name of the POAP" name="name" />
-              </>
-            ) : (
-              <>
-                <h2>
-                  {event!.name} - {event!.year}
-                </h2>
-                <EventField disabled={false} title="Name" name="name" />
-              </>
-            )}
-            <EventField disabled={false} title="Description" type="textarea" name="description" />
-            <CheckboxField
-              title="Virtual Event"
-              name="virtual_event"
-              action={toggleVirtualEvent}
-              checked={virtualEvent}
-            />
-            <div className="bk-group">
-              <EventField
-                disabled={false}
-                title={
-                  <>
-                    City <i>Optional</i>
-                  </>
-                }
-                name="city"
-              />
-              <EventField
-                disabled={false}
-                title={
-                  <>
-                    Country <i>Optional</i>
-                  </>
-                }
-                name="country"
-              />
-            </div>
+        {({ values, errors, isSubmitting, setFieldValue }) => {
+          const handleTemplateSelectChange = (name: string) => (selectedOption: any) =>
+            setFieldValue(name, selectedOption.value);
 
-            <CheckboxField
-              title="Multi-day event"
-              name="multi_day"
-              action={() => toggleMultiDay(setFieldValue, values.start_date)}
-              checked={multiDay}
-            />
-            <div className="bk-group">
-              <DayPickerContainer
-                text="Start Date"
-                dayToSetup="start_date"
-                handleDayClick={handleDayClick}
-                setFieldValue={setFieldValue}
-                placeholder={values.start_date}
-                value={
-                  values.start_date !== ''
-                    ? new Date(dateFormatterString(values.start_date).getTime() + day)
-                    : ''
-                }
-                disabled={false}
-                disabledDays={
-                  values.end_date !== ''
-                    ? {
-                        from: new Date(dateFormatterString(values.end_date).getTime() + day * 2),
-                        to: veryFutureDate,
-                      }
-                    : undefined
-                }
-              />
-              <DayPickerContainer
-                text="End Date"
-                dayToSetup="end_date"
-                handleDayClick={handleDayClick}
-                setFieldValue={setFieldValue}
-                placeholder={values.end_date}
-                value={
-                  values.end_date !== ''
-                    ? new Date(dateFormatterString(values.end_date).getTime() + day)
-                    : ''
-                }
-                disabled={!multiDay}
-                disabledDays={
-                  values.start_date !== ''
-                    ? {
-                        from: veryOldDate,
-                        to: new Date(dateFormatterString(values.start_date).getTime()),
-                      }
-                    : undefined
-                }
-              />
-            </div>
-            <EventField title="Website" name="event_url" />
+          const handleTemplateInputChange = (value: string) => debounceFunction(value);
 
-            <div className="bk-group">
-              <ImageContainer
-                text="Image of the POAP"
-                handleFileChange={handleFileChange}
-                setFieldValue={setFieldValue}
-                errors={errors}
-                name="image"
+          return (
+            <Form>
+              {create ? (
+                <>
+                  <h2>Create Event</h2>
+                  <EventField disabled={!create} title="Name of the POAP" name="name" />
+                </>
+              ) : (
+                <>
+                  <h2>
+                    {event!.name} - {event!.year}
+                  </h2>
+                  <EventField disabled={false} title="Name" name="name" />
+                </>
+              )}
+              <EventField disabled={false} title="Description" type="textarea" name="description" />
+              <CheckboxField
+                title="Virtual Event"
+                name="virtual_event"
+                action={toggleVirtualEvent}
+                checked={virtualEvent}
               />
-              <div>
-                <EventField disabled={false} title={editLabel} name="secret_code" />
+              <div className="bk-group">
+                <EventField
+                  disabled={false}
+                  title={
+                    <>
+                      City <i>Optional</i>
+                    </>
+                  }
+                  name="city"
+                />
+                <EventField
+                  disabled={false}
+                  title={
+                    <>
+                      Country <i>Optional</i>
+                    </>
+                  }
+                  name="country"
+                />
               </div>
-            </div>
-            {event && event.image_url && (
-              <div className={'image-edit-container'}>
-                <img alt={event.image_url} className={'image-edit'} src={event.image_url} />
+
+              <CheckboxField
+                title="Multi-day event"
+                name="multi_day"
+                action={() => toggleMultiDay(setFieldValue, values.start_date)}
+                checked={multiDay}
+              />
+              <div className="bk-group">
+                <DayPickerContainer
+                  text="Start Date"
+                  dayToSetup="start_date"
+                  handleDayClick={handleDayClick}
+                  setFieldValue={setFieldValue}
+                  placeholder={values.start_date}
+                  value={
+                    values.start_date !== ''
+                      ? new Date(dateFormatterString(values.start_date).getTime() + day)
+                      : ''
+                  }
+                  disabled={false}
+                  disabledDays={
+                    values.end_date !== ''
+                      ? {
+                          from: new Date(dateFormatterString(values.end_date).getTime() + day * 2),
+                          to: veryFutureDate,
+                        }
+                      : undefined
+                  }
+                />
+                <DayPickerContainer
+                  text="End Date"
+                  dayToSetup="end_date"
+                  handleDayClick={handleDayClick}
+                  setFieldValue={setFieldValue}
+                  placeholder={values.end_date}
+                  value={
+                    values.end_date !== ''
+                      ? new Date(dateFormatterString(values.end_date).getTime() + day)
+                      : ''
+                  }
+                  disabled={!multiDay}
+                  disabledDays={
+                    values.start_date !== ''
+                      ? {
+                          from: veryOldDate,
+                          to: new Date(dateFormatterString(values.start_date).getTime()),
+                        }
+                      : undefined
+                  }
+                />
               </div>
-            )}
-            <SubmitButton text="Save" isSubmitting={isSubmitting} canSubmit={true} />
-          </Form>
-        )}
+              <div className="bk-group">
+                <EventField title="Website" name="event_url" />
+                <FormFilterReactSelect
+                  label="Template"
+                  name="template_id"
+                  placeholder="Pick a template"
+                  onChange={handleTemplateSelectChange('template_id')}
+                  onInputChange={handleTemplateInputChange}
+                  options={templateOptions}
+                  disabled={fetchingTemplates}
+                />
+              </div>
+              <div className="bk-group">
+                <ImageContainer
+                  text="Image of the POAP"
+                  handleFileChange={handleFileChange}
+                  setFieldValue={setFieldValue}
+                  errors={errors}
+                  name="image"
+                />
+                <div>
+                  <EventField disabled={false} title={editLabel} name="secret_code" />
+                </div>
+              </div>
+              {event && event.image_url && (
+                <div className={'image-edit-container'}>
+                  <img alt={event.image_url} className={'image-edit'} src={event.image_url} />
+                </div>
+              )}
+              <SubmitButton text="Save" isSubmitting={isSubmitting} canSubmit={true} />
+            </Form>
+          );
+        }}
       </Formik>
     </div>
   );

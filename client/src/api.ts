@@ -233,11 +233,9 @@ export async function getEvents(): Promise<PoapEvent[]> {
 
 export type TemplateResponse = DjangoResponse<Template>;
 
-export async function getTemplates({
-  limit = 10,
-  page = 0,
-  name = '',
-}: Params): Promise<TemplateResponse> {
+export async function getTemplates({ limit = 10, page = 0, name = '' }: Params = {}): Promise<
+  TemplateResponse
+> {
   // TODO: Unccomment next code block when templates endpoint is implemented
   // return authClient.isAuthenticated()
   //   ? secureFetch(`${API_BASE}/templates/?limit=${limit}&page=${page}&name__icontains=${name}`)
