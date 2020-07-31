@@ -17,12 +17,13 @@ type HashFormValues = {
 * @dev: Form component to get the QR if code was not scanned
 * */
 const QRHashForm: React.FC<{error: boolean, loading: boolean, checkClaim: (hash: string) => void}> = ({error, loading, checkClaim}) => {
-
+  // handlers
   const handleForm = (
     values: HashFormValues
   ) => {
     checkClaim(values.hash)
   };
+
 
   return (
     <div className={'container'}>

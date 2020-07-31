@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@walletconnect/web3-provider": "1.0.11",
+    "@portis/web3": "^2.0.0-beta.57",
+    "@walletconnect/web3-provider": "1.1.0",
     "aos": "^2.3.4",
     "auth0-js": "^9.11.2",
     "classnames": "^2.2.6",
@@ -28,7 +29,7 @@
     "react-toast-notifications": "^2.4.0",
     "typescript": "3.7.4",
     "web3": "^1.2.8",
-    "web3modal": "1.6.3",
+    "web3modal": "1.9.0",
     "yup": "^0.27.0"
   },
   "scripts": {

@@ -3,8 +3,10 @@ import Web3 from 'web3'
 import Web3Modal from 'web3modal'
 // @ts-ignore
 import WalletConnectProvider from '@walletconnect/web3-provider'
+import Portis from '@portis/web3'
 // @ts-ignore
 import { TransactionReceipt } from 'web3-core'
+import ReactModal from 'react-modal';
 import { useToasts } from 'react-toast-notifications'
 
 /* Helpers */
@@ -37,6 +39,8 @@ const ClaimDelegated: React.FC<{
   verifyClaim: () => void;
   initialStep: boolean;
 }> = ({ claim, verifyClaim, initialStep }) => {
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
+  const [disclaimerShowed, setDisclaimerShowed] = useState<boolean>(false)
   const [web3, setWeb3] = useState<any>(null)
   const [network, setNetwork] = useState<string | null>(null)
   const [connectStatus, setConnectStatus] = useState<string>(!initialStep ? PAGE_STATUS.LOADING : PAGE_STATUS.DISCONNECTED)
@@ -79,6 +83,12 @@ const ClaimDelegated: React.FC<{
         options: {
           infuraId: process.env.REACT_APP_INFURA_ID
         }
+      },
+      portis: {
+        package: Portis,
+        options: {
+          id: process.env.REACT_APP_PORTIS_APP_ID
+        }
       }
     }
 
@@ -105,6 +115,12 @@ const ClaimDelegated: React.FC<{
   };
 
   const claimPoap = async () => {
+    if (!disclaimerShowed) {
+      setIsModalOpen(true)
+      setDisclaimerShowed(true)
+      return
+    }
+
     let _web3 = web3
     if (!_web3) {
       _web3 = await connectWallet()
@@ -184,10 +200,15 @@ const ClaimDelegated: React.FC<{
     setTxReceipt(null)
   }
 
+  const continueClaim = () => {
+    setIsModalOpen(false);
+    claimPoap();
+  };
+
   const fadeEffect = initialStep ? 'fade-up' : '';
 
   let beneficiary = claim.beneficiary
-  if (claim.user_input) {
+  if (claim.user_input && claim.user_input.toLowerCase() !== claim.beneficiary.toLowerCase()) {
     beneficiary = `${claim.user_input} (${reduceAddress(claim.beneficiary)})`
   }
 
@@ -204,11 +225,11 @@ const ClaimDelegated: React.FC<{
       </form>
 
       {connectStatus !== PAGE_STATUS.LOADING && !txHash &&
-        <Button
-          text={'Claim POAP token'}
-          action={claimPoap}
-          extraClass={'link-btn'}
-        />
+      <Button
+        text={'Claim POAP token'}
+        action={claimPoap}
+        extraClass={'link-btn'}
+      />
       }
 
       {connectStatus === PAGE_STATUS.LOADING && !txHash &&
@@ -220,10 +241,10 @@ const ClaimDelegated: React.FC<{
       }
 
       {txHash &&
-        <TxDetail
-          hash={txHash}
-          receipt={txReceipt}
-        />
+      <TxDetail
+        hash={txHash}
+        receipt={txReceipt}
+      />
       }
 
       {txHash && txRetry > TX_RETRY_LIMIT &&
@@ -256,19 +277,36 @@ const ClaimDelegated: React.FC<{
       }
 
       {txReceipt && !txReceipt.status &&
-        <>
-          <div className={'text-info'}>
-            <p>It seems that your transaction failed. Want to try again?</p>
-          </div>
-          <Button
-            text={'Retry'}
-            action={cleanState}
-            extraClass={'link-btn'}
-          />
-        </>
+      <>
+        <div className={'text-info'}>
+          <p>It seems that your transaction failed. Want to try again?</p>
+        </div>
+        <Button
+          text={'Retry'}
+          action={cleanState}
+          extraClass={'link-btn'}
+        />
+      </>
       }
 
       <ClaimFooterMessage />
+      <ReactModal isOpen={isModalOpen} shouldFocusAfterRender={true}>
+        <div className="admin-list-modal">
+          <div className='claim-modal-text-container'>
+            <p>The current surge in gas prices makes a POAP minting have a cost of between $2 and $6 in mining fees.</p>
+            <p>We are working hard on a scaling solution that should be ready in 6-8 weeks. </p>
+            <p>The POAP is already reserved for the address submitted to be minted for free once our new deployment is ready.
+              You can continue the process at your expense or just close this page.</p>
+            <p>For learning more about what our plans are visit our <a href="http://poap.xyz/discord" target="_blank" rel="noopener noreferrer">discord</a>.
+            </p>
+          </div>
+          <div className="claim-modal-cancel-container">
+            <div onClick={continueClaim} className={'close-modal'}>
+              Continue
+            </div>
+          </div>
+        </div>
+      </ReactModal>
     </div>
   );
 };
