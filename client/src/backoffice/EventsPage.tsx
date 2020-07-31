@@ -2,6 +2,7 @@ import React, {
   FC,
   useCallback,
   useState,
+  ReactElement,
   useEffect,
   useMemo,
   ChangeEvent,
@@ -122,6 +123,7 @@ export type ImageContainerProps = {
   errors: any;
   name: string;
   shouldShowInfo?: boolean;
+  customLabel?: ReactElement;
 };
 export interface RangeModifier {
   from: Date;
@@ -521,17 +523,18 @@ export const ImageContainer = ({
   setFieldValue,
   errors,
   shouldShowInfo = true,
+  customLabel,
   name,
 }: ImageContainerProps) => (
   <div className={classNames('date-picker-container', !shouldShowInfo && 'h78')}>
-    <label>{text}</label>
+    {customLabel ? <span>{React.cloneElement(customLabel)}</span> : <label>{text}</label>}
     <input
       type="file"
-      accept="image/png"
-      className={classNames(Boolean(errors.image) && 'error')}
+      accept="image/png, image/jpeg, image/jpg"
+      className={classNames(Boolean(errors?.[name]) && 'error')}
       onChange={(e: ChangeEvent<HTMLInputElement>) => handleFileChange(e, setFieldValue, name)}
     />
-    <ErrorMessage name="image" component="p" className="bk-error" />
+    <ErrorMessage name={name} component="p" className="bk-error" />
     {shouldShowInfo && (
       <div className="input-field-helper">
         Badge specs:

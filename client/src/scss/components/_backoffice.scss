@@ -50,16 +50,8 @@
   width: 100%;
   margin: 18px 0px;
 
-  > label {
-    margin-bottom: 10px;
-    display: block;
+  label {
     color: $color-primary;
-
-    .info-button {
-      width: 13px;
-      margin-left: 10px;
-      margin-bottom: 3px;
-    }
   }
 
   input,
@@ -75,6 +67,7 @@
 
 .bk-group {
   display: flex;
+  height: 130px;
 
   > * {
     flex: 1;
@@ -111,6 +104,8 @@
 
   .bk-form-row {
     margin-top: 0;
+    margin-bottom: 0;
+    height: 112px;
   }
 }
 
@@ -855,5 +850,27 @@
 }
 
 .h78 {
-  height: 78px;
+  height: 112px;
+}
+
+.info-label-container {
+  display: flex;
+}
+
+.info-label {
+  // margin-bottom: 10px;
+  display: block;
+  color: $color-primary;
+}
+
+.info-button {
+  width: 13px;
+  margin-left: 10px;
+  margin-bottom: 3px;
+}
+
+.date-picker-container {
+  span {
+    margin-bottom: 10px;
+  }
 }

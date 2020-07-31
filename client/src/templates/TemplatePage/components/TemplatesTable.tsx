@@ -75,7 +75,7 @@ export const TemplatesTable: FC<Props> = ({
                   </div>
 
                   <div className={'col-md-2 col-xs-12 center event-edit-icon-container'}>
-                    <Link to={`/admin/events/${template.id}`}>
+                    <Link to={`/admin/template/form/${template.id}`}>
                       <EditIcon />
                     </Link>
                   </div>

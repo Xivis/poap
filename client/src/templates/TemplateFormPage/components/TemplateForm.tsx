@@ -1,5 +1,6 @@
-import React, { FC } from 'react';
+import React, { FC, useCallback, useMemo } from 'react';
 import { Tooltip } from 'react-lightweight-tooltip';
+import { useHistory } from 'react-router-dom';
 import { Formik, Form, FormikActions } from 'formik';
 
 // lib
@@ -14,29 +15,13 @@ import { EventField } from '../../../backoffice/EventsPage';
 // assets
 import infoButton from '../../../images/info-button.svg';
 
-import { createTemplate } from '../../../api';
+// api
+import { createTemplate, getTemplateById } from '../../../api';
 
-const initialValues = {
-  name: '',
-  title_image: '',
-  title_link: '',
-  header_link_text: '',
-  header_link_url: '',
-  header_color: '',
-  header_link_color: '',
-  main_color: '',
-  footer_color: '',
-  left_image_url: '',
-  left_image_link: '',
-  right_image_url: '',
-  right_image_link: '',
-  mobile_image_url: '',
-  mobile_image_link: '',
-  footer_icon: '',
-  secret_code: generateSecretCode(),
-};
+// helpers
+import { useAsync } from '../../../react-helpers';
 
-const validationSchema = {};
+import { templateFormSchema } from '../../../lib/schemas';
 
 type TemplatePageFormValues = {
   name: string;
@@ -65,6 +50,16 @@ type Props = {
 };
 
 export const TemplateForm: FC<Props> = ({ id }) => {
+  // methods
+  const fetchTemplate = useCallback(() => (id ? getTemplateById(id) : null), [id]);
+
+  // TODO: check this type
+  // custom hooks
+  const [template]: any = useAsync(fetchTemplate);
+
+  // router hooks
+  const history = useHistory();
+
   // handlers
   const onSubmit = (
     values: TemplatePageFormValues,
@@ -76,12 +71,49 @@ export const TemplateForm: FC<Props> = ({ id }) => {
       formData.append(key, typeof value === 'number' ? String(value) : value);
     });
 
-    createTemplate(formData).finally(() => {
-      formikActions.setSubmitting(false);
-    });
+    createTemplate(formData)
+      .then(() => history.push('/admin/template'))
+      .catch((error: Error) => console.error(error.message))
+      .finally(() => {
+        formikActions.setSubmitting(false);
+      });
   };
 
   // constants
+  const initialValues = useMemo(() => {
+    if (template) {
+      console.log('initialValues -> template', template);
+      const values = {
+        ...template,
+        secret_code: template.secret_code ? template.secret_code.toString().padStart(6, '0') : '',
+      };
+
+      return values;
+    } else {
+      const values: TemplatePageFormValues = {
+        name: '',
+        title_image: '',
+        title_link: '',
+        header_link_text: '',
+        header_link_url: '',
+        header_color: '',
+        header_link_color: '',
+        main_color: '',
+        footer_color: '',
+        left_image_url: '',
+        left_image_link: '',
+        right_image_url: '',
+        right_image_link: '',
+        mobile_image_url: '',
+        mobile_image_link: '',
+        footer_icon: '',
+        secret_code: generateSecretCode(),
+      };
+
+      return values;
+    }
+  }, [template]); /* eslint-disable-line react-hooks/exhaustive-deps */
+
   const warning = (
     <div className={'backoffice-tooltip'}>
       {id ? (
@@ -96,26 +128,35 @@ export const TemplateForm: FC<Props> = ({ id }) => {
     </div>
   );
 
-  const editLabel = (
-    <>
-      <b>Edit Code</b>
-      <Tooltip content={warning}>
+  const editLabel = ({
+    label,
+    tooltipContent,
+    tooltipText,
+  }: {
+    label: string;
+    tooltipContent?: React.ReactNode;
+    tooltipText?: string;
+  }) => (
+    <div className="info-label-container">
+      <b className="info-label">{label}</b>
+      <Tooltip content={tooltipContent ? tooltipContent : tooltipText}>
         <img alt="Informative icon" src={infoButton} className={'info-button'} />
       </Tooltip>
-    </>
+    </div>
   );
 
   return (
     <div className={'bk-container'}>
       <Formik
+        enableReinitialize
         initialValues={initialValues}
         validateOnBlur={false}
         validateOnChange={false}
-        validationSchema={validationSchema}
+        validationSchema={templateFormSchema}
         onSubmit={onSubmit}
       >
         {({ values, errors, isSubmitting, setFieldValue }) => {
-          console.log('isSubmitting', isSubmitting);
+          console.log('errors', errors);
           const handleFileChange = (
             event: React.ChangeEvent<HTMLInputElement>,
             setFieldValue: SetFieldValue,
@@ -166,60 +207,68 @@ export const TemplateForm: FC<Props> = ({ id }) => {
                 <ImageContainer
                   name="title_image"
                   text="Title's image"
+                  customLabel={editLabel({ label: "Title's image", tooltipText: 'Specs' })}
                   handleFileChange={handleFileChange}
                   setFieldValue={setFieldValue}
                   errors={errors}
                   shouldShowInfo={false}
                 />
-                <EventField title="Title's link" name="title_link" />
+                <EventField title="Title's redirect link" name="title_link" />
               </div>
               <div className="bk-group">
                 <EventField title="Header's text" name="header_link_text" />
-                <EventField title="Header's text link" name="header_link_url" />
+                <EventField title="Header's text redirect link" name="header_link_url" />
               </div>
               <div className="bk-group">
                 <ImageContainer
                   name="left_image_url"
                   text="Left image"
+                  customLabel={editLabel({ label: 'Left image', tooltipText: 'Specs' })}
                   handleFileChange={handleFileChange}
                   setFieldValue={setFieldValue}
                   errors={errors}
                   shouldShowInfo={false}
                 />
-                <EventField title="Left image's link" name="left_image_link" />
+                <EventField title="Left image's redirect link" name="left_image_link" />
               </div>
               <div className="bk-group">
                 <ImageContainer
                   name="right_image_url"
+                  customLabel={editLabel({ label: 'Right image', tooltipText: 'Specs' })}
                   text="Right image"
                   handleFileChange={handleFileChange}
                   setFieldValue={setFieldValue}
                   errors={errors}
                   shouldShowInfo={false}
                 />
-                <EventField title="Right image's link" name="right_image_link" />
+                <EventField title="Right image's redirect link" name="right_image_link" />
               </div>
               <div className="bk-group">
                 <ImageContainer
                   name="mobile_image_url"
+                  customLabel={editLabel({ label: 'Mobile image', tooltipText: 'Specs' })}
                   text="Mobile image"
                   handleFileChange={handleFileChange}
                   setFieldValue={setFieldValue}
                   errors={errors}
                   shouldShowInfo={false}
                 />
-                <EventField title="Mobile image's link" name="mobile_image_link" />
+                <EventField title="Mobile image's redirect link" name="mobile_image_link" />
               </div>
               <div className="bk-group">
                 <ImageContainer
                   text="Footer's logo"
+                  customLabel={editLabel({ label: "Footer's logo", tooltipText: 'Specs' })}
                   name="footer_icon"
                   handleFileChange={handleFileChange}
                   setFieldValue={setFieldValue}
                   errors={errors}
                   shouldShowInfo={false}
                 />
-                <EventField title={editLabel} name="secret_code" />
+                <EventField
+                  title={editLabel({ label: 'Edit Code', tooltipContent: warning })}
+                  name="secret_code"
+                />
               </div>
               <SubmitButton canSubmit text="Save" isSubmitting={isSubmitting} />
             </Form>

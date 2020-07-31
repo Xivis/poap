@@ -19,7 +19,7 @@ export function useBodyClassName(classes: string) {
   }, [classes]);
 }
 
-export function useAsync<A>(fn: (params?: any) => Promise<A>): [A | null, boolean, boolean] {
+export function useAsync<A>(fn: (params?: any) => Promise<A> | null): [A | null, boolean, boolean] {
   const [working, setWorking] = useState(false);
   const [hasError, setError] = useState(false);
   const [value, setValue] = useState<A | null>(null);

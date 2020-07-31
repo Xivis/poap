@@ -243,6 +243,14 @@ export async function getTemplates({ limit = 10, page = 0, name = '' }: Params =
   return fetchJson('https://run.mocky.io/v3/c46afed8-7d79-43c7-b0b0-32336f17b6c4');
 }
 
+export async function getTemplateById(id?: number): Promise<Template> {
+  // TODO: Unccomment next code block when templates endpoint is implemented
+  // return authClient.isAuthenticated()
+  //   ? secureFetch(`${API_BASE}/templates/?limit=${limit}&page=${page}&name__icontains=${name}`)
+  //   : fetchJson(`${API_BASE}/templates/?limit=${limit}&page=${page}&name__icontains=${name}`);
+  return fetchJson('https://run.mocky.io/v3/1d8db90e-76f1-4964-8d83-fdec36186e62');
+}
+
 export async function getEvent(fancyId: string): Promise<null | PoapFullEvent> {
   const isAdmin = authClient.isAuthenticated();
   return isAdmin
@@ -384,12 +392,10 @@ export async function createEvent(event: FormData) {
 }
 
 export async function createTemplate(event: FormData) {
-  // TODO: Unccomment next code block when backend accepts creating template
-  // return fetchJson(`${API_BASE}/template`, {
-  //   method: 'POST',
-  //   body: event,
-  // });
-  return fetchJson(`https://run.mocky.io/v3/1d8db90e-76f1-4964-8d83-fdec36186e62`);
+  return fetchJson(`${API_BASE}/event-templates`, {
+    method: 'POST',
+    body: event,
+  });
 }
 
 export async function getSigners(): Promise<AdminAddress[]> {
