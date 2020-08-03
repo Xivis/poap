@@ -237,8 +237,6 @@ export type TemplateResponse = TemplatesResponse<Template>;
 export async function getTemplates({ limit = 10, page = 1, name = '' }: Params = {}): Promise<
   TemplateResponse
 > {
-  console.log('page', page);
-  console.log('limit', limit);
   return fetchJson(
     `${API_BASE}/event-templates?limit=${limit}&offset=${page}&name__icontains=${name}`
   );

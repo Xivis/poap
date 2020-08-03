@@ -49,6 +49,7 @@ export const TemplatePage = () => {
 
   return (
     <>
+      <NavigationMenu />
       <header id="site-header" role="banner">
         <div className="container">
           <div className="col-xs-6 col-sm-6 col-md-6">
@@ -75,7 +76,6 @@ export const TemplatePage = () => {
           />
         </div>
       </div>
-      <NavigationMenu />
     </>
   );
 };
