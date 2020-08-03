@@ -16,7 +16,7 @@ import { EventField } from '../../../backoffice/EventsPage';
 import infoButton from '../../../images/info-button.svg';
 
 // api
-import { createTemplate, getTemplateById } from '../../../api';
+import { createTemplate, updateTemplate, getTemplateById } from '../../../api';
 
 // helpers
 import { useAsync } from '../../../react-helpers';
@@ -68,21 +68,39 @@ export const TemplateForm: FC<Props> = ({ id }) => {
     const formData = new FormData();
 
     Object.entries(values).forEach(([key, value]: [string, string | Blob]) => {
-      formData.append(key, typeof value === 'number' ? String(value) : value);
+      if (id) {
+        if (
+          (key.includes('image_url') ||
+            key.includes('footer_icon') ||
+            key.includes('title_image')) &&
+          typeof value === 'string'
+        ) {
+          return;
+        }
+        formData.append(key, typeof value === 'number' ? String(value) : value);
+      } else {
+        formData.append(key, typeof value === 'number' ? String(value) : value);
+      }
     });
 
-    createTemplate(formData)
-      .then(() => history.push('/admin/template'))
-      .catch((error: Error) => console.error(error.message))
-      .finally(() => {
-        formikActions.setSubmitting(false);
-      });
+    id
+      ? updateTemplate(formData, id)
+          .then(() => history.push('/admin/template'))
+          .catch((error: Error) => console.error(error.message))
+          .finally(() => {
+            formikActions.setSubmitting(false);
+          })
+      : createTemplate(formData)
+          .then(() => history.push('/admin/template'))
+          .catch((error: Error) => console.error(error.message))
+          .finally(() => {
+            formikActions.setSubmitting(false);
+          });
   };
 
   // constants
   const initialValues = useMemo(() => {
     if (template) {
-      console.log('initialValues -> template', template);
       const values = {
         ...template,
         secret_code: template.secret_code ? template.secret_code.toString().padStart(6, '0') : '',
@@ -156,7 +174,6 @@ export const TemplateForm: FC<Props> = ({ id }) => {
         onSubmit={onSubmit}
       >
         {({ values, errors, isSubmitting, setFieldValue }) => {
-          console.log('errors', errors);
           const handleFileChange = (
             event: React.ChangeEvent<HTMLInputElement>,
             setFieldValue: SetFieldValue,
@@ -204,15 +221,24 @@ export const TemplateForm: FC<Props> = ({ id }) => {
                 />
               </div>
               <div className="bk-group">
-                <ImageContainer
-                  name="title_image"
-                  text="Title's image"
-                  customLabel={editLabel({ label: "Title's image", tooltipText: 'Specs' })}
-                  handleFileChange={handleFileChange}
-                  setFieldValue={setFieldValue}
-                  errors={errors}
-                  shouldShowInfo={false}
-                />
+                <div>
+                  <ImageContainer
+                    name="title_image"
+                    text="Title's image"
+                    customLabel={editLabel({ label: "Title's image", tooltipText: 'Specs' })}
+                    handleFileChange={handleFileChange}
+                    setFieldValue={setFieldValue}
+                    errors={errors}
+                    shouldShowInfo={false}
+                  />
+                  {values?.title_image && typeof values?.title_image === 'string' && (
+                    <img
+                      alt={values.title_image}
+                      src={values.title_image}
+                      className={'template_image_preview'}
+                    />
+                  )}
+                </div>
                 <EventField title="Title's redirect link" name="title_link" />
               </div>
               <div className="bk-group">
@@ -220,51 +246,87 @@ export const TemplateForm: FC<Props> = ({ id }) => {
                 <EventField title="Header's text redirect link" name="header_link_url" />
               </div>
               <div className="bk-group">
-                <ImageContainer
-                  name="left_image_url"
-                  text="Left image"
-                  customLabel={editLabel({ label: 'Left image', tooltipText: 'Specs' })}
-                  handleFileChange={handleFileChange}
-                  setFieldValue={setFieldValue}
-                  errors={errors}
-                  shouldShowInfo={false}
-                />
+                <div>
+                  <ImageContainer
+                    name="left_image_url"
+                    text="Left image"
+                    customLabel={editLabel({ label: 'Left image', tooltipText: 'Specs' })}
+                    handleFileChange={handleFileChange}
+                    setFieldValue={setFieldValue}
+                    errors={errors}
+                    shouldShowInfo={false}
+                  />
+                  {values?.left_image_url && typeof values?.left_image_url === 'string' && (
+                    <img
+                      alt={values.left_image_url}
+                      src={values.left_image_url}
+                      className={'template_image_preview'}
+                    />
+                  )}
+                </div>
                 <EventField title="Left image's redirect link" name="left_image_link" />
               </div>
               <div className="bk-group">
-                <ImageContainer
-                  name="right_image_url"
-                  customLabel={editLabel({ label: 'Right image', tooltipText: 'Specs' })}
-                  text="Right image"
-                  handleFileChange={handleFileChange}
-                  setFieldValue={setFieldValue}
-                  errors={errors}
-                  shouldShowInfo={false}
-                />
+                <div>
+                  <ImageContainer
+                    name="right_image_url"
+                    customLabel={editLabel({ label: 'Right image', tooltipText: 'Specs' })}
+                    text="Right image"
+                    handleFileChange={handleFileChange}
+                    setFieldValue={setFieldValue}
+                    errors={errors}
+                    shouldShowInfo={false}
+                  />
+                  {values?.right_image_url && typeof values?.right_image_url === 'string' && (
+                    <img
+                      alt={values.right_image_url}
+                      src={values.right_image_url}
+                      className={'template_image_preview'}
+                    />
+                  )}
+                </div>
                 <EventField title="Right image's redirect link" name="right_image_link" />
               </div>
               <div className="bk-group">
-                <ImageContainer
-                  name="mobile_image_url"
-                  customLabel={editLabel({ label: 'Mobile image', tooltipText: 'Specs' })}
-                  text="Mobile image"
-                  handleFileChange={handleFileChange}
-                  setFieldValue={setFieldValue}
-                  errors={errors}
-                  shouldShowInfo={false}
-                />
+                <div>
+                  <ImageContainer
+                    name="mobile_image_url"
+                    customLabel={editLabel({ label: 'Mobile image', tooltipText: 'Specs' })}
+                    text="Mobile image"
+                    handleFileChange={handleFileChange}
+                    setFieldValue={setFieldValue}
+                    errors={errors}
+                    shouldShowInfo={false}
+                  />
+                  {values?.mobile_image_url && typeof values?.mobile_image_url === 'string' && (
+                    <img
+                      alt={values.mobile_image_url}
+                      src={values.mobile_image_url}
+                      className={'template_image_preview'}
+                    />
+                  )}
+                </div>
                 <EventField title="Mobile image's redirect link" name="mobile_image_link" />
               </div>
               <div className="bk-group">
-                <ImageContainer
-                  text="Footer's logo"
-                  customLabel={editLabel({ label: "Footer's logo", tooltipText: 'Specs' })}
-                  name="footer_icon"
-                  handleFileChange={handleFileChange}
-                  setFieldValue={setFieldValue}
-                  errors={errors}
-                  shouldShowInfo={false}
-                />
+                <div>
+                  <ImageContainer
+                    text="Footer's logo"
+                    customLabel={editLabel({ label: "Footer's logo", tooltipText: 'Specs' })}
+                    name="footer_icon"
+                    handleFileChange={handleFileChange}
+                    setFieldValue={setFieldValue}
+                    errors={errors}
+                    shouldShowInfo={false}
+                  />
+                  {values?.footer_icon && typeof values?.footer_icon === 'string' && (
+                    <img
+                      alt={values.footer_icon}
+                      src={values.footer_icon}
+                      className={'template_image_preview'}
+                    />
+                  )}
+                </div>
                 <EventField
                   title={editLabel({ label: 'Edit Code', tooltipContent: warning })}
                   name="secret_code"

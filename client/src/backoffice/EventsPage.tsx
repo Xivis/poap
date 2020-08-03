@@ -778,7 +778,7 @@ const EventTable: React.FC<EventTableProps> = ({ initialEvents, criteria, create
                 <span className={'visible-sm'}>Start date: </span>
                 <span>{event.start_date}</span>
               </div>
-              <div className={'col-md-2 center logo-image-container'}>
+              <div className={'col-md-2 center '}>
                 <Tooltip
                   content={[
                     // eslint-disable-next-line

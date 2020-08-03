@@ -160,6 +160,7 @@ const API_BASE =
 
 async function fetchJson<A>(input: RequestInfo, init?: RequestInit): Promise<A> {
   const res = await fetch(input, init);
+
   if (!res.ok) {
     const data = await res.json();
     if (data && data.message) throw new Error(data.message);
@@ -244,11 +245,7 @@ export async function getTemplates({ limit = 10, page = 1, name = '' }: Params =
 }
 
 export async function getTemplateById(id?: number): Promise<Template> {
-  // TODO: Unccomment next code block when templates endpoint is implemented
-  // return authClient.isAuthenticated()
-  //   ? secureFetch(`${API_BASE}/templates/?limit=${limit}&page=${page}&name__icontains=${name}`)
-  //   : fetchJson(`${API_BASE}/templates/?limit=${limit}&page=${page}&name__icontains=${name}`);
-  return fetchJson('https://run.mocky.io/v3/1d8db90e-76f1-4964-8d83-fdec36186e62');
+  return fetchJson(`${API_BASE}/event-templates/${id}`);
 }
 
 export async function getEvent(fancyId: string): Promise<null | PoapFullEvent> {
@@ -394,6 +391,13 @@ export async function createEvent(event: FormData) {
 export async function createTemplate(event: FormData) {
   return fetchJson(`${API_BASE}/event-templates`, {
     method: 'POST',
+    body: event,
+  });
+}
+
+export async function updateTemplate(event: FormData, id: number) {
+  return fetchJsonNoResponse(`${API_BASE}/event-templates/${id}`, {
+    method: 'PUT',
     body: event,
   });
 }
