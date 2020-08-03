@@ -62,6 +62,8 @@ export interface HashClaim {
   tx: Transaction;
   event_id: number;
   event: PoapEvent;
+  // TODO: Type event_template when backend sends the data
+  event_template: any;
   beneficiary: Address;
   user_input: string | null;
   signer: Address;

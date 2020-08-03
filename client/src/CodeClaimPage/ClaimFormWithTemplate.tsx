@@ -18,7 +18,7 @@ type QRFormValues = {
   address: string;
 };
 
-const ClaimForm: React.FC<{
+const ClaimFormWithTemplate: React.FC<{
   claim: HashClaim;
   method: string;
   onSubmit: (claim: HashClaim) => void;
@@ -112,4 +112,4 @@ const ClaimForm: React.FC<{
   );
 };
 
-export default ClaimForm;
+export default ClaimFormWithTemplate;
