@@ -986,7 +986,8 @@ export default async function routes(fastify: FastifyInstance) {
                 end_date: { type: 'string' },
                 created_date: { type: 'string' },
                 from_admin: { type: 'boolean' },
-                virtual_event: { type: 'boolean' }
+                virtual_event: { type: 'boolean' },
+                event_template_id: { type: 'number' },
               },
             }
           }
@@ -1024,7 +1025,8 @@ export default async function routes(fastify: FastifyInstance) {
               end_date: { type: 'string' },
               created_date: { type: 'string' },
               from_admin: { type: 'boolean' },
-              virtual_event: { type: 'boolean' }
+              virtual_event: { type: 'boolean' },
+              event_template_id: { type: 'number' },
             },
           }
         }
@@ -1067,7 +1069,8 @@ export default async function routes(fastify: FastifyInstance) {
               created_date: { type: 'string' },
               from_admin: { type: 'boolean' },
               virtual_event: { type: 'boolean' },
-              secret_code: { type: 'number' }
+              secret_code: { type: 'number' },
+              event_template_id: { type: 'number' },
             },
           }
         },
