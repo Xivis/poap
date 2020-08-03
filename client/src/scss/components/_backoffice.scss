@@ -834,6 +834,10 @@
 }
 
 .rselect {
+  div {
+    color: $color-primary !important;
+  }
+
   input {
     height: auto;
     margin: 5px 0;

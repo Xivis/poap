@@ -38,7 +38,6 @@ import { SubmitButton } from '../components/SubmitButton';
 import { Loading } from '../components/Loading';
 import FilterButton from '../components/FilterButton';
 import FilterSelect from '../components/FilterSelect';
-import FilterReactSelect from '../components/FilterReactSelect';
 
 // constants
 import { ROUTES } from '../lib/constants';
@@ -60,8 +59,10 @@ import {
   updateEvent,
   createEvent,
   getTemplates,
+  getTemplateById,
 } from '../api';
 import FormFilterReactSelect from '../components/FormFilterReactSelect';
+import { Template } from '../templates/TemplatePage/types';
 
 type EventEditValues = {
   name: string;
@@ -73,6 +74,7 @@ type EventEditValues = {
   city: string;
   country: string;
   event_url: string;
+  event_template_id: number;
   image?: Blob;
   isFile: boolean;
   secret_code: string;
@@ -192,6 +194,9 @@ type TemplateOptionType = {
 const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ create, event }) => {
   const [virtualEvent, setVirtualEvent] = useState<boolean>(event ? event.virtual_event : false);
   const [templateName, setTemplateName] = useState<string>('');
+  const [templateInitialOptionLabel, setTemplateInitialOptionLabel] = useState<string | null>(null);
+  const [templateOptions, setTemplateOptions] = useState<Template[] | null>(null);
+
   const [multiDay, setMultiDay] = useState<boolean>(
     event ? event.start_date !== event.end_date : false
   );
@@ -206,7 +211,20 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
 
   const fetchTemplates = useCallback(() => getTemplates({ name: templateName }), [templateName]);
 
+  const fetchTemplate = useCallback(() => getTemplateById(2), []);
+  // TODO: Uncomment next line when endpoint sends event_tamplate_id
+  // const fetchTemplate = useCallback(() => getTemplateById(event?.event_template_id), [event]);
+
   const [templates, fetchingTemplates] = useAsync(fetchTemplates);
+  const [template, fetchingTemplate] = useAsync(fetchTemplate);
+
+  useEffect(() => {
+    if (templates) setTemplateOptions(templates?.event_templates);
+  }, [templates]);
+
+  useEffect(() => {
+    if (template) setTemplateInitialOptionLabel(template.name);
+  }, [template]);
 
   const { addToast } = useToasts();
 
@@ -219,6 +237,8 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
         ...eventKeys,
         start_date: event.start_date.replace(dateRegex, '-'),
         end_date: event.end_date.replace(dateRegex, '-'),
+        // TODO: Remove event_template_id when back sends the data
+        event_template_id: 2,
         isFile: false,
         secret_code: secret_code ? secret_code.toString().padStart(6, '0') : '',
       };
@@ -233,6 +253,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
         start_date: '',
         end_date: '',
         city: '',
+        event_template_id: 0,
         country: '',
         event_url: '',
         image: new Blob(),
@@ -300,16 +321,16 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
     </>
   );
 
-  let templateOptions: TemplateOptionType[] = [];
-
-  if (templates) {
-    templateOptions = templates?.event_templates?.map((template) => {
+  const parseTemplateToOptions = (templates: Template[]): TemplateOptionType[] => {
+    return templates.map((template: Template) => {
       const label = `${template.name ? template.name : 'No name'}`;
       return { value: template.id, label };
     });
-  }
+  };
 
   const debounceFunction = useMemo(() => debounce(setTemplateName, 1000), [setTemplateName]);
+
+  const templateSelectOptions = templateOptions ? parseTemplateToOptions(templateOptions) : [];
 
   return (
     <div className={'bk-container'}>
@@ -457,11 +478,13 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
                 <EventField title="Website" name="event_url" />
                 <FormFilterReactSelect
                   label="Template"
-                  name="template_id"
-                  placeholder="Pick a template"
-                  onChange={handleTemplateSelectChange('template_id')}
+                  name="event_template_id"
+                  placeholder={
+                    templateInitialOptionLabel ? templateInitialOptionLabel : 'Pick a template'
+                  }
+                  onChange={handleTemplateSelectChange('event_template_id')}
                   onInputChange={handleTemplateInputChange}
-                  options={templateOptions}
+                  options={templateSelectOptions}
                   disabled={fetchingTemplates}
                 />
               </div>

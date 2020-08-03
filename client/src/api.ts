@@ -36,6 +36,7 @@ export interface PoapEvent {
   city: string;
   country: string;
   event_url: string;
+  event_template_id: number;
   from_admin: boolean;
   image_url: string;
   year: number;
