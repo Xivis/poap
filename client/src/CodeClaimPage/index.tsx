@@ -24,6 +24,7 @@ import { TX_STATUS } from '../lib/constants';
 /* Assets */
 import abi from '../abis/PoapDelegatedMint.json';
 import EmptyBadge from '../images/empty-badge.svg';
+import { TemplateClaimFooter } from './templateClaim/TemplateClaimFooter';
 
 const NETWORK = process.env.REACT_APP_ETH_NETWORK;
 
@@ -37,6 +38,7 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string; method:
   const [initialStep, setInitialStep] = useState<boolean>(true);
   const [isClaimLoading, setIsClaimLoading] = useState<boolean>(false);
   const [beneficiaryHasToken, setBeneficiaryHasToken] = useState<boolean>(false);
+  console.log('claim', claim);
 
   const { addToast } = useToasts();
 
@@ -167,7 +169,14 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string; method:
         claimed={!!(claim && (claim.tx_status === TX_STATUS.passed || beneficiaryHasToken))}
       />
       <div className={'claim-body'}>{body}</div>
-      <ClaimFooter />
+      {!claim?.event_template ? (
+        <ClaimFooter />
+      ) : (
+        <TemplateClaimFooter
+          templateFooterIcon={claim?.event_template?.footer_icon}
+          templateFooterColor={claim?.event_template?.footer_color}
+        />
+      )}
     </div>
   );
 };

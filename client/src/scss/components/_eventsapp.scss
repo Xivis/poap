@@ -351,6 +351,10 @@
 .code-claim-page {
   background: $color-invert;
   min-height: 100vh;
+
+  display: flex;
+  flex-direction: column;
+
   .claim-header {
     position: relative;
     background: $bg-color;
@@ -438,6 +442,8 @@
 
   .claim-body {
     padding-top: 50px;
+    flex: 1;
+
     @media (min-width: $bp-mw) {
       padding-top: 0;
     }
@@ -460,7 +466,8 @@
         padding: 25px 0;
         font-family: $font-family-narrow;
         color: $color-medium-violet;
-        span, a {
+        span,
+        a {
           text-decoration: underline;
           cursor: pointer;
           font-family: inherit;
@@ -531,7 +538,6 @@
             top: 13px;
           }
         }
-
       }
 
       .text-info {
@@ -558,7 +564,6 @@
           }
         }
       }
-
     }
   }
 
@@ -604,7 +609,7 @@
         text-transform: uppercase;
         font-size: 0.85rem;
         color: $color-grey;
-        margin-bottom: 20px
+        margin-bottom: 20px;
       }
       &:first-child {
         border-right: 1px solid rgb(226, 232, 240);
@@ -616,7 +621,6 @@
         }
       }
     }
-
   }
 }
 
@@ -627,5 +631,52 @@
   }
   .close-modal {
     margin-top: 20px;
+  }
+}
+
+.template_claim_footer {
+  height: 250px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 0 7rem;
+
+  .footer_icon_container {
+    height: 191px;
+  }
+
+  .footer_icon {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .footer-content {
+    height: 190px;
+
+    .container {
+      display: flex;
+      min-width: auto;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+
+      .social-icons {
+        display: flex;
+        margin-top: 30px;
+
+        a {
+          height: 30px;
+          width: 30px;
+
+          &:not(:last-of-type) {
+            margin-right: 20px;
+          }
+        }
+      }
+    }
   }
 }
