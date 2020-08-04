@@ -12,7 +12,8 @@ import { hasWeb3 } from '../poap-eth';
 import { SubmitButton } from '../components/SubmitButton';
 import ClaimFooterMessage from './ClaimFooterMessage';
 
-/* Assets */
+// lib
+import { COLORS } from '../lib/constants';
 
 type QRFormValues = {
   address: string;
@@ -25,6 +26,10 @@ const ClaimForm: React.FC<{
 }> = ({ claim, onSubmit, method }) => {
   const [enabledWeb3, setEnabledWeb3] = useState<boolean | null>(null);
   const [account, setAccount] = useState<string>('');
+
+  const mobileImageUrl = claim?.event_template?.mobile_image_url;
+  const mobileImageLink = claim?.event_template?.mobile_image_link;
+  const mainColor = claim?.event_template?.main_color;
 
   useEffect(() => {
     hasWeb3().then(setEnabledWeb3);
@@ -80,6 +85,7 @@ const ClaimForm: React.FC<{
                       <input
                         type="text"
                         autoComplete="off"
+                        style={{ borderColor: mainColor ? mainColor : COLORS.primaryColor }}
                         className={classNames(!!form.errors[field.name] && 'error')}
                         placeholder={'Input your Ethereum address or ENS name'}
                         {...field}
@@ -99,6 +105,7 @@ const ClaimForm: React.FC<{
 
                 <SubmitButton
                   text="Claim POAP token"
+                  style={{ backgroundColor: mainColor ? mainColor : COLORS.primaryColor }}
                   isSubmitting={isSubmitting}
                   canSubmit={isValid}
                 />
@@ -107,7 +114,16 @@ const ClaimForm: React.FC<{
           }}
         </Formik>
       </div>
-      <ClaimFooterMessage />
+      <ClaimFooterMessage linkStyle={{ color: mainColor ? mainColor : COLORS.primaryColor }} />
+      {mobileImageUrl ? (
+        mobileImageLink ? (
+          <a href={mobileImageLink} rel="noopener noreferrer">
+            <img alt="Brand publicity" src={mobileImageUrl} className="mobile_image" />
+          </a>
+        ) : (
+          <img alt="Brand publicity" src={mobileImageUrl} className="mobile_image" />
+        )
+      ) : null}
     </div>
   );
 };

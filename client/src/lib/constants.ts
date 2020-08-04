@@ -3,6 +3,10 @@ const ROLES = {
   eventHost: 'event_host',
 };
 
+const COLORS = {
+  primaryColor: '#6534ff',
+};
+
 const LABELS = {
   issueBadges: {
     roles: [ROLES.administrator],
@@ -133,4 +137,4 @@ const etherscanLinks = {
   address: (address: string): string => `https://${prefix}etherscan.io/address/${address}`,
 };
 
-export { ROLES, ROUTES, TX_STATUS, etherscanLinks, LABELS, IMAGE_SUPPORTED_FORMATS };
+export { ROLES, ROUTES, TX_STATUS, etherscanLinks, LABELS, IMAGE_SUPPORTED_FORMATS, COLORS };

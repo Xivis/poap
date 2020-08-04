@@ -56,6 +56,29 @@ export interface ClaimProof {
   claimer: Address;
   proof: string;
 }
+
+export type EventTemplate = {
+  created_date: string;
+  footer_color: string;
+  footer_icon: string;
+  header_color: string;
+  header_link_color: string;
+  header_link_text: string;
+  header_link_url: string;
+  id: number;
+  is_active: boolean;
+  left_image_link: string;
+  left_image_url: string;
+  main_color: string;
+  mobile_image_link: string;
+  mobile_image_url: string;
+  name: string;
+  right_image_link: string;
+  right_image_url: string;
+  title_image: string;
+  title_link: string;
+};
+
 export interface HashClaim {
   id: number;
   qr_hash: string;
@@ -63,8 +86,7 @@ export interface HashClaim {
   tx: Transaction;
   event_id: number;
   event: PoapEvent;
-  // TODO: Type event_template when backend sends the data
-  event_template: any;
+  event_template: EventTemplate;
   beneficiary: Address;
   user_input: string | null;
   signer: Address;

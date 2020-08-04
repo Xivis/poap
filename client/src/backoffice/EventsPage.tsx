@@ -211,9 +211,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
 
   const fetchTemplates = useCallback(() => getTemplates({ name: templateName }), [templateName]);
 
-  const fetchTemplate = useCallback(() => getTemplateById(2), []);
-  // TODO: Uncomment next line when endpoint sends event_tamplate_id
-  // const fetchTemplate = useCallback(() => getTemplateById(event?.event_template_id), [event]);
+  const fetchTemplate = useCallback(() => getTemplateById(event?.event_template_id), [event]);
 
   const [templates, fetchingTemplates] = useAsync(fetchTemplates);
   const [template, fetchingTemplate] = useAsync(fetchTemplate);
@@ -485,7 +483,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
                   onChange={handleTemplateSelectChange('event_template_id')}
                   onInputChange={handleTemplateInputChange}
                   options={templateSelectOptions}
-                  disabled={fetchingTemplates}
+                  disabled={fetchingTemplates || fetchingTemplate}
                 />
               </div>
               <div className="bk-group">
