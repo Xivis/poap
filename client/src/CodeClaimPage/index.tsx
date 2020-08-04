@@ -15,6 +15,7 @@ import ClaimPending from './ClaimPending';
 import ClaimFinished from './ClaimFinished';
 import ClaimBumped from './ClaimBumped';
 import ClaimDelegated from './ClaimDelegated';
+import { TemplateClaimLoading } from './templateClaim/TemplateClaimLoading';
 import { ClaimFooter } from '../components/ClaimFooter';
 
 /* Constants */
@@ -38,7 +39,6 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string; method:
   const [initialStep, setInitialStep] = useState<boolean>(true);
   const [isClaimLoading, setIsClaimLoading] = useState<boolean>(false);
   const [beneficiaryHasToken, setBeneficiaryHasToken] = useState<boolean>(false);
-  console.log('claim', claim);
 
   const { addToast } = useToasts();
 
@@ -158,41 +158,47 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string; method:
   }
 
   return (
-    <div className={'code-claim-page'}>
-      {!claim?.event_template ? (
-        <ClaimHeader
-          title={title}
-          image={image}
-          claimed={!!(claim && (claim.tx_status === TX_STATUS.passed || beneficiaryHasToken))}
-        />
+    <>
+      {hash && !claim ? (
+        <TemplateClaimLoading />
       ) : (
-        <TemplateClaimHeader
-          title={title}
-          image={image}
-          claimed={!!(claim && (claim.tx_status === TX_STATUS.passed || beneficiaryHasToken))}
-          headerColor={claim?.event_template?.header_color}
-          headerLinkColor={claim?.event_template?.header_link_color}
-          headerLinkText={claim?.event_template?.header_link_text}
-          headerLinkUrl={claim?.event_template?.header_link_url}
-          mainColor={claim?.event_template?.main_color}
-          titleImage={claim?.event_template?.title_image}
-          titleLink={claim?.event_template?.title_link}
-          leftImageLink={claim?.event_template?.left_image_link}
-          leftImageUrl={claim?.event_template?.left_image_url}
-          rightImageLink={claim?.event_template?.right_image_link}
-          rightImageUrl={claim?.event_template?.right_image_url}
-        />
-      )}
+        <div className={'code-claim-page'}>
+          {!claim?.event_template ? (
+            <ClaimHeader
+              title={title}
+              image={image}
+              claimed={!!(claim && (claim.tx_status === TX_STATUS.passed || beneficiaryHasToken))}
+            />
+          ) : (
+            <TemplateClaimHeader
+              title={title}
+              image={image}
+              claimed={!!(claim && (claim.tx_status === TX_STATUS.passed || beneficiaryHasToken))}
+              headerColor={claim?.event_template?.header_color}
+              headerLinkColor={claim?.event_template?.header_link_color}
+              headerLinkText={claim?.event_template?.header_link_text}
+              headerLinkUrl={claim?.event_template?.header_link_url}
+              mainColor={claim?.event_template?.main_color}
+              titleImage={claim?.event_template?.title_image}
+              titleLink={claim?.event_template?.title_link}
+              leftImageLink={claim?.event_template?.left_image_link}
+              leftImageUrl={claim?.event_template?.left_image_url}
+              rightImageLink={claim?.event_template?.right_image_link}
+              rightImageUrl={claim?.event_template?.right_image_url}
+            />
+          )}
 
-      <div className={`claim-body ${claim?.event_template ? 'template' : ''}`}>{body}</div>
-      {!claim?.event_template ? (
-        <ClaimFooter />
-      ) : (
-        <TemplateClaimFooter
-          templateFooterIcon={claim?.event_template?.footer_icon}
-          templateFooterColor={claim?.event_template?.footer_color}
-        />
+          <div className={`claim-body ${claim?.event_template ? 'template' : ''}`}>{body}</div>
+          {!claim?.event_template ? (
+            <ClaimFooter />
+          ) : (
+            <TemplateClaimFooter
+              templateFooterIcon={claim?.event_template?.footer_icon}
+              templateFooterColor={claim?.event_template?.footer_color}
+            />
+          )}
+        </div>
       )}
-    </div>
+    </>
   );
 };
