@@ -859,6 +859,10 @@
 
 .info-label-container {
   display: flex;
+
+  > div {
+    z-index: 1 !important;
+  }
 }
 
 .info-label {
@@ -922,4 +926,50 @@
       stroke: $color-primary;
     }
   }
+}
+
+.ReactModal__Content--after-open {
+  &.template {
+    max-width: 100vw;
+    width: 90vw;
+    top: 5vh !important;
+    left: 5vw !important;
+    height: 90vh;
+    margin: 0;
+    overflow: scroll;
+
+    > svg {
+      position: absolute;
+      cursor: pointer;
+      top: 8px;
+      right: 8px;
+      stroke-width: 4;
+    }
+  }
+}
+
+.secondary_button {
+  background-color: white;
+  cursor: pointer;
+  color: $color-primary;
+  outline: none;
+  border-radius: 40px;
+  padding: 12px 24px;
+  height: 51px;
+  border: 1px solid $color-primary;
+}
+
+.template_buttons_container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  button {
+    margin: 0;
+    margin-right: 24px;
+  }
+}
+
+.template_form {
+  padding-bottom: 24px;
 }

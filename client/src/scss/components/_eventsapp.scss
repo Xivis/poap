@@ -350,7 +350,10 @@
   ****************************************************** */
 .code-claim-page {
   background: $color-invert;
-  min-height: 100vh;
+
+  &.claim {
+    min-height: 100vh;
+  }
 
   display: flex;
   flex-direction: column;
@@ -376,11 +379,11 @@
         height: 300px;
         width: 150px;
 
-        @media (min-width: $bp-m-max) {
+        @media (min-width: 1030px) {
           display: inline;
         }
 
-        @media (min-width: $bp-mw-max) {
+        @media (min-width: 1220px) {
           right: 120px;
         }
       }
@@ -398,11 +401,11 @@
         height: 300px;
         width: 150px;
 
-        @media (min-width: $bp-m-max) {
+        @media (min-width: 1030px) {
           display: inline;
         }
 
-        @media (min-width: $bp-mw-max) {
+        @media (min-width: 1220px) {
           left: 120px;
         }
       }
@@ -523,7 +526,7 @@
         padding: 0 4rem;
       }
 
-      @media (min-width: $bp-m-max) {
+      @media (min-width: 1030px) {
         display: none;
       }
     }

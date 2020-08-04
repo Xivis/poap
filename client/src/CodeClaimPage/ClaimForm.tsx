@@ -15,21 +15,34 @@ import ClaimFooterMessage from './ClaimFooterMessage';
 // lib
 import { COLORS } from '../lib/constants';
 
+// types
+import { TemplatePageFormValues } from '../templates/TemplateFormPage/components/TemplateForm';
+import { useImageSrc } from '../lib/hooks/useImageSrc';
+
 type QRFormValues = {
   address: string;
 };
 
 const ClaimForm: React.FC<{
-  claim: HashClaim;
+  claim?: HashClaim;
   method: string;
+  template?: TemplatePageFormValues;
   onSubmit: (claim: HashClaim) => void;
-}> = ({ claim, onSubmit, method }) => {
+}> = ({ claim, onSubmit, method, template }) => {
   const [enabledWeb3, setEnabledWeb3] = useState<boolean | null>(null);
   const [account, setAccount] = useState<string>('');
 
-  const mobileImageUrl = claim?.event_template?.mobile_image_url;
-  const mobileImageLink = claim?.event_template?.mobile_image_link;
-  const mainColor = claim?.event_template?.main_color;
+  const mobileImageUrlRaw = claim?.event_template?.mobile_image_url
+    ? claim?.event_template?.mobile_image_url
+    : template?.mobile_image_url;
+  const mobileImageLink = claim?.event_template?.mobile_image_link
+    ? claim?.event_template?.mobile_image_link
+    : template?.mobile_image_link;
+  const mainColor = claim?.event_template?.main_color
+    ? claim?.event_template?.main_color
+    : template?.main_color;
+
+  const mobileImageUrl = useImageSrc(mobileImageUrlRaw);
 
   useEffect(() => {
     hasWeb3().then(setEnabledWeb3);
@@ -48,13 +61,16 @@ const ClaimForm: React.FC<{
   const handleFormSubmit = async (values: QRFormValues, actions: FormikActions<QRFormValues>) => {
     try {
       actions.setSubmitting(true);
-      let newClaim = await postClaimHash(
-        claim.qr_hash.toLowerCase(),
-        values.address.toLowerCase(),
-        claim.secret,
-        method
-      );
-      onSubmit(newClaim);
+      if (claim) {
+        let newClaim = await postClaimHash(
+          claim.qr_hash.toLowerCase(),
+          values.address.toLowerCase(),
+          claim.secret,
+          method
+        );
+
+        onSubmit(newClaim);
+      }
     } catch (error) {
       actions.setStatus({
         ok: false,

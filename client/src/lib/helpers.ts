@@ -35,7 +35,17 @@ const generateSecretCode = () =>
     .toString()
     .padStart(6, '0');
 
+const getBase64 = (img: File | Blob, callback: (outputFile: string | undefined) => void) => {
+  const reader = new FileReader();
+
+  reader.addEventListener('load', () => {
+    if (typeof reader.result === 'string') return reader.result;
+  });
+  reader.readAsDataURL(img);
+};
+
 export {
+  getBase64,
   isValidAddress,
   convertToGWEI,
   convertFromGWEI,

@@ -6,13 +6,26 @@ import Twitter from '../../images/logo-twitter.svg';
 import Telegram from '../../images/logo-telegram.svg';
 import Github from '../../images/logo-git.svg';
 
+// types
+import { TemplatePageFormValues } from '../../templates/TemplateFormPage/components/TemplateForm';
+import { HashClaim } from '../../api';
+import { useImageSrc } from '../../lib/hooks/useImageSrc';
+
 type Props = {
-  templateFooterIcon?: string;
-  templateFooterColor?: string;
+  template?: TemplatePageFormValues;
+  claim?: HashClaim;
 };
 
-export const TemplateClaimFooter: FC<Props> = ({ templateFooterIcon, templateFooterColor }) => {
-  console.log('templateFooterIcon', templateFooterIcon);
+export const TemplateClaimFooter: FC<Props> = ({ template, claim }) => {
+  const templateFooterIconRaw = claim?.event_template?.footer_icon
+    ? claim?.event_template?.footer_icon
+    : template?.footer_icon;
+  const templateFooterColor = claim?.event_template?.footer_color
+    ? claim?.event_template?.footer_color
+    : template?.footer_color;
+
+  const templateFooterIcon = useImageSrc(templateFooterIconRaw);
+
   return (
     <div
       className="template_claim_footer"

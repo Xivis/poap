@@ -1,4 +1,5 @@
-import React, { FC, useCallback, useMemo } from 'react';
+import React, { FC, useCallback, useMemo, useState } from 'react';
+import ReactModal from 'react-modal';
 import { Tooltip } from 'react-lightweight-tooltip';
 import { useHistory } from 'react-router-dom';
 import { Formik, Form, FormikActions } from 'formik';
@@ -14,16 +15,18 @@ import { EventField } from '../../../backoffice/EventsPage';
 
 // assets
 import infoButton from '../../../images/info-button.svg';
+import { ReactComponent as CloseIcon } from '../../../images/x.svg';
 
 // api
 import { createTemplate, updateTemplate, getTemplateById } from '../../../api';
 
 // helpers
 import { useAsync } from '../../../react-helpers';
-
 import { templateFormSchema } from '../../../lib/schemas';
+import { TemplatePreview } from '../../../CodeClaimPage/templateClaim/TemplatePreview';
+import { SecondaryButton } from '../../../components/SecondaryButton';
 
-type TemplatePageFormValues = {
+export type TemplatePageFormValues = {
   name: string;
   title_image: Blob | string;
   title_link: string;
@@ -50,6 +53,8 @@ type Props = {
 };
 
 export const TemplateForm: FC<Props> = ({ id }) => {
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState<boolean>(false);
+
   // methods
   const fetchTemplate = useCallback(() => (id ? getTemplateById(id) : null), [id]);
 
@@ -97,6 +102,10 @@ export const TemplateForm: FC<Props> = ({ id }) => {
             formikActions.setSubmitting(false);
           });
   };
+
+  // handlers
+  const handleShowPreviewClick = () => setIsPreviewModalOpen(true);
+  const handleClosePreviewClick = () => setIsPreviewModalOpen(false);
 
   // constants
   const initialValues = useMemo(() => {
@@ -189,7 +198,7 @@ export const TemplateForm: FC<Props> = ({ id }) => {
           };
 
           return (
-            <Form>
+            <Form className="template_form">
               <h2>{`${id ? 'Update' : 'Create'}`} Event</h2>
               <EventField title="Name of the POAP" name="name" />
               <div className="bk-group">
@@ -332,7 +341,20 @@ export const TemplateForm: FC<Props> = ({ id }) => {
                   name="secret_code"
                 />
               </div>
-              <SubmitButton canSubmit text="Save" isSubmitting={isSubmitting} />
+              <div className="template_buttons_container">
+                <SecondaryButton onClick={handleShowPreviewClick} text="Show preview" />
+                <SubmitButton canSubmit text="Save" isSubmitting={isSubmitting} />
+              </div>
+
+              <ReactModal
+                className="template"
+                isOpen={isPreviewModalOpen}
+                onRequestClose={handleClosePreviewClick}
+                shouldFocusAfterRender={true}
+              >
+                <CloseIcon onClick={handleClosePreviewClick} />
+                <TemplatePreview template={values} />
+              </ReactModal>
             </Form>
           );
         }}
