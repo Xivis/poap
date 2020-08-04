@@ -631,7 +631,7 @@ export async function getPaginatedEventTemplates(limit: number, offset: number, 
   let query = `SELECT * FROM event_templates WHERE is_active = true `
 
   if (name) {
-    query = query + `AND name ILIKE '${name}' `;
+    query = query + `AND name ILIKE '%${name}%' `;
   }
 
   query = query + 'ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}';
@@ -644,7 +644,7 @@ export async function getTotalEventTemplates(name: string): Promise<number> {
   let query = `SELECT * FROM event_templates WHERE is_active = true `
 
   if (name) {
-    query = query + `AND name ILIKE '${name}' `;
+    query = query + `AND name ILIKE '%${name}%' `;
   }
   const res = await db.result(query);
   return res.rowCount;
