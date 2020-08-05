@@ -2644,12 +2644,10 @@ export default async function routes(fastify: FastifyInstance) {
             type: 'object',
             required: [
               'name',
-              'title_image',
               'title_link',
               'header_color',
               'header_link_color',
               'main_color',
-              'footer_icon',
               'secret_code'
             ],
             properties: {
@@ -2705,30 +2703,30 @@ export default async function routes(fastify: FastifyInstance) {
           }
         }
 
+        let title_image_url:string|null = null;
         const title_image = req.body[Symbol.for('title_image')][0];
-        if (!title_image) {
-          return new createError.BadRequest('An image is required for field title_image');
-        }
-        if (title_image.mimetype != 'image/png') {
-          return new createError.BadRequest('title_image must be png');
-        }
-        const filename = 'templates/title-image-' + (new Date().getTime()) + '.png'
-        const title_image_url = await uploadFile(filename, title_image.mimetype, title_image.data);
-        if (!title_image_url) {
-          return new createError.InternalServerError('Error uploading title_image');
+        if (title_image) {
+          if (title_image.mimetype != 'image/png') {
+            return new createError.BadRequest('title_image must be png');
+          }
+          const filename = 'templates/title-image-' + (new Date().getTime()) + '.png'
+          title_image_url = await uploadFile(filename, title_image.mimetype, title_image.data);
+          if (!title_image_url) {
+            return new createError.InternalServerError('Error uploading title_image');
+          }
         }
 
+        let footer_icon_url:string|null = null;
         const footer_icon = req.body[Symbol.for('footer_icon')][0];
-        if (!footer_icon) {
-          return new createError.BadRequest('An image is required for field footer_icon');
-        }
-        if (footer_icon.mimetype != 'image/png') {
-          return new createError.BadRequest('footer_icon must be png');
-        }
-        const footer_icon_filename = 'templates/footer-icon-' + (new Date().getTime()) + '.png'
-        const footer_icon_url = await uploadFile(footer_icon_filename, footer_icon.mimetype, footer_icon.data);
-        if (!footer_icon_url) {
-          return new createError.InternalServerError('Error uploading footer_icon');
+        if (footer_icon) {
+          if (footer_icon.mimetype != 'image/png') {
+            return new createError.BadRequest('footer_icon must be png');
+          }
+          const footer_icon_filename = 'templates/footer-icon-' + (new Date().getTime()) + '.png'
+          footer_icon_url = await uploadFile(footer_icon_filename, footer_icon.mimetype, footer_icon.data);
+          if (!footer_icon_url) {
+            return new createError.InternalServerError('Error uploading footer_icon');
+          }
         }
 
         let right_image_url:string|null = null;
