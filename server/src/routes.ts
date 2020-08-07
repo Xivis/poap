@@ -84,6 +84,7 @@ import { uploadFile } from './plugins/google-storage-utils';
 import { getUserRoles } from './plugins/groups-decorator';
 import { sleep } from './utils';
 import { getEventTokenSupply } from './plugins/thegraph-utils';
+import {sendNewEventEmailToAdmins} from "./plugins/sendgrid-utils";
 
 function buildMetadataJson(homeUrl: string, tokenUrl: string, ev: PoapEvent) {
   return {
@@ -1236,6 +1237,9 @@ export default async function routes(fastify: FastifyInstance) {
       if (event == null) {
         return new createError.BadRequest('Invalid event');
       }
+
+      sendNewEventEmailToAdmins(event);
+
       return event;
     }
   );

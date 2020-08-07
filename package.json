@@ -27,5 +27,7 @@
     "typechain": "^0.3.14",
     "typescript": "^3.4.5"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@sendgrid/mail": "^7.2.3"
+  }
 }
