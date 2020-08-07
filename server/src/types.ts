@@ -38,6 +38,30 @@ export interface TokenInfo {
   event: PoapEvent;
 }
 
+export interface EventTemplate {
+  id: number;
+  name: string;
+  title_image: string;
+  title_link: string;
+  header_link_color: string;
+  header_color: string;
+  main_color: string;
+  footer_icon: string
+  header_link_text: string | null;
+  header_link_url: string | null;
+  footer_color: string | null;
+  left_image_url: string | null;
+  left_image_link: string | null;
+  right_image_url: string | null;
+  right_image_link: string | null;
+  mobile_image_url: string | null;
+  mobile_image_link: string | null;
+}
+
+export interface FullEventTemplate extends EventTemplate {
+  secret_code: number
+}
+
 export interface PoapEvent {
   id: number;
   fancy_id: string;
@@ -54,6 +78,7 @@ export interface PoapEvent {
   from_admin: boolean;
   virtual_event: boolean;
   supply?: number;
+  event_template_id?: number | null;
 }
 
 export interface PoapFullEvent extends PoapEvent{
@@ -107,6 +132,7 @@ export interface ClaimQR {
   is_active: boolean;
   delegated_mint: boolean;
   delegated_signed_message: string;
+  event_template?: null | EventTemplate;
 }
 
 export interface Claim extends ClaimProof {
