@@ -3,6 +3,10 @@ const ROLES = {
   eventHost: 'event_host',
 };
 
+const COLORS = {
+  primaryColor: '#6534ff',
+};
+
 const LABELS = {
   issueBadges: {
     roles: [ROLES.administrator],
@@ -44,6 +48,15 @@ const ROUTES = {
     path: '/admin/issue-for-event',
     roles: [ROLES.administrator],
     title: 'Many Users',
+  },
+  template: {
+    path: '/admin/template',
+    roles: [ROLES.eventHost],
+    title: 'Manage Templates',
+  },
+  templateForm: {
+    path: '/admin/template/form/:id?',
+    roles: [ROLES.eventHost],
   },
   issueForUser: {
     path: '/admin/issue-for-user',
@@ -117,10 +130,11 @@ const TX_STATUS = {
   bumped: 'bumped',
 };
 
-const prefix = process.env.REACT_APP_ETH_NETWORK === 'mainnet' ? '' : `${process.env.REACT_APP_ETH_NETWORK}.`
+const prefix =
+  process.env.REACT_APP_ETH_NETWORK === 'mainnet' ? '' : `${process.env.REACT_APP_ETH_NETWORK}.`;
 const etherscanLinks = {
   tx: (hash: string): string => `https://${prefix}etherscan.io/tx/${hash}`,
   address: (address: string): string => `https://${prefix}etherscan.io/address/${address}`,
 };
 
-export { ROLES, ROUTES, TX_STATUS, etherscanLinks, LABELS, IMAGE_SUPPORTED_FORMATS };
+export { ROLES, ROUTES, TX_STATUS, etherscanLinks, LABELS, IMAGE_SUPPORTED_FORMATS, COLORS };

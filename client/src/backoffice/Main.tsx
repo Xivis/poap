@@ -71,7 +71,7 @@ export const withAuthentication = <T extends Object>(
   };
 };
 
-const NavigationMenu = withRouter(({ history }) => {
+export const NavigationMenu = withRouter(({ history }) => {
   const [isOpen, setIsOpen] = useState(false);
   const auth = useContext(AuthContext);
 
@@ -107,6 +107,8 @@ const NavigationMenu = withRouter(({ history }) => {
       <SidebarLink route={ROUTES.events} handleClick={closeMenu} />
 
       <SidebarLink route={ROUTES.qr} handleClick={closeMenu} />
+      
+      <SidebarLink route={ROUTES.template} handleClick={closeMenu} />
 
       {!isAdmin && <SidebarLink route={ROUTES.adminLogin} handleClick={closeMenu} />}
 

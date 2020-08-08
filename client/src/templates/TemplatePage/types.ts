@@ -1,0 +1,20 @@
+export type Template = {
+  id: 1;
+  name: 'Xivis Template';
+  title_image: 'https://via.placeholder.com/20x10';
+  title_link: 'https://www.xivis.com';
+  header_link_text: 'FAQs';
+  header_link_url: 'https://www.xivis.com/faqs';
+  header_color: '#eda600';
+  header_link_color: '#eda600';
+  main_color: '#eda600';
+  footer_color: '#eda600';
+  left_image_url: 'https://via.placeholder.com/20x10';
+  left_image_link: 'https://via.placeholder.com/';
+  right_image_url: 'https://via.placeholdrer.com/20x10';
+  right_image_link: 'https://via.placeholder.com/';
+  mobile_image_url: 'https://via.placeholdrer.com/20x10';
+  mobile_image_link: 'https://via.placeholder.com/';
+  footer_icon: 'https://via.placeholder.com/';
+  secret_code: '';
+};

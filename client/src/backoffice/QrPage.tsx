@@ -54,7 +54,7 @@ type eventOptionType = {
   value: number;
   label: string;
   start_date: string;
-}
+};
 
 // update modal types
 type UpdateByRangeModalProps = {
@@ -132,24 +132,29 @@ const QrPage: FC = () => {
   }, []); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
-    if (passphrase) fetchQrCodes()
+    if (passphrase) fetchQrCodes();
   }, [passphrase]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
     if (!initialFetch) {
-      fetchQrCodes()
-      setCheckedAllQrs(false)
+      fetchQrCodes();
+      setCheckedAllQrs(false);
     }
   }, [page]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
     if (!initialFetch) {
-      cleanQrSelection()
-      setPage(0)
-      fetchQrCodes()
-      setCheckedAllQrs(false)
+      cleanQrSelection();
+      setPage(0);
+      fetchQrCodes();
+      setCheckedAllQrs(false);
     }
-  }, [selectedEvent, claimStatus, claimScanned, limit ]); /* eslint-disable-line react-hooks/exhaustive-deps */
+  }, [
+    selectedEvent,
+    claimStatus,
+    claimScanned,
+    limit,
+  ]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   const cleanQrSelection = () => setSelectedQrs([]);
 
@@ -159,7 +164,7 @@ const QrPage: FC = () => {
     if (isAdmin) {
       setEvents(events);
     } else {
-      const eventsForCommunity = events.filter(event => !event.from_admin);
+      const eventsForCommunity = events.filter((event) => !event.from_admin);
 
       setEvents(eventsForCommunity);
     }
@@ -225,38 +230,36 @@ const QrPage: FC = () => {
     const stringifiedId = String(id);
 
     return selectedQrs.includes(stringifiedId)
-      ? setSelectedQrs(selectedQrs => selectedQrs.filter((qrId: string) => qrId !== stringifiedId))
-      : setSelectedQrs(selectedQrs => [...selectedQrs, stringifiedId]);
+      ? setSelectedQrs((selectedQrs) =>
+          selectedQrs.filter((qrId: string) => qrId !== stringifiedId)
+        )
+      : setSelectedQrs((selectedQrs) => [...selectedQrs, stringifiedId]);
   };
 
   const handleQrCheckboxChangeAll = () => {
-
     if (qrCodes && qrCodes.length > 0) {
-      const unclaimedCodes = qrCodes.filter(code => !code.claimed)
-      let newSelectedQrs = [...selectedQrs]
-      unclaimedCodes.forEach(code => {
+      const unclaimedCodes = qrCodes.filter((code) => !code.claimed);
+      let newSelectedQrs = [...selectedQrs];
+      unclaimedCodes.forEach((code) => {
         const stringifiedId = String(code.id);
-        const included = selectedQrs.includes(stringifiedId)
+        const included = selectedQrs.includes(stringifiedId);
         if (!included && !checkedAllQrs) {
-          newSelectedQrs = [...newSelectedQrs, stringifiedId]
+          newSelectedQrs = [...newSelectedQrs, stringifiedId];
         }
 
         if (included && checkedAllQrs) {
-          newSelectedQrs = newSelectedQrs.filter((qrId: string) => qrId !== stringifiedId)
+          newSelectedQrs = newSelectedQrs.filter((qrId: string) => qrId !== stringifiedId);
         }
-
-      })
+      });
       setSelectedQrs(newSelectedQrs);
       setCheckedAllQrs(!checkedAllQrs);
     }
-  }
+  };
 
-  const handleLimitChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ): void => {
+  const handleLimitChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
     const { value } = e.target;
     setLimit(parseInt(value, 10));
-  }
+  };
 
   const handleUpdateModalClick = (): void => setIsUpdateModalOpen(true);
 
@@ -268,10 +271,10 @@ const QrPage: FC = () => {
 
   let eventOptions: eventOptionType[] = [];
   if (events) {
-    eventOptions = events.map(event => {
+    eventOptions = events.map((event) => {
       const label = `${event.name ? event.name : 'No name'} (${event.fancy_id}) - ${event.year}`;
-      return {value: event.id, label: label, start_date: event.start_date};
-    })
+      return { value: event.id, label: label, start_date: event.start_date };
+    });
   }
 
   return (
@@ -305,7 +308,11 @@ const QrPage: FC = () => {
             </FilterSelect>
           </div>
         </div>
-        <div className={`action-button-container ${isAdmin ? 'col-md-2 col-xs-6' : 'col-md-5 col-xs-12'}`}>
+        <div
+          className={`action-button-container ${
+            isAdmin ? 'col-md-2 col-xs-6' : 'col-md-5 col-xs-12'
+          }`}
+        >
           <FilterButton text="Update" handleClick={handleUpdateModalClick} />
         </div>
         {isAdmin && (
@@ -372,7 +379,9 @@ const QrPage: FC = () => {
                   onChange={handleQrCheckboxChangeAll}
                   checked={checkedAllQrs}
                 />
-              ) : "-"}
+              ) : (
+                '-'
+              )}
             </div>
             <div className={'col-md-1'}>QR</div>
             <div className={'col-md-3'}>Event</div>
@@ -408,7 +417,12 @@ const QrPage: FC = () => {
                     {(!qr.event || !qr.event.name) && <span>-</span>}
 
                     {qr.event && qr.event.event_url && qr.event.name && (
-                      <a href={qr.event.event_url} title={qr.event.name} target="_blank" rel="noopener noreferrer">
+                      <a
+                        href={qr.event.event_url}
+                        title={qr.event.name}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         {qr.event.name}
                       </a>
                     )}
@@ -420,11 +434,11 @@ const QrPage: FC = () => {
 
                   <div className={'col-md-1 col-xs-4 center status'}>
                     <span className={'visible-sm'}>Web3: </span>
-                    {qr.delegated_mint &&
-                    <>
-                      <img src={checked} alt={'Web3 claim'} className={'status-icon'} />
-                    </>
-                    }
+                    {qr.delegated_mint && (
+                      <>
+                        <img src={checked} alt={'Web3 claim'} className={'status-icon'} />
+                      </>
+                    )}
                   </div>
 
                   <div className={'col-md-1 col-xs-4 center status'}>
@@ -449,17 +463,22 @@ const QrPage: FC = () => {
                     <span className={'visible-sm'}>Tx Hash: </span>
                     <a href={etherscanLinks.tx(qr.tx_hash)} target={'_blank'}>
                       {qr.tx_hash && reduceAddress(qr.tx_hash)}
-                    </a>&nbsp;&nbsp;
-                    {qr.tx_status && <TxStatus status={qr.tx_status}/>}
+                    </a>
+                    &nbsp;&nbsp;
+                    {qr.tx_status && <TxStatus status={qr.tx_status} />}
                   </div>
 
                   <div className={'col-md-2 col-xs-12 center ellipsis'}>
                     <span className={'visible-sm'}>Beneficiary: </span>
-                    {qr.beneficiary &&
-                      <a href={etherscanLinks.address(qr.beneficiary)} target={'_blank'} title={qr.user_input ? qr.user_input : qr.beneficiary}>
+                    {qr.beneficiary && (
+                      <a
+                        href={etherscanLinks.address(qr.beneficiary)}
+                        target={'_blank'}
+                        title={qr.user_input ? qr.user_input : qr.beneficiary}
+                      >
                         {qr.user_input ? qr.user_input : qr.beneficiary}
                       </a>
-                    }
+                    )}
                   </div>
                 </div>
               );
@@ -522,8 +541,8 @@ const CreationModal: React.FC<CreationModalProps> = ({
     const qrHashesFormatted = hashes
       .trim()
       .split('\n')
-      .map(hash => hash.trim().toLowerCase())
-      .filter(hash => {
+      .map((hash) => hash.trim().toLowerCase())
+      .filter((hash) => {
         if (!hash.match(hashRegex) && hash !== '') _incorrectQrHashes.push(hash);
 
         return hash.match(hashRegex);
@@ -532,8 +551,8 @@ const CreationModal: React.FC<CreationModalProps> = ({
     const qrIdsFormatted = ids
       .trim()
       .split('\n')
-      .map(id => id.trim())
-      .filter(id => {
+      .map((id) => id.trim())
+      .filter((id) => {
         if (!id.match(idRegex) && id !== '') _incorrectQrIds.push(id);
 
         return id.match(idRegex);
@@ -557,7 +576,7 @@ const CreationModal: React.FC<CreationModalProps> = ({
     if (_hasNoIncorrectQrs) {
       if (_hasHashesButNoIds || _hasSameQrsQuantity) {
         qrCreateMassive(qrHashesFormatted, qrIdsFormatted, delegated_mint, event)
-          .then(_ => {
+          .then((_) => {
             addToast('QR codes updated correctly', {
               appearance: 'success',
               autoDismiss: true,
@@ -565,7 +584,7 @@ const CreationModal: React.FC<CreationModalProps> = ({
             refreshQrs();
             handleCreationModalClosing();
           })
-          .catch(e => {
+          .catch((e) => {
             console.log(e);
             addToast(e.message, {
               appearance: 'error',
@@ -584,7 +603,7 @@ const CreationModal: React.FC<CreationModalProps> = ({
         hashes: '',
         ids: '',
         event: '',
-        delegated_mint: false
+        delegated_mint: false,
       }}
       validateOnBlur={false}
       validateOnChange={false}
@@ -631,7 +650,7 @@ const CreationModal: React.FC<CreationModalProps> = ({
             <div className="select-container">
               <Field
                 component={FormSelect}
-                name={"event"}
+                name={'event'}
                 options={events}
                 placeholder={'Select an event'}
               />
@@ -642,8 +661,15 @@ const CreationModal: React.FC<CreationModalProps> = ({
             <div className="modal-content">
               <div className="modal-buttons-container creation-modal">
                 <div className="modal-action-checkbox-container">
-                  <Field type="checkbox" name="delegated_mint" id="delegated_mint_id" className={""} />
-                  <label htmlFor="delegated_mint_id" className="">Web 3 claim enabled</label>
+                  <Field
+                    type="checkbox"
+                    name="delegated_mint"
+                    id="delegated_mint_id"
+                    className={''}
+                  />
+                  <label htmlFor="delegated_mint_id" className="">
+                    Web 3 claim enabled
+                  </label>
                 </div>
                 <div className="modal-action-buttons-container">
                   <FilterButton text="Cancel" handleClick={handleCreationModalClosing} />
@@ -729,7 +755,11 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
       assignHashList();
     }
     setIsSendingHashList(false);
-  }, [hasIncorrectHashes, isSendingHashList, selectedEvent]); /* eslint-disable-line react-hooks/exhaustive-deps */
+  }, [
+    hasIncorrectHashes,
+    isSendingHashList,
+    selectedEvent,
+  ]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
     if (isListActive) setIsSendingHashList(true);
@@ -740,7 +770,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
       if (!hasIncorrectHashes) {
         const event = selectedEvent === 'unassign' ? null : selectedEvent;
         qrCodesListAssign(qrHashList, event)
-          .then(res => {
+          .then((res) => {
             console.log(res);
             const hasAlreadyClaimedHashes = res.alreadyclaimedQrs.length > 0;
 
@@ -765,7 +795,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
             refreshQrs();
             handleUpdateModalClosing();
           })
-          .catch(e =>
+          .catch((e) =>
             addToast(e.message, {
               appearance: 'error',
               autoDismiss: false,
@@ -796,8 +826,8 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
     const _hashesList = hashesList
       .trim()
       .split('\n')
-      .map(hash => hash.trim().toLowerCase())
-      .filter(hash => {
+      .map((hash) => hash.trim().toLowerCase())
+      .filter((hash) => {
         if (!hash.match(hashRegex)) _incorrectQrHashes.push(hash);
 
         return hash.match(hashRegex);
@@ -809,7 +839,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
     if (isRangeActive) {
       if (typeof from === 'number' && typeof to === 'number') {
         qrCodesRangeAssign(from, to, _event, passphrase)
-          .then(_ => {
+          .then((_) => {
             addToast('QR codes updated correctly', {
               appearance: 'success',
               autoDismiss: true,
@@ -818,7 +848,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
             refreshQrs();
             handleUpdateModalClosing();
           })
-          .catch(e =>
+          .catch((e) =>
             addToast(e.message, {
               appearance: 'error',
               autoDismiss: false,
@@ -829,7 +859,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
 
     if (isSelectionActive) {
       qrCodesSelectionUpdate(selectedQrs, _event, passphrase)
-        .then(_ => {
+        .then((_) => {
           addToast('QR codes updated correctly', {
             appearance: 'success',
             autoDismiss: true,
@@ -838,7 +868,7 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
           refreshQrs();
           handleUpdateModalClosing();
         })
-        .catch(e => {
+        .catch((e) => {
           console.log(e);
           addToast(e.message, {
             appearance: 'error',
@@ -877,11 +907,13 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
     setIsListActive(true);
   };
 
-  const eventOptions = isAdmin ? events : events.filter(event => {
-    const todayDate = new Date();
-    const eventDate = new Date(event.start_date);
-    return isAfter(eventDate, todayDate);
-  });
+  const eventOptions = isAdmin
+    ? events
+    : events.filter((event) => {
+        const todayDate = new Date();
+        const eventDate = new Date(event.start_date);
+        return isAfter(eventDate, todayDate);
+      });
 
   return (
     <Formik
@@ -943,8 +975,8 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
                   {hasSelectedQrs ? (
                     <span>{`You have ${selectedQrs.length} QR's selected`}</span>
                   ) : (
-                      <span className="grey-text">You have no selected QRs</span>
-                    )}
+                    <span className="grey-text">You have no selected QRs</span>
+                  )}
                 </div>
               </div>
               <div className="option-container">
@@ -1006,24 +1038,21 @@ const UpdateModal: React.FC<UpdateByRangeModalProps> = ({
                   </div>
                 </div>
               )}
-              {values.isUnassigning &&
-                <select
-                  disabled={true}
-                  className={resolveSelectClass()}
-                >
+              {values.isUnassigning && (
+                <select disabled={true} className={resolveSelectClass()}>
                   <option value="">{resolveSelectText()}</option>
                 </select>
-              }
-              {!values.isUnassigning &&
+              )}
+              {!values.isUnassigning && (
                 <div className={'select-container'}>
                   <Field
                     component={FormSelect}
-                    name={"event"}
+                    name={'event'}
                     options={eventOptions}
                     placeholder={'Select an event'}
                   />
                 </div>
-              }
+              )}
               <div className="modal-buttons-container">
                 <FilterChip
                   name="isUnassigning"
