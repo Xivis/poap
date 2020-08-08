@@ -30,7 +30,11 @@ const db = pgPromise()({
 });
 
 const publicEventColumns = 'id, fancy_id, name, description, city, country, event_url, image_url, year, start_date, ' +
-  'end_date, event_host_id, from_admin, virtual_event, event_template_id'
+  'end_date, event_host_id, from_admin, virtual_event, event_template_id';
+
+const publicTemplateColumns = 'id, name, title_image, title_link, header_link_text, header_link_url, header_color, ' +
+  'header_link_color, main_color, footer_color, left_image_url, left_image_link, right_image_url, right_image_link, ' +
+  'mobile_image_url, mobile_image_link, footer_icon';
 
 function formatDate(dbDate: string): string {
   return format(new Date(dbDate), 'DD-MMM-YYYY');
@@ -623,7 +627,7 @@ export async function getTotalQrClaims(eventId: number, qrRollId: number, claime
 }
 
 export async function getEventTemplate(id: string | number): Promise<null | EventTemplate> {
-  const res = await db.oneOrNone<EventTemplate>('SELECT * FROM event_templates WHERE id=${id} AND is_active = true', { id });
+  const res = await db.oneOrNone<EventTemplate>('SELECT ' + publicTemplateColumns + ' FROM event_templates WHERE id=${id} AND is_active = true', { id });
   return res;
 }
 

@@ -84,7 +84,7 @@ import { uploadFile } from './plugins/google-storage-utils';
 import { getUserRoles } from './plugins/groups-decorator';
 import { sleep } from './utils';
 import { getEventTokenSupply } from './plugins/thegraph-utils';
-import {sendNewEventEmailToAdmins} from "./plugins/sendgrid-utils";
+import { sendNewEventEmailToAdmins } from "./plugins/sendgrid-utils";
 
 function buildMetadataJson(homeUrl: string, tokenUrl: string, ev: PoapEvent) {
   return {
@@ -2566,7 +2566,7 @@ export default async function routes(fastify: FastifyInstance) {
           return new createError.InternalServerError('Error uploading footer_icon');
         }
 
-        let right_image_url:string|null = null;
+        let right_image_url: string | null = null;
         const right_image = req.body[Symbol.for('right_image_url')][0];
         if (right_image) {
           if (right_image.mimetype != 'image/png') {
@@ -2579,7 +2579,7 @@ export default async function routes(fastify: FastifyInstance) {
           }
         }
 
-        let left_image_url:string|null = null;
+        let left_image_url: string | null = null;
         const left_image = req.body[Symbol.for('left_image_url')][0];
         if (left_image) {
           if (left_image.mimetype != 'image/png') {
@@ -2592,7 +2592,7 @@ export default async function routes(fastify: FastifyInstance) {
           }
         }
 
-        let mobile_image_url:string|null = null;
+        let mobile_image_url: string | null = null;
         const mobile_image = req.body[Symbol.for('mobile_image_url')][0];
         if (mobile_image) {
           if (mobile_image.mimetype != 'image/png') {
@@ -2707,7 +2707,7 @@ export default async function routes(fastify: FastifyInstance) {
           }
         }
 
-        let title_image_url:string|null = null;
+        let title_image_url: string | null = null;
         const title_image = req.body[Symbol.for('title_image')][0];
         if (title_image) {
           if (title_image.mimetype != 'image/png') {
@@ -2720,7 +2720,7 @@ export default async function routes(fastify: FastifyInstance) {
           }
         }
 
-        let footer_icon_url:string|null = null;
+        let footer_icon_url: string | null = null;
         const footer_icon = req.body[Symbol.for('footer_icon')][0];
         if (footer_icon) {
           if (footer_icon.mimetype != 'image/png') {
@@ -2733,7 +2733,7 @@ export default async function routes(fastify: FastifyInstance) {
           }
         }
 
-        let right_image_url:string|null = null;
+        let right_image_url: string | null = null;
         const right_image = req.body[Symbol.for('right_image_url')][0];
         if (right_image) {
           if (right_image.mimetype != 'image/png') {
@@ -2746,7 +2746,7 @@ export default async function routes(fastify: FastifyInstance) {
           }
         }
 
-        let left_image_url:string|null = null;
+        let left_image_url: string | null = null;
         const left_image = req.body[Symbol.for('left_image_url')][0];
         if (left_image) {
           if (left_image.mimetype != 'image/png') {
@@ -2759,7 +2759,7 @@ export default async function routes(fastify: FastifyInstance) {
           }
         }
 
-        let mobile_image_url:string|null = null;
+        let mobile_image_url: string | null = null;
         const mobile_image = req.body[Symbol.for('mobile_image_url')][0];
         if (mobile_image) {
           if (mobile_image.mimetype != 'image/png') {
