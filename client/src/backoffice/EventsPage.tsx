@@ -9,7 +9,6 @@ import React, {
   ReactNode,
 } from 'react';
 import { Link, Route, RouteComponentProps, Switch } from 'react-router-dom';
-import debounce from 'lodash.debounce';
 import classNames from 'classnames';
 import {
   Formik,
@@ -27,7 +26,7 @@ import { format } from 'date-fns';
 import { useToasts } from 'react-toast-notifications';
 import { useHistory } from 'react-router-dom';
 
-import { authClient } from '../auth';
+import { authClient } from 'auth';
 
 // libraries
 import ReactPaginate from 'react-paginate';
@@ -40,18 +39,19 @@ import FilterButton from '../components/FilterButton';
 import FilterSelect from '../components/FilterSelect';
 
 // constants
-import { ROUTES } from '../lib/constants';
+import { ROUTES } from 'lib/constants';
 
 // assets
-import { ReactComponent as EditIcon } from '../images/edit.svg';
-import sortDown from '../images/sort-down.png';
-import sortUp from '../images/sort-up.png';
-import infoButton from '../images/info-button.svg';
+import { ReactComponent as EditIcon } from 'images/edit.svg';
+import sortDown from 'images/sort-down.png';
+import sortUp from 'images/sort-up.png';
+import infoButton from 'images/info-button.svg';
 
 /* Helpers */
-import { useAsync } from '../react-helpers';
-import { PoapEventSchema } from '../lib/schemas';
+import { useAsync } from 'react-helpers';
+import { PoapEventSchema } from 'lib/schemas';
 import {
+  Template,
   PoapFullEvent,
   PoapEvent,
   getEvent,
@@ -61,8 +61,7 @@ import {
   getTemplates,
   getTemplateById,
 } from '../api';
-import FormFilterReactSelect from '../components/FormFilterReactSelect';
-import { Template } from '../templates/TemplatePage/types';
+import FormFilterReactSelect from 'components/FormFilterReactSelect';
 
 type EventEditValues = {
   name: string;
@@ -193,8 +192,6 @@ type TemplateOptionType = {
 
 const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ create, event }) => {
   const [virtualEvent, setVirtualEvent] = useState<boolean>(event ? event.virtual_event : false);
-  const [templateName, setTemplateName] = useState<string>('');
-  const [templateInitialOptionLabel, setTemplateInitialOptionLabel] = useState<string | null>(null);
   const [templateOptions, setTemplateOptions] = useState<Template[] | null>(null);
 
   const [multiDay, setMultiDay] = useState<boolean>(
@@ -209,20 +206,12 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
     return new Date(`${parts[2]}-${parts[0]}-${parts[1]}`);
   };
 
-  const fetchTemplates = useCallback(() => getTemplates({ name: templateName }), [templateName]);
-
-  const fetchTemplate = useCallback(() => getTemplateById(event?.event_template_id), [event]);
-
+  const fetchTemplates = useCallback(() => getTemplates({ limit: 1000 }), []);
   const [templates, fetchingTemplates] = useAsync(fetchTemplates);
-  const [template, fetchingTemplate] = useAsync(fetchTemplate);
 
   useEffect(() => {
     if (templates) setTemplateOptions(templates?.event_templates);
   }, [templates]);
-
-  useEffect(() => {
-    if (template) setTemplateInitialOptionLabel(template.name);
-  }, [template]);
 
   const { addToast } = useToasts();
 
@@ -235,8 +224,6 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
         ...eventKeys,
         start_date: event.start_date.replace(dateRegex, '-'),
         end_date: event.end_date.replace(dateRegex, '-'),
-        // TODO: Remove event_template_id when back sends the data
-        event_template_id: 2,
         isFile: false,
         secret_code: secret_code ? secret_code.toString().padStart(6, '0') : '',
       };
@@ -321,12 +308,10 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
 
   const parseTemplateToOptions = (templates: Template[]): TemplateOptionType[] => {
     return templates.map((template: Template) => {
-      const label = `${template.name ? template.name : 'No name'}`;
+      const label = template.name ? template.name : 'No name';
       return { value: template.id, label };
     });
   };
-
-  const debounceFunction = useMemo(() => debounce(setTemplateName, 1000), [setTemplateName]);
 
   const templateSelectOptions = templateOptions ? parseTemplateToOptions(templateOptions) : [];
 
@@ -376,9 +361,6 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
         {({ values, errors, isSubmitting, setFieldValue }) => {
           const handleTemplateSelectChange = (name: string) => (selectedOption: any) =>
             setFieldValue(name, selectedOption.value);
-
-          const handleTemplateInputChange = (value: string) => debounceFunction(value);
-
           return (
             <Form>
               {create ? (
@@ -477,13 +459,13 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
                 <FormFilterReactSelect
                   label="Template"
                   name="event_template_id"
-                  placeholder={
-                    templateInitialOptionLabel ? templateInitialOptionLabel : 'Pick a template'
-                  }
+                  placeholder={'Pick a template'}
                   onChange={handleTemplateSelectChange('event_template_id')}
-                  onInputChange={handleTemplateInputChange}
                   options={templateSelectOptions}
-                  disabled={fetchingTemplates || fetchingTemplate}
+                  disabled={fetchingTemplates}
+                  value={templateSelectOptions?.find(
+                    (option) => option.value === values['event_template_id']
+                  )}
                 />
               </div>
               <div className="bk-group">

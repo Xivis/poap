@@ -1,16 +1,16 @@
 import React, { FC } from 'react';
 
 // assets
-import Star from '../../images/white-star.svg';
-import HeaderShadow from '../../images/header-shadow-desktop-white.svg';
+import Star from 'images/white-star.svg';
+import HeaderShadow from 'images/header-shadow-desktop-white.svg';
 
 // lib
-import { COLORS } from '../../lib/constants';
-import { HashClaim } from '../../api';
+import { COLORS } from 'lib/constants';
+import { HashClaim } from 'api';
 
 // types
-import { TemplatePageFormValues } from '../../templates/TemplateFormPage/components/TemplateForm';
-import { useImageSrc } from '../../lib/hooks/useImageSrc';
+import { TemplatePageFormValues } from 'api';
+import { useImageSrc } from 'lib/hooks/useImageSrc';
 
 type Props = {
   title: string;
@@ -63,12 +63,12 @@ export const TemplateClaimHeader: FC<Props> = ({ claim, title, image, claimed, t
     <>
       <div style={{ backgroundColor: headerColor }} className="template_claim_header">
         <div className="title_container">
-          <a href={titleLink} rel="noopener noreferrer">
+          <a href={titleLink} rel="noopener noreferrer" target="_blank">
             <img alt="Brand title" src={titleImage} />
           </a>
         </div>
         <div className="header_link_container">
-          <a style={{ color: headerLinkColor }} href={headerLinkUrl} rel="noopener noreferrer">
+          <a style={{ color: headerLinkColor }} href={headerLinkUrl} target="_blank" rel="noopener noreferrer">
             {headerLinkText}
           </a>
         </div>
@@ -94,7 +94,7 @@ export const TemplateClaimHeader: FC<Props> = ({ claim, title, image, claimed, t
 
         {leftImageUrl ? (
           leftImageLink ? (
-            <a href={leftImageLink} rel="noopener noreferrer">
+            <a href={leftImageLink} rel="noopener noreferrer" target="_blank">
               <img alt="Brand publicity" src={leftImageUrl} className="left_image" />
             </a>
           ) : (
@@ -104,7 +104,7 @@ export const TemplateClaimHeader: FC<Props> = ({ claim, title, image, claimed, t
 
         {rightImageUrl ? (
           rightImageLink ? (
-            <a href={rightImageLink} rel="noopener noreferrer">
+            <a href={rightImageLink} rel="noopener noreferrer" target="_blank">
               <img alt="Brand publicity" src={rightImageUrl} className="right_image" />
             </a>
           ) : (

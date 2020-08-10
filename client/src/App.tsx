@@ -8,8 +8,8 @@ import { BackOffice } from './backoffice/Main';
 import { SignerClaimPage } from './SignerClaimPage';
 import { CodeClaimPage } from './CodeClaimPage';
 import { ScanPage } from './ScanPage';
-import { TemplatePage } from './templates/TemplatePage';
-import { TemplateFormPage } from './templates/TemplateFormPage';
+import { TemplatePage } from './backoffice/templates/TemplatePage';
+import { TemplateFormPage } from './backoffice/templates/TemplateFormPage';
 import { AdminLoginPage } from './AdminLoginPage';
 
 type AppProps = { auth: AuthService };

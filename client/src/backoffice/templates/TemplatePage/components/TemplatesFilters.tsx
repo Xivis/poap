@@ -2,7 +2,7 @@ import React, { FC } from 'react';
 import { Link } from 'react-router-dom';
 
 // ui components
-import FilterButton from '../../../components/FilterButton';
+import FilterButton from 'components/FilterButton';
 
 type Props = {
   setLimit: (value: number) => void;

@@ -3,10 +3,10 @@ import delve from 'dlv';
 import { Link, RouteComponentProps } from 'react-router-dom';
 
 /* Assets */
-import PoapLogo from '../../images/POAP.svg';
+import PoapLogo from 'images/POAP.svg';
 
 // components
-import { NavigationMenu } from '../../backoffice/Main';
+import { NavigationMenu } from 'backoffice/Main';
 import { TemplateForm } from './components/TemplateForm';
 
 export const TemplateFormPage: FC<RouteComponentProps> = ({ match }) => {
@@ -29,7 +29,7 @@ export const TemplateFormPage: FC<RouteComponentProps> = ({ match }) => {
         </div>
       </header>
       <div className="container">
-        <div className={'admin-table qr'}>
+        <div className={'admin-table'}>
           <TemplateForm id={id} />
         </div>
       </div>

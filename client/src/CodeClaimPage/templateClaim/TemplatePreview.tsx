@@ -1,10 +1,10 @@
 import React, { FC } from 'react';
 
 // types
-import { TemplatePageFormValues } from '../../templates/TemplateFormPage/components/TemplateForm';
+import { Template } from 'api';
 
 // assets
-import EmptyBadge from '../../images/empty-badge.svg';
+import EmptyBadge from 'images/empty-badge.svg';
 
 // components
 import { TemplateClaimHeader } from './TemplateClaimHeader';
@@ -12,12 +12,14 @@ import { TemplateClaimFooter } from './TemplateClaimFooter';
 import ClaimForm from '../ClaimForm';
 
 type Props = {
-  template: TemplatePageFormValues;
+  template: Template | null;
 };
 
 export const TemplatePreview: FC<Props> = ({ template }) => {
   let image = EmptyBadge;
   let title = 'POAP Claim';
+
+  if (!template) return <div />
 
   return (
     <div className={'code-claim-page'}>

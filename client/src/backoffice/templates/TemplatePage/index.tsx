@@ -2,18 +2,18 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 
 /* Assets */
-import PoapLogo from '../../images/POAP.svg';
+import PoapLogo from 'images/POAP.svg';
 
 // components
-import { NavigationMenu } from '../../backoffice/Main';
+import { NavigationMenu } from 'backoffice/Main';
 import { TemplatesFilters } from './components/TemplatesFilters';
 import { TemplatesTable } from './components/TemplatesTable';
 
 // helpers
-import { useAsync } from '../../react-helpers';
+import { useAsync } from 'react-helpers';
 
 // api
-import { getTemplates, TemplateResponse } from '../../api';
+import { getTemplates, TemplateResponse } from 'api';
 
 type PaginateAction = {
   selected: number;
@@ -26,7 +26,7 @@ export const TemplatePage = () => {
   const [limit, setLimit] = useState<number>(10);
   const [total, setTotal] = useState<number>(0);
 
-  const fetchTemplates = useCallback(() => getTemplates({ limit, page, name }), [
+  const fetchTemplates = useCallback(() => getTemplates({ limit, offset: page * limit, name }), [
     limit,
     page,
     name,
@@ -37,9 +37,7 @@ export const TemplatePage = () => {
 
   // effects
   useEffect(() => {
-    if (templates) {
-      setTotal(templates?.event_templates?.length);
-    }
+    if (templates) setTotal(templates?.total);
   }, [templates]);
 
   // handlers
@@ -63,7 +61,7 @@ export const TemplatePage = () => {
         </div>
       </header>
       <div className="container">
-        <div className={'admin-table qr'}>
+        <div className={'admin-table templates'}>
           <h2>Templates</h2>
           <TemplatesFilters setLimit={setLimit} setName={setName} />
           <TemplatesTable

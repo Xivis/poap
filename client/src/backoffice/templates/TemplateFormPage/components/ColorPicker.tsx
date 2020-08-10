@@ -1,15 +1,15 @@
-import React, { FC } from 'react';
+import React, { FC, ReactNode } from 'react';
 import { FormikValues, FormikActions } from 'formik';
 import { TwitterPicker, ColorResult } from 'react-color';
 import { Tooltip } from 'react-lightweight-tooltip';
 
 // components
-import { EventField } from '../../../backoffice/EventsPage';
+import { EventField } from 'backoffice/EventsPage';
 
 type SetFieldValue = FormikActions<FormikValues>['setFieldValue'];
 
 type Props = {
-  title: string;
+  title: string | ReactNode;
   name: string;
   setFieldValue: SetFieldValue;
   values: FormikValues;
@@ -20,7 +20,7 @@ export const ColorPicker: FC<Props> = ({ title, name, setFieldValue, values }) =
     setFieldValue(name, color.hex);
   };
 
-  // Library typings are wrong, it asks for keys that are not necesary
+  // Library typings are wrong, it asks for keys that are not necessary
   const colorPickerTooltipStyle: any = {
     tooltip: {
       backgroundColor: 'transparent',

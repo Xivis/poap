@@ -1,15 +1,15 @@
 import React, { FC } from 'react';
 
 // assets
-import PoapBadge from '../../images/POAP.svg';
-import Twitter from '../../images/logo-twitter.svg';
-import Telegram from '../../images/logo-telegram.svg';
-import Github from '../../images/logo-git.svg';
+import PoapBadge from 'images/POAP.svg';
+import Twitter from 'images/logo-twitter.svg';
+import Telegram from 'images/logo-telegram.svg';
+import Github from 'images/logo-git.svg';
 
 // types
-import { TemplatePageFormValues } from '../../templates/TemplateFormPage/components/TemplateForm';
-import { HashClaim } from '../../api';
-import { useImageSrc } from '../../lib/hooks/useImageSrc';
+import { TemplatePageFormValues } from 'api';
+import { HashClaim } from 'api';
+import { useImageSrc } from 'lib/hooks/useImageSrc';
 
 type Props = {
   template?: TemplatePageFormValues;

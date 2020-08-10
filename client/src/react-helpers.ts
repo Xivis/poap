@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useToasts } from 'react-toast-notifications';
-import { Params } from './api';
 
 export function useToggleState(initial: boolean): [boolean, () => void] {
   const [value, setValue] = useState(initial);

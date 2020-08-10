@@ -4,14 +4,13 @@ import { Tooltip } from 'react-lightweight-tooltip';
 import ReactPaginate from 'react-paginate';
 
 // ui components
-import { Loading } from '../../../components/Loading';
+import { Loading } from 'components/Loading';
 
 // types
-import { Template } from '../types';
-import { TemplatesResponse } from '../../../api';
+import { Template, TemplatesResponse } from 'api';
 
 // assets
-import { ReactComponent as EditIcon } from '../../../images/edit.svg';
+import { ReactComponent as EditIcon } from 'images/edit.svg';
 
 type Props = {
   isFetchingTemplates: boolean;
@@ -38,17 +37,16 @@ export const TemplatesTable: FC<Props> = ({
       {templates && total !== 0 && !isFetchingTemplates && (
         <div className={'qr-table-section'}>
           <div className={'row table-header visible-md'}>
-            <div className={'col-md-1'}></div>
+            <div className={'col-md-1'} />
             <div className={'col-md-7'}>Name</div>
             <div className={'col-md-2 center'}>Logo</div>
             <div className={'col-md-2 center'}>Edit</div>
           </div>
           <div className={'admin-table-row qr-table'}>
             {templates?.event_templates?.map((template, index) => {
-              console.log('template', template);
               return (
                 <div className={`row ${index % 2 === 0 ? 'even' : 'odd'}`} key={template.id}>
-                  <div className={'col-md-1'}></div>
+                  <div className={'col-md-1'} />
                   <div className={'col-md-7 col-xs-12'}>
                     <span className={'visible-sm'}>Name: </span>
                     {template.name}
@@ -83,7 +81,7 @@ export const TemplatesTable: FC<Props> = ({
               );
             })}
           </div>
-          {total > limit && (
+          {total > limit * page && (
             <div className={'pagination'}>
               <ReactPaginate
                 pageCount={Math.ceil(total / limit)}

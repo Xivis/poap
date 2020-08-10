@@ -596,6 +596,7 @@
   &.qr,
   &.notifications,
   &.transactions,
+  &.templates,
   &.addresses {
     .no-results {
       text-align: center;
@@ -642,6 +643,10 @@
       top: 5px;
     }
   }
+
+  &.templates {
+    padding-bottom: 100px;
+  }
 }
 
 .ellipsis {
@@ -667,6 +672,7 @@
 
 .ReactModal__Overlay--after-open {
   z-index: 1;
+  background-color: rgba(0, 0, 0, 0.5) !important;
 }
 
 .ReactModal__Content--after-open {
@@ -859,9 +865,15 @@
 
 .info-label-container {
   display: flex;
+  position: relative;
+  z-index: 100;
 
   > div {
     z-index: 1 !important;
+  }
+  i {
+    font-size: 0.8rem;
+    color: $color-grey;
   }
 }
 
@@ -872,6 +884,7 @@
 }
 
 .info-button {
+  z-index: 1 !important;
   width: 13px;
   margin-left: 10px;
   margin-bottom: 3px;
@@ -904,11 +917,25 @@
   }
 }
 
-.template_image_preview {
-  margin-bottom: 34px;
-  border-radius: 4px;
-  object-fit: cover;
+.input-with-image {
+  display: grid;
+  grid-template-columns: 5fr 2fr;
+  .template-image-preview {
+    display: flex;
+    justify-content: center;
+    div {
+      align-items: center;
+      display: flex;
+      justify-content: center;
+      img {
+        margin-left: 20px;
+        max-height: 50px;
+        max-width: 100px;
+      }
+    }
+  }
 }
+
 
 .template_claim_loading {
   height: 100vh;
@@ -929,6 +956,7 @@
 }
 
 .ReactModal__Content--after-open {
+  z-index: 2;
   &.template {
     max-width: 100vw;
     width: 90vw;
@@ -937,6 +965,7 @@
     height: 90vh;
     margin: 0;
     overflow: scroll;
+    z-index: 2;
 
     > svg {
       position: absolute;
@@ -970,6 +999,10 @@
   }
 }
 
-.template_form {
-  padding-bottom: 24px;
+.template-form {
+  padding-bottom: 100px;
+  z-index: 1;
+  .bk-group {
+    min-height: inherit;
+  }
 }

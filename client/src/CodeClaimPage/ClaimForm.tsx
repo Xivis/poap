@@ -3,21 +3,21 @@ import classNames from 'classnames';
 import { ErrorMessage, Field, FieldProps, Form, Formik, FormikActions } from 'formik';
 
 /* Helpers */
-import { tryGetAccount } from '../poap-eth';
-import { HashClaim, postClaimHash } from '../api';
-import { AddressSchema } from '../lib/schemas';
-import { hasWeb3 } from '../poap-eth';
+import { tryGetAccount } from 'poap-eth';
+import { HashClaim, postClaimHash } from 'api';
+import { AddressSchema } from 'lib/schemas';
+import { hasWeb3 } from 'poap-eth';
 
 /* Components */
-import { SubmitButton } from '../components/SubmitButton';
+import { SubmitButton } from 'components/SubmitButton';
 import ClaimFooterMessage from './ClaimFooterMessage';
 
 // lib
-import { COLORS } from '../lib/constants';
+import { COLORS } from 'lib/constants';
 
 // types
-import { TemplatePageFormValues } from '../templates/TemplateFormPage/components/TemplateForm';
-import { useImageSrc } from '../lib/hooks/useImageSrc';
+import { TemplatePageFormValues } from 'api';
+import { useImageSrc } from 'lib/hooks/useImageSrc';
 
 type QRFormValues = {
   address: string;
@@ -133,7 +133,7 @@ const ClaimForm: React.FC<{
       <ClaimFooterMessage linkStyle={{ color: mainColor ? mainColor : COLORS.primaryColor }} />
       {mobileImageUrl ? (
         mobileImageLink ? (
-          <a href={mobileImageLink} rel="noopener noreferrer">
+          <a href={mobileImageLink} rel="noopener noreferrer" target="_blank">
             <img alt="Brand publicity" src={mobileImageUrl} className="mobile_image" />
           </a>
         ) : (

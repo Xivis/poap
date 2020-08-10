@@ -9,6 +9,7 @@ const colourStyles = {
     borderColor: 'white',
     '&:hover': { borderColor: '#6534ff' },
   }),
+  menu: (styles: any) => ({ ...styles, zIndex: 100 }),
   input: (styles: any) => ({ ...styles, height: 36 }),
 };
 
@@ -18,8 +19,8 @@ type FormFilterReactSelectProps = {
   label: string;
   name: string;
   disabled: boolean;
-  onInputChange: (value: string) => void;
   onChange: (option: OptionTypeBase) => void;
+  value?: OptionTypeBase;
 };
 
 const FormFilterReactSelect: React.FC<FormFilterReactSelectProps> = ({
@@ -27,23 +28,24 @@ const FormFilterReactSelect: React.FC<FormFilterReactSelectProps> = ({
   name,
   placeholder,
   disabled,
-  onInputChange,
   onChange,
   label,
-}) => (
-  <div>
-    <label>{label}</label>
-    <Select
-      isDisabled={disabled}
-      options={options}
-      onChange={onChange}
-      onInputChange={onInputChange}
-      placeholder={placeholder}
-      className="rselect"
-      name={name}
-      styles={colourStyles}
-    />
-  </div>
-);
+  value,
+}) => {
+  return (
+    <div>
+      <label>{label}</label>
+      <Select
+        isDisabled={disabled}
+        options={options}
+        onChange={onChange}
+        placeholder={value ? value.label : placeholder}
+        className="rselect"
+        name={name}
+        styles={colourStyles}
+      />
+    </div>
+  );
+};
 
 export default FormFilterReactSelect;
