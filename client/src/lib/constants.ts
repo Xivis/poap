@@ -7,6 +7,11 @@ const COLORS = {
   primaryColor: '#6534ff',
 };
 
+const STYLES = {
+  // Adding #80 to RGB color for 50% opacity
+  boxShadow: (color: string) => `0px 10px 30px -5px ${color}80`,
+};
+
 const LABELS = {
   issueBadges: {
     roles: [ROLES.administrator],
@@ -137,4 +142,4 @@ const etherscanLinks = {
   address: (address: string): string => `https://${prefix}etherscan.io/address/${address}`,
 };
 
-export { ROLES, ROUTES, TX_STATUS, etherscanLinks, LABELS, IMAGE_SUPPORTED_FORMATS, COLORS };
+export { ROLES, ROUTES, TX_STATUS, etherscanLinks, LABELS, IMAGE_SUPPORTED_FORMATS, COLORS, STYLES };

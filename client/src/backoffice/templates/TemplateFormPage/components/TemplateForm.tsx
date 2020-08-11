@@ -1,7 +1,8 @@
-import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { FC, useEffect, useMemo, useState } from 'react';
 import { Tooltip } from 'react-lightweight-tooltip';
 import { Formik, Form, FormikActions } from 'formik';
 import ReactModal from 'react-modal';
+import { useHistory } from 'react-router-dom';
 
 // lib
 import { generateSecretCode } from 'lib/helpers';
@@ -26,7 +27,7 @@ import {
 } from 'api';
 
 // helpers
-import { useAsync } from 'react-helpers';
+import { ROUTES } from 'lib/constants';
 import { templateFormSchema } from 'lib/schemas';
 import { TemplatePreview } from 'CodeClaimPage/templateClaim/TemplatePreview';
 
@@ -39,6 +40,7 @@ type Props = {
 export const TemplateForm: FC<Props> = ({ id }) => {
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState<boolean>(false);
   const [template, setTemplate] = useState<Template | null>(null);
+  const history = useHistory();
 
   // hooks
   useEffect(() => {
@@ -98,6 +100,7 @@ export const TemplateForm: FC<Props> = ({ id }) => {
   // handlers
   const openPreviewModal = () => setIsPreviewModalOpen(true);
   const handleClosePreviewClick = () => setIsPreviewModalOpen(false);
+  const handleGoBack = () => history.push(ROUTES.template.path);
 
   // constants
   const initialValues = useMemo(() => {
@@ -189,7 +192,7 @@ export const TemplateForm: FC<Props> = ({ id }) => {
     <div>
       <div>Header image, top left position</div>
       <div>&bull; Mandatory: PNG format</div>
-      <div>&bull; Recommended: height 60px</div>
+      <div>&bull; Recommended: 60px height & no more than 300px width</div>
     </div>
   );
 
@@ -197,7 +200,7 @@ export const TemplateForm: FC<Props> = ({ id }) => {
     <div>
       <div>Side image</div>
       <div>&bull; Mandatory: PNG format</div>
-      <div>&bull; Recommended: 120x240px</div>
+      <div>&bull; Recommended: 240x400px</div>
     </div>
   );
 
@@ -213,7 +216,7 @@ export const TemplateForm: FC<Props> = ({ id }) => {
     <div>
       <div>Footer image, bottom left position</div>
       <div>&bull; Mandatory: PNG format</div>
-      <div>&bull; Recommended: 100x100px</div>
+      <div>&bull; Recommended: 75x75px</div>
     </div>
   );
 
@@ -473,8 +476,13 @@ export const TemplateForm: FC<Props> = ({ id }) => {
                   name="secret_code"
                 />
               </div>
-              <div className="template_buttons_container">
-                <SubmitButton canSubmit text="Save & preview" isSubmitting={isSubmitting} />
+              <div className="template-buttons-container">
+                <div>
+                  <SubmitButton canSubmit text="Save & preview" isSubmitting={isSubmitting} />
+                </div>
+                <div onClick={handleGoBack} className={'close-action'}>
+                  Return to templates
+                </div>
               </div>
             </Form>
           );

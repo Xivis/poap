@@ -77,7 +77,8 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string; method:
   const checkUserTokens = () => {
     if (!claim || !claim.beneficiary) return;
     getTokensFor(claim.beneficiary).then((tokens) => {
-      if (tokens.filter((token) => token.event.id === claim.event_id).length > 0) {
+      const hasToken = tokens.filter((token) => token.event.id === claim.event_id).length > 0;
+      if (hasToken) {
         setBeneficiaryHasToken(true);
       }
     });
@@ -159,7 +160,7 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string; method:
 
   return (
     <>
-      {hash && !claim ? (
+      {hash && !claim && !claimError ? (
         <TemplateClaimLoading />
       ) : (
         <div className={'code-claim-page claim'}>

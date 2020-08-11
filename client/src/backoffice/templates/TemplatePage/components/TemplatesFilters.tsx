@@ -23,7 +23,7 @@ export const TemplatesFilters: FC<Props> = ({ setLimit, setName }) => {
 
   return (
     <>
-      <div className="filters-container qr space-between">
+      <div className="filters-container templates space-between">
         <input type="text" placeholder="Search by name" onChange={handleNameChange} />
         <div className="action-buttons-container">
           <div className="action-button-container ">

@@ -1,18 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
 
-/* Assets */
-import PoapLogo from 'images/POAP.svg';
-
-// components
-import { NavigationMenu } from 'backoffice/Main';
+/* Components */
 import { TemplatesFilters } from './components/TemplatesFilters';
 import { TemplatesTable } from './components/TemplatesTable';
 
-// helpers
+/* Helpers */
 import { useAsync } from 'react-helpers';
 
-// api
+/* Api */
 import { getTemplates, TemplateResponse } from 'api';
 
 type PaginateAction = {
@@ -46,34 +41,19 @@ export const TemplatePage = () => {
   };
 
   return (
-    <>
-      <NavigationMenu />
-      <header id="site-header" role="banner">
-        <div className="container">
-          <div className="col-xs-6 col-sm-6 col-md-6">
-            <Link to="/admin" className="logo">
-              <img src={PoapLogo} alt="POAP" />
-            </Link>
-          </div>
-          <div className="col-xs-6 col-sm-6 col-md-6">
-            <p className="page-title">Templates</p>
-          </div>
-        </div>
-      </header>
-      <div className="container">
-        <div className={'admin-table templates'}>
-          <h2>Templates</h2>
-          <TemplatesFilters setLimit={setLimit} setName={setName} />
-          <TemplatesTable
-            isFetchingTemplates={fetchingTemplates}
-            handlePageChange={handlePageChange}
-            page={page}
-            templates={templates}
-            total={total}
-            limit={limit}
-          />
-        </div>
+    <div className="container">
+      <div className={'admin-table templates'}>
+        <h2>Templates</h2>
+        <TemplatesFilters setLimit={setLimit} setName={setName} />
+        <TemplatesTable
+          isFetchingTemplates={fetchingTemplates}
+          handlePageChange={handlePageChange}
+          page={page}
+          templates={templates}
+          total={total}
+          limit={limit}
+        />
       </div>
-    </>
+    </div>
   );
 };

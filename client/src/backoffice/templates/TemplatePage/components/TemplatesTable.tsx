@@ -52,7 +52,7 @@ export const TemplatesTable: FC<Props> = ({
                     {template.name}
                   </div>
 
-                  <div className={'col-md-2 col-xs-12 center'}>
+                  <div className={'col-md-2 col-xs-8 center'}>
                     <Tooltip
                       content={[
                         <div key={template.name + template.id} className={'event-table-tooltip'}>
@@ -72,7 +72,7 @@ export const TemplatesTable: FC<Props> = ({
                     </Tooltip>
                   </div>
 
-                  <div className={'col-md-2 col-xs-12 center template-edit-icon-container'}>
+                  <div className={'col-md-2 col-xs-4 center template-edit-icon-container'}>
                     <Link to={`/admin/template/form/${template.id}`}>
                       <EditIcon />
                     </Link>

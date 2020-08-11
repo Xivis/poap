@@ -1,5 +1,4 @@
 import React, {
-  FC,
   useCallback,
   useState,
   ReactElement,
@@ -50,6 +49,7 @@ import infoButton from 'images/info-button.svg';
 /* Helpers */
 import { useAsync } from 'react-helpers';
 import { PoapEventSchema } from 'lib/schemas';
+import { generateSecretCode } from 'lib/helpers';
 import {
   Template,
   PoapFullEvent,
@@ -59,7 +59,6 @@ import {
   updateEvent,
   createEvent,
   getTemplates,
-  getTemplateById,
 } from '../api';
 import FormFilterReactSelect from 'components/FormFilterReactSelect';
 
@@ -139,19 +138,6 @@ type SelectProps = {
   values: FormikValues;
   label: string;
 };
-
-const Select: FC<SelectProps> = ({ name, options, label, disabled, handleChange, values }) => (
-  <div>
-    <label>{label}</label>
-    <select disabled={disabled} value={values?.[name]} onChange={handleChange} name={name}>
-      {options?.map((option: any) => (
-        <option key={option.id} value={option.id}>
-          {option.name}
-        </option>
-      ))}
-    </select>
-  </div>
-);
 
 export const EventsPage = () => (
   <Switch>
@@ -243,9 +229,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
         event_url: '',
         image: new Blob(),
         isFile: true,
-        secret_code: Math.floor(Math.random() * 999999)
-          .toString()
-          .padStart(6, '0'),
+        secret_code: generateSecretCode(),
       };
       return values;
     }
@@ -348,7 +332,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
               await updateEvent(formData!, event.fancy_id);
             }
 
-            history.push('/admin/events');
+            history.push(ROUTES.events.path);
           } catch (err) {
             actions.setSubmitting(false);
             addToast(err.message, {

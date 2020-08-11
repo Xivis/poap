@@ -456,7 +456,8 @@
       }
     }
 
-    &.qr {
+    &.qr,
+    &.templates {
       &.space-between {
         display: flex;
         justify-content: space-between;
@@ -642,10 +643,6 @@
       right: 15px;
       top: 5px;
     }
-  }
-
-  &.templates {
-    padding-bottom: 100px;
   }
 }
 
@@ -988,14 +985,18 @@
   border: 1px solid $color-primary;
 }
 
-.template_buttons_container {
+.template-buttons-container {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
 
   button {
-    margin: 0;
-    margin-right: 24px;
+    margin-bottom: 24px;
+  }
+  .close-action{
+    cursor: pointer;
+    font-weight: bold;
   }
 }
 

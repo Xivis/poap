@@ -51,7 +51,7 @@ export const ColorPicker: FC<Props> = ({ title, name, setFieldValue, values }) =
             right: '12px',
             borderRadius: '4px',
           }}
-        ></div>
+        />
       </div>
     </Tooltip>
   );

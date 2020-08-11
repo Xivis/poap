@@ -4,9 +4,9 @@ import classNames from 'classnames';
 import { Formik, Form, Field, FieldProps } from 'formik';
 
 /* Schemas */
-import { ClaimHashSchema } from '../lib/schemas';
+import { ClaimHashSchema } from 'lib/schemas';
 /* Components */
-import { SubmitButton } from '../components/SubmitButton';
+import { SubmitButton } from 'components/SubmitButton';
 import ClaimFooterMessage from './ClaimFooterMessage';
 
 type HashFormValues = {

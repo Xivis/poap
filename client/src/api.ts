@@ -123,7 +123,7 @@ export interface HashClaim {
   tx: Transaction;
   event_id: number;
   event: PoapEvent;
-  event_template: EventTemplate;
+  event_template: EventTemplate | null;
   beneficiary: Address;
   user_input: string | null;
   signer: Address;

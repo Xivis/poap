@@ -16,8 +16,8 @@ type Props = {
 };
 
 export const TemplatePreview: FC<Props> = ({ template }) => {
-  let image = EmptyBadge;
-  let title = 'POAP Claim';
+  const image = EmptyBadge;
+  const title = 'POAP Claim';
 
   if (!template) return <div />
 

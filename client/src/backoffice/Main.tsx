@@ -23,6 +23,8 @@ import { InboxPage } from './InboxPage';
 import { InboxListPage } from './InboxListPage';
 import { QrPage } from './QrPage';
 import { EventsPage } from './EventsPage';
+import { TemplatePage } from './templates/TemplatePage';
+import { TemplateFormPage } from './templates/TemplateFormPage';
 
 export const MintersPage = () => <div> This is a MintersPage </div>;
 
@@ -175,6 +177,10 @@ export const BackOffice: React.FC = () => (
           <Route path={ROUTES.events.path} render={() => <EventsPage />} />
 
           <Route exact path={ROUTES.admin} render={() => <Landing />} />
+
+          <Route exact path={ROUTES.template.path} component={TemplatePage} />
+
+          <Route path={ROUTES.templateForm.path} component={TemplateFormPage} />
 
           <Route
             exact

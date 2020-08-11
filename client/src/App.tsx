@@ -8,8 +8,6 @@ import { BackOffice } from './backoffice/Main';
 import { SignerClaimPage } from './SignerClaimPage';
 import { CodeClaimPage } from './CodeClaimPage';
 import { ScanPage } from './ScanPage';
-import { TemplatePage } from './backoffice/templates/TemplatePage';
-import { TemplateFormPage } from './backoffice/templates/TemplateFormPage';
 import { AdminLoginPage } from './AdminLoginPage';
 
 type AppProps = { auth: AuthService };
@@ -20,8 +18,6 @@ const App: React.FC<AppProps> = ({ auth }) => (
       <Switch>
         <Route exact path={ROUTES.callback} component={Callback} />
         <Route exact path={ROUTES.adminLogin.path} component={AdminLoginPage} />
-        <Route exact path={ROUTES.template.path} component={TemplatePage} />
-        <Route path={ROUTES.templateForm.path} component={TemplateFormPage} />
         <Route path={ROUTES.admin} component={BackOffice} />
         <Route path={ROUTES.signerClaimPage} component={SignerClaimPage} />
         <Route path={ROUTES.codeClaimWeb3PageHash} component={CodeClaimPage} />
