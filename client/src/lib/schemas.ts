@@ -31,21 +31,22 @@ export const templateFormSchema = yup.object().shape({
     },
     message: 'Must be a PNG image',
   }),
-  title_link: yup.string().required('This field is required'),
+  title_link: yup.string().required('This field is required').url('Must be valid URL'),
   header_link_text: yup.string(),
-  header_link_url: yup.mixed().test({
-    test: (value) => {
-      if (typeof value === 'object') return IMAGE_SUPPORTED_FORMATS.includes(value.type);
-      if (typeof value === 'string') return yup.string().isValidSync(value);
-
-      return true;
-    },
-    message: 'Must be a PNG image',
-  }),
-  header_color: yup.string().required('This field is required'),
-  header_link_color: yup.string(),
-  main_color: yup.string().required('This field is required'),
-  footer_color: yup.string().required('This field is required'),
+  header_link_url: yup.string().url('Must be valid URL'),
+  header_color: yup
+    .string()
+    .required('This field is required')
+    .matches(/^#[0-9A-Fa-f]{6}$/, 'Not a valid Hex color'),
+  header_link_color: yup.string().matches(/^#[0-9A-Fa-f]{6}$/, 'Not a valid Hex color'),
+  main_color: yup
+    .string()
+    .required('This field is required')
+    .matches(/^#[0-9A-Fa-f]{6}$/, 'Not a valid Hex color'),
+  footer_color: yup
+    .string()
+    .required('This field is required')
+    .matches(/^#[0-9A-Fa-f]{6}$/, 'Not a valid Hex color'),
   left_image_url: yup.mixed().test({
     test: (value) => {
       if (typeof value === 'object') return IMAGE_SUPPORTED_FORMATS.includes(value.type);
@@ -55,7 +56,7 @@ export const templateFormSchema = yup.object().shape({
     },
     message: 'Must be a PNG image',
   }),
-  left_image_link: yup.string(),
+  left_image_link: yup.string().url('Must be valid URL'),
   right_image_url: yup.mixed().test({
     test: (value) => {
       if (typeof value === 'object') return IMAGE_SUPPORTED_FORMATS.includes(value.type);
@@ -65,7 +66,7 @@ export const templateFormSchema = yup.object().shape({
     },
     message: 'Must be a PNG image',
   }),
-  right_image_link: yup.string(),
+  right_image_link: yup.string().url('Must be valid URL'),
   mobile_image_url: yup.mixed().test({
     test: (value) => {
       if (typeof value === 'object') return IMAGE_SUPPORTED_FORMATS.includes(value.type);
@@ -75,13 +76,13 @@ export const templateFormSchema = yup.object().shape({
     },
     message: 'Must be a PNG image',
   }),
-  mobile_image_link: yup.string(),
+  mobile_image_link: yup.string().url('Must be valid URL'),
   footer_icon: yup.mixed().test({
     test: (value) => {
       if (typeof value === 'object') return IMAGE_SUPPORTED_FORMATS.includes(value.type);
       if (typeof value === 'string') return yup.string().isValidSync(value);
 
-      return true;
+      return false;
     },
     message: 'Must be a PNG image',
   }),

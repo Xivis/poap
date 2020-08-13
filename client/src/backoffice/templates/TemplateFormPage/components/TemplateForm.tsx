@@ -3,6 +3,7 @@ import { Tooltip } from 'react-lightweight-tooltip';
 import { Formik, Form, FormikActions } from 'formik';
 import ReactModal from 'react-modal';
 import { useHistory } from 'react-router-dom';
+import { useToasts } from 'react-toast-notifications';
 
 // lib
 import { generateSecretCode } from 'lib/helpers';
@@ -38,16 +39,20 @@ type Props = {
 };
 
 export const TemplateForm: FC<Props> = ({ id }) => {
+  const [templateId, setTemplateId] = useState<number | undefined>(id);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState<boolean>(false);
   const [template, setTemplate] = useState<Template | null>(null);
+
+  // libs
   const history = useHistory();
+  const { addToast } = useToasts();
 
   // hooks
   useEffect(() => {
-    if (!template && id) {
-      getTemplateById(id).then(setTemplate);
+    if (!template && templateId) {
+      getTemplateById(templateId).then(setTemplate);
     }
-  }, [id, template]);
+  }, [templateId, template]);
 
   // handlers
   const onSubmit = (
@@ -57,7 +62,7 @@ export const TemplateForm: FC<Props> = ({ id }) => {
     const formData = new FormData();
 
     Object.entries(values).forEach(([key, value]: [string, string | Blob]) => {
-      if (id) {
+      if (templateId) {
         if (
           (key.includes('image_url') ||
             key.includes('footer_icon') ||
@@ -72,26 +77,37 @@ export const TemplateForm: FC<Props> = ({ id }) => {
       }
     });
 
-    id
-      ? updateTemplate(formData, id)
+    templateId
+      ? updateTemplate(formData, templateId)
           .then(() => {
-            getTemplateById(id).then((template) => {
+            getTemplateById(templateId).then((template) => {
               setTemplate(template);
               openPreviewModal();
             });
           })
-          .catch((error: Error) => console.error(error.message))
+          .catch((error: Error) => {
+            addToast(error.message, {
+              appearance: 'error',
+              autoDismiss: true,
+            });
+          })
           .finally(() => {
             formikActions.setSubmitting(false);
           })
       : createTemplate(formData)
-          .then(() => {
-            getTemplateById(id).then((template) => {
+          .then((template) => {
+            if (template) {
+              setTemplateId(template.id);
               setTemplate(template);
               openPreviewModal();
+            }
+          })
+          .catch((error: Error) => {
+            addToast(error.message, {
+              appearance: 'error',
+              autoDismiss: true,
             });
           })
-          .catch((error: Error) => console.error(error.message))
           .finally(() => {
             formikActions.setSubmitting(false);
           });
@@ -138,7 +154,7 @@ export const TemplateForm: FC<Props> = ({ id }) => {
 
   const warning = (
     <div className={'backoffice-tooltip'}>
-      {id ? (
+      {templateId ? (
         <span>
           Be sure to save the 6 digit <b>Edit Code</b> to make any further updateTemplates
         </span>
@@ -152,14 +168,12 @@ export const TemplateForm: FC<Props> = ({ id }) => {
 
   const editLabel = ({
     label,
-    tooltipContent,
     tooltipText,
     bold = false,
     optional = false,
   }: {
     label: string;
-    tooltipContent?: React.ReactNode;
-    tooltipText?: string | React.ReactNode;
+    tooltipText: string | React.ReactNode;
     bold?: boolean;
     optional?: boolean;
   }) => {
@@ -179,7 +193,7 @@ export const TemplateForm: FC<Props> = ({ id }) => {
       <div className="info-label-container">
         {_label}
         <Tooltip
-          content={tooltipContent ? tooltipContent : tooltipText}
+          content={tooltipText}
           styles={{ content: {}, tooltip: { zIndex: 100 }, arrow: {}, wrapper: {}, gap: {} }}
         >
           <img alt="Informative icon" src={infoButton} className={'info-button'} />
@@ -192,7 +206,7 @@ export const TemplateForm: FC<Props> = ({ id }) => {
     <div>
       <div>Header image, top left position</div>
       <div>&bull; Mandatory: PNG format</div>
-      <div>&bull; Recommended: 60px height & no more than 300px width</div>
+      <div>&bull; Recommended: up to 300px width, 60px height</div>
     </div>
   );
 
@@ -249,7 +263,7 @@ export const TemplateForm: FC<Props> = ({ id }) => {
 
           return (
             <Form className="template-form">
-              <h2>{`${id ? 'Update' : 'Create'}`} Template</h2>
+              <h2>{`${templateId ? 'Update' : 'Create'}`} Template</h2>
               <EventField title="Name of the template" name="name" />
               <div className="bk-group">
                 <ColorPicker
@@ -339,7 +353,11 @@ export const TemplateForm: FC<Props> = ({ id }) => {
                   <ImageContainer
                     name="left_image_url"
                     text="Left image"
-                    customLabel={editLabel({ label: 'Left image', tooltipText: sideSpecs, optional: true })}
+                    customLabel={editLabel({
+                      label: 'Left image',
+                      tooltipText: sideSpecs,
+                      optional: true,
+                    })}
                     handleFileChange={handleFileChange}
                     setFieldValue={setFieldValue}
                     errors={errors}
@@ -376,7 +394,11 @@ export const TemplateForm: FC<Props> = ({ id }) => {
                 >
                   <ImageContainer
                     name="right_image_url"
-                    customLabel={editLabel({ label: 'Right image', tooltipText: sideSpecs, optional: true })}
+                    customLabel={editLabel({
+                      label: 'Right image',
+                      tooltipText: sideSpecs,
+                      optional: true,
+                    })}
                     text="Right image"
                     handleFileChange={handleFileChange}
                     setFieldValue={setFieldValue}
@@ -414,7 +436,11 @@ export const TemplateForm: FC<Props> = ({ id }) => {
                 >
                   <ImageContainer
                     name="mobile_image_url"
-                    customLabel={editLabel({ label: 'Mobile image', tooltipText: mobileSpecs, optional: true })}
+                    customLabel={editLabel({
+                      label: 'Mobile image',
+                      tooltipText: mobileSpecs,
+                      optional: true,
+                    })}
                     text="Mobile image"
                     handleFileChange={handleFileChange}
                     setFieldValue={setFieldValue}
@@ -452,7 +478,7 @@ export const TemplateForm: FC<Props> = ({ id }) => {
                 >
                   <ImageContainer
                     text="Footer's logo"
-                    customLabel={editLabel({ label: "Footer's logo", tooltipText: footerSpecs, optional: true })}
+                    customLabel={editLabel({ label: "Footer's logo", tooltipText: footerSpecs })}
                     name="footer_icon"
                     handleFileChange={handleFileChange}
                     setFieldValue={setFieldValue}
@@ -472,7 +498,7 @@ export const TemplateForm: FC<Props> = ({ id }) => {
                   )}
                 </div>
                 <EventField
-                  title={editLabel({ label: 'Edit Code', tooltipContent: warning, bold: true })}
+                  title={editLabel({ label: 'Edit Code', tooltipText: warning, bold: true })}
                   name="secret_code"
                 />
               </div>

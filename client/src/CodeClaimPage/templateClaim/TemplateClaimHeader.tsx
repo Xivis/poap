@@ -77,7 +77,7 @@ export const TemplateClaimHeader: FC<Props> = ({ claim, title, image, claimed, t
 
         {leftImageUrl ? (
           leftImageLink ? (
-            <a href={leftImageLink} rel="noopener noreferrer" target="_blank">
+            <a href={leftImageLink} rel="noopener noreferrer" target="_blank" className={'side-banner'}>
               <img alt="Brand publicity" src={leftImageUrl} className="left-image" />
             </a>
           ) : (
@@ -87,7 +87,7 @@ export const TemplateClaimHeader: FC<Props> = ({ claim, title, image, claimed, t
 
         {rightImageUrl ? (
           rightImageLink ? (
-            <a href={rightImageLink} rel="noopener noreferrer" target="_blank">
+            <a href={rightImageLink} rel="noopener noreferrer" target="_blank" className={'side-banner'}>
               <img alt="Brand publicity" src={rightImageUrl} className="right-image" />
             </a>
           ) : (

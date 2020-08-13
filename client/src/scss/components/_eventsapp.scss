@@ -366,8 +366,13 @@
       background: none;
       position: relative;
 
+      .side-banner{
+        z-index: 2;
+      }
+
       .right-image {
         position: absolute;
+        z-index: 2;
 
         border-radius: 4px;
 
@@ -395,6 +400,7 @@
 
       .left-image {
         position: absolute;
+        z-index: 2;
 
         border-radius: 4px;
 

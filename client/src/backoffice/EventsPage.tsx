@@ -517,7 +517,7 @@ export const ImageContainer = ({
     {customLabel ? <span>{React.cloneElement(customLabel)}</span> : <label>{text}</label>}
     <input
       type="file"
-      accept="image/png, image/jpeg, image/jpg"
+      accept="image/png"
       className={classNames(Boolean(errors?.[name]) && 'error')}
       onChange={(e: ChangeEvent<HTMLInputElement>) => handleFileChange(e, setFieldValue, name)}
     />

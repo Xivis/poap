@@ -53,6 +53,9 @@
   label {
     color: $color-primary;
   }
+  textarea {
+    margin-bottom: 16px;
+  }
 
   input,
   textarea {
@@ -112,10 +115,7 @@
 .bk-error {
   color: #e13c5d;
   text-align: center;
-
-  // margin-top: 5px;
-  // @include x-rem(font-size, 14px);
-  // max-width: 600px;
+  margin-top: -10px;
   @include x-rem(font-size, 16px);
 }
 

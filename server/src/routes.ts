@@ -50,7 +50,10 @@ import {
   getPaginatedEventTemplates,
   getTotalEventTemplates,
   createEventTemplate,
-  getFullEventTemplateById, updateEventTemplate, saveEventTemplateUpdate
+  getFullEventTemplateById,
+  getEventTemplatesByName,
+  updateEventTemplate,
+  saveEventTemplateUpdate
 } from './db';
 
 import {
@@ -2605,6 +2608,11 @@ export default async function routes(fastify: FastifyInstance) {
           }
         }
 
+        const _other_templates = await getEventTemplatesByName(req.body.name);
+        if (_other_templates.length > 0) {
+          return new createError.BadRequest('Template with this name already exists, please try another one');
+        }
+
         // image_url: google_image_url,
         let newEventTemplate: Omit<FullEventTemplate, 'id'> = {
           name: req.body.name,
@@ -2770,6 +2778,11 @@ export default async function routes(fastify: FastifyInstance) {
           if (!mobile_image_url) {
             return new createError.InternalServerError('Error uploading mobile_image_url');
           }
+        }
+
+        const _other_templates = await getEventTemplatesByName(req.body.name);
+        if (_other_templates.filter((template) => template.id !== event_template.id).length > 0) {
+          return new createError.BadRequest('Template with this name already exists, please try another one');
         }
 
         const isOk = await updateEventTemplate(req.params.id, {

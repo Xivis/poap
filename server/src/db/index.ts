@@ -631,6 +631,11 @@ export async function getEventTemplate(id: string | number): Promise<null | Even
   return res;
 }
 
+export async function getEventTemplatesByName(name: string): Promise<EventTemplate[]> {
+  const res = await db.manyOrNone<EventTemplate>('SELECT ' + publicTemplateColumns + ' FROM event_templates WHERE name ILIKE ${name} AND is_active = true', { name });
+  return res;
+}
+
 export async function getPaginatedEventTemplates(limit: number, offset: number, name: string|null): Promise<EventTemplate[]> {
   let query = `SELECT * FROM event_templates WHERE is_active = true `
 
