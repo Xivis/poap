@@ -3,28 +3,40 @@ import classNames from 'classnames';
 import { ErrorMessage, Field, FieldProps, Form, Formik, FormikActions } from 'formik';
 
 /* Helpers */
-import { tryGetAccount } from '../poap-eth';
-import { HashClaim, postClaimHash } from '../api';
-import { AddressSchema } from '../lib/schemas';
-import { hasWeb3 } from '../poap-eth';
+import { tryGetAccount } from 'poap-eth';
+import { HashClaim, postClaimHash } from 'api';
+import { AddressSchema } from 'lib/schemas';
+import { hasWeb3 } from 'poap-eth';
 
 /* Components */
-import { SubmitButton } from '../components/SubmitButton';
+import { SubmitButton } from 'components/SubmitButton';
 import ClaimFooterMessage from './ClaimFooterMessage';
 
-/* Assets */
+/* Lib */
+import { COLORS, STYLES } from 'lib/constants';
+import { useImageSrc } from 'lib/hooks/useImageSrc';
+
+/* Types */
+import { Template } from 'api';
 
 type QRFormValues = {
   address: string;
 };
 
 const ClaimForm: React.FC<{
-  claim: HashClaim;
+  claim?: HashClaim;
   method: string;
+  template?: Template;
   onSubmit: (claim: HashClaim) => void;
-}> = ({ claim, onSubmit, method }) => {
+}> = ({ claim, onSubmit, method, template }) => {
   const [enabledWeb3, setEnabledWeb3] = useState<boolean | null>(null);
   const [account, setAccount] = useState<string>('');
+
+  const mobileImageUrlRaw = claim?.event_template?.mobile_image_url ?? template?.mobile_image_url;
+  const mobileImageLink = claim?.event_template?.mobile_image_link ?? template?.mobile_image_link;
+  const mainColor = claim?.event_template?.main_color ?? template?.main_color;
+
+  const mobileImageUrl = useImageSrc(mobileImageUrlRaw);
 
   useEffect(() => {
     hasWeb3().then(setEnabledWeb3);
@@ -32,10 +44,10 @@ const ClaimForm: React.FC<{
 
   const getAddress = () => {
     tryGetAccount()
-      .then(address => {
+      .then((address) => {
         if (address) setAccount(address);
       })
-      .catch(e => {
+      .catch((e) => {
         console.log('Error while fetching account: ', e);
       });
   };
@@ -43,13 +55,16 @@ const ClaimForm: React.FC<{
   const handleFormSubmit = async (values: QRFormValues, actions: FormikActions<QRFormValues>) => {
     try {
       actions.setSubmitting(true);
-      let newClaim = await postClaimHash(
-        claim.qr_hash.toLowerCase(),
-        values.address.toLowerCase(),
-        claim.secret,
-        method
-      );
-      onSubmit(newClaim);
+      if (claim) {
+        const newClaim = await postClaimHash(
+          claim.qr_hash.toLowerCase(),
+          values.address.toLowerCase(),
+          claim.secret,
+          method
+        );
+
+        onSubmit(newClaim);
+      }
     } catch (error) {
       actions.setStatus({
         ok: false,
@@ -80,6 +95,7 @@ const ClaimForm: React.FC<{
                       <input
                         type="text"
                         autoComplete="off"
+                        style={{ borderColor: mainColor ?? COLORS.primaryColor }}
                         className={classNames(!!form.errors[field.name] && 'error')}
                         placeholder={'Input your Ethereum address or ENS name'}
                         {...field}
@@ -92,13 +108,17 @@ const ClaimForm: React.FC<{
                 <div className={'web3-browser'}>
                   {enabledWeb3 && (
                     <div>
-                    Web3 browser? <span onClick={getAddress}>Get my address</span>
+                      Web3 browser? <span onClick={getAddress}>Get my address</span>
                     </div>
-                    )}
+                  )}
                 </div>
 
                 <SubmitButton
                   text="Claim POAP token"
+                  style={{
+                    backgroundColor: mainColor ?? COLORS.primaryColor,
+                    boxShadow: mainColor ? STYLES.boxShadow(mainColor) : '',
+                  }}
                   isSubmitting={isSubmitting}
                   canSubmit={isValid}
                 />
@@ -107,7 +127,18 @@ const ClaimForm: React.FC<{
           }}
         </Formik>
       </div>
-      <ClaimFooterMessage />
+      <ClaimFooterMessage linkStyle={{ color: mainColor ?? COLORS.primaryColor }} />
+      <div className="mobile-image">
+        {mobileImageUrl ? (
+          mobileImageLink ? (
+            <a href={mobileImageLink} rel="noopener noreferrer" target="_blank">
+              <img alt="Brand publicity" src={mobileImageUrl} />
+            </a>
+          ) : (
+            <img alt="Brand publicity" src={mobileImageUrl} />
+          )
+        ) : null}
+      </div>
     </div>
   );
 };

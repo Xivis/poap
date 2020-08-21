@@ -77,7 +77,7 @@ CREATE TABLE tasks (
     "id" SERIAL PRIMARY KEY,
     "name" varchar(100),
     "task_data" json,
-    "status" varchar(100) constraint default_satus DEFAULT 'PENDING',
+    "status" varchar(100) constraint default_status DEFAULT 'PENDING',
     "return_data" varchar(256),
     CONSTRAINT chk_status CHECK (status IN ('FINISH', 'FINISH_WITH_ERROR', 'IN_PROCESS', 'PENDING'))
 );
@@ -97,7 +97,7 @@ CREATE TABLE event_host (
     "id" SERIAL PRIMARY KEY,
     "user_id" varchar(256) UNIQUE,
     "is_active" boolean default true
-)
+);
 
 CREATE TABLE qr_roll (
     "id" SERIAL PRIMARY KEY,
@@ -147,3 +147,40 @@ CREATE TABLE events_history (
     "from_admin" BOOLEAN DEFAULT FALSE,
     "created_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
+
+CREATE TABLE event_templates (
+    "id" SERIAL PRIMARY KEY,
+    "name" varchar(256),
+    "title_image" varchar(256),
+    "title_link" varchar(256),
+    "header_link_text" varchar(256),
+    "header_link_url" varchar(256),
+    "header_color" varchar(256),
+    "header_link_color" varchar(256),
+    "main_color" varchar(256),
+    "footer_color" varchar(256),
+    "left_image_url" varchar(256),
+    "left_image_link" varchar(256),
+    "right_image_url" varchar(256),
+    "right_image_link" varchar(256),
+    "mobile_image_url" varchar(256),
+    "mobile_image_link" varchar(256),
+    "footer_icon" varchar(256),
+    "secret_code" integer,
+    "created_date" timestamp with time zone not null default now(),
+    "is_active" boolean default true
+);
+
+CREATE TABLE event_templates_history (
+    "id" SERIAL PRIMARY KEY,
+    "event_template_id" INTEGER NOT NULL REFERENCES events (id),
+    "field" VARCHAR(100) NOT NULL,
+    "old_value" VARCHAR,
+    "new_value" VARCHAR,
+    "from_admin" BOOLEAN DEFAULT FALSE,
+    "created_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+);
+
+ALTER TABLE events ADD COLUMN event_template_id INTEGER NULL REFERENCES event_templates (id);
+
+UPDATE event_templates SET secret_code = floor(100000 + random() * 899999);

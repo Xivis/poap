@@ -3,6 +3,16 @@ import queryString from 'query-string';
 import { authClient } from './auth';
 
 export type Address = string;
+
+export type Params = {
+  [key: string]: string | number | boolean | undefined;
+};
+export interface TemplatesResponse<Result> {
+  total: number;
+  next?: string;
+  previous?: string;
+  event_templates: Result[];
+}
 export interface TokenInfo {
   tokenId: string;
   owner: string;
@@ -24,6 +34,7 @@ export interface PoapEvent {
   city: string;
   country: string;
   event_url: string;
+  event_template_id: number;
   from_admin: boolean;
   image_url: string;
   year: number;
@@ -31,7 +42,7 @@ export interface PoapEvent {
   end_date: string;
   virtual_event: boolean;
 }
-export interface PoapFullEvent extends PoapEvent{
+export interface PoapFullEvent extends PoapEvent {
   secret_code?: number;
 }
 export interface Claim extends ClaimProof {
@@ -43,6 +54,68 @@ export interface ClaimProof {
   claimer: Address;
   proof: string;
 }
+
+export type Template = {
+  id: number;
+  name: string;
+  title_image: string;
+  title_link: string;
+  header_link_text: string;
+  header_link_url: string;
+  header_color: string;
+  header_link_color: string;
+  main_color: string;
+  footer_color: string;
+  left_image_url: string;
+  left_image_link: string;
+  right_image_url: string;
+  right_image_link: string;
+  mobile_image_url: string;
+  mobile_image_link: string;
+  footer_icon: string;
+  secret_code: string;
+};
+export type TemplatePageFormValues = {
+  name: string;
+  title_image: Blob | string;
+  title_link: string;
+  header_link_text: string;
+  header_link_url: string;
+  header_color: string;
+  header_link_color: string;
+  main_color: string;
+  footer_color: string;
+  left_image_url: Blob | string;
+  left_image_link: string;
+  right_image_url: Blob | string;
+  right_image_link: string;
+  mobile_image_url: Blob | string;
+  mobile_image_link: string;
+  footer_icon: Blob | string;
+  secret_code: string;
+};
+export type EventTemplate = {
+  created_date: string;
+  footer_color: string;
+  footer_icon: string;
+  header_color: string;
+  header_link_color: string;
+  header_link_text: string;
+  header_link_url: string;
+  id: number;
+  is_active: boolean;
+  left_image_link: string;
+  left_image_url: string;
+  main_color: string;
+  mobile_image_link: string;
+  mobile_image_url: string;
+  name: string;
+  right_image_link: string;
+  right_image_url: string;
+  title_image: string;
+  title_link: string;
+};
+
 export interface HashClaim {
   id: number;
   qr_hash: string;
@@ -50,6 +123,7 @@ export interface HashClaim {
   tx: Transaction;
   event_id: number;
   event: PoapEvent;
+  event_template: EventTemplate | null;
   beneficiary: Address;
   user_input: string | null;
   signer: Address;
@@ -148,6 +222,7 @@ const API_BASE =
 
 async function fetchJson<A>(input: RequestInfo, init?: RequestInit): Promise<A> {
   const res = await fetch(input, init);
+
   if (!res.ok) {
     const data = await res.json();
     if (data && data.message) throw new Error(data.message);
@@ -217,6 +292,21 @@ export async function getEvents(): Promise<PoapEvent[]> {
   return authClient.isAuthenticated()
     ? secureFetch(`${API_BASE}/events`)
     : fetchJson(`${API_BASE}/events`);
+}
+
+export type TemplateResponse = TemplatesResponse<Template>;
+
+export async function getTemplates({ limit = 10, offset = 0, name = '' }: Params = {}): Promise<
+  TemplateResponse
+> {
+  return fetchJson(`${API_BASE}/event-templates?limit=${limit}&offset=${offset}&name=${name}`);
+}
+
+export async function getTemplateById(id?: number): Promise<Template> {
+  const isAdmin = authClient.isAuthenticated();
+  return isAdmin
+    ? secureFetch(`${API_BASE}/event-templates-admin/${id}`)
+    : fetchJson(`${API_BASE}/event-templates/${id}`);
 }
 
 export async function getEvent(fancyId: string): Promise<null | PoapFullEvent> {
@@ -359,6 +449,20 @@ export async function createEvent(event: FormData) {
   });
 }
 
+export async function createTemplate(event: FormData): Promise<Template> {
+  return fetchJson(`${API_BASE}/event-templates`, {
+    method: 'POST',
+    body: event,
+  });
+}
+
+export async function updateTemplate(event: FormData, id: number): Promise<void>  {
+  return fetchJsonNoResponse(`${API_BASE}/event-templates/${id}`, {
+    method: 'PUT',
+    body: event,
+  });
+}
+
 export async function getSigners(): Promise<AdminAddress[]> {
   return secureFetch(`${API_BASE}/signers`);
 }
@@ -467,7 +571,7 @@ export async function qrCreateMassive(
   let unstringifiedBody = {
     qr_list: qrHashes,
     numeric_list: qrIds,
-    delegated_mint
+    delegated_mint,
   };
 
   if (Number(event) !== 0) Object.assign(unstringifiedBody, { event_id: Number(event) });
@@ -514,11 +618,7 @@ export function getTransactions(
   status: string,
   signer: string
 ): Promise<PaginatedTransactions> {
-
-  const params = queryString.stringify(
-    { limit, offset, status, signer },
-    { sort: false }
-  );
+  const params = queryString.stringify({ limit, offset, status, signer }, { sort: false });
   return secureFetch(`${API_BASE}/transactions?${params}`);
 }
 
@@ -540,7 +640,7 @@ export async function postClaimHash(
   secret: string,
   method: string
 ): Promise<HashClaim> {
-  let delegated = method === 'web3'
+  let delegated = method === 'web3';
   return fetchJson(`${API_BASE}/actions/claim-qr`, {
     method: 'POST',
     body: JSON.stringify({ qr_hash, address, secret, delegated }),
