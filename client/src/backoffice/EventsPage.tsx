@@ -280,7 +280,6 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
       )}
     </div>
   );
-
   const editLabel = (
     <>
       <b>Edit Code</b>
