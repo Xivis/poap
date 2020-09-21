@@ -205,11 +205,11 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
 
   const initialValues = useMemo(() => {
     if (event) {
-      let { virtual_event, secret_code, ...eventKeys } = event;
+      let { virtual_event, secret_code, start_date, end_date, ...eventKeys } = event;
       return {
         ...eventKeys,
-        start_date: event.start_date.replace(dateRegex, '-'),
-        end_date: event.end_date.replace(dateRegex, '-'),
+        start_date: start_date.replace(dateRegex, '-'),
+        end_date: end_date.replace(dateRegex, '-'),
         isFile: false,
         secret_code: secret_code ? secret_code.toString().padStart(6, '0') : '',
       };
@@ -291,10 +291,11 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
   );
 
   const parseTemplateToOptions = (templates: Template[]): TemplateOptionType[] => {
-    return templates.map((template: Template) => {
+    const options = templates.map((template: Template) => {
       const label = template.name ? template.name : 'No name';
       return { value: template.id, label };
     });
+    return [{ value: 0, label: 'Standard template' }, ...options];
   };
 
   const templateSelectOptions = templateOptions ? parseTemplateToOptions(templateOptions) : [];
@@ -403,14 +404,14 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
                   placeholder={values.start_date}
                   value={
                     values.start_date !== ''
-                      ? new Date(dateFormatterString(values.start_date).getTime() + day)
+                      ? new Date(dateFormatterString(values.start_date).getTime())
                       : ''
                   }
                   disabled={false}
                   disabledDays={
                     values.end_date !== ''
                       ? {
-                          from: new Date(dateFormatterString(values.end_date).getTime() + day * 2),
+                          from: new Date(dateFormatterString(values.end_date).getTime() + day),
                           to: veryFutureDate,
                         }
                       : undefined
@@ -424,7 +425,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
                   placeholder={values.end_date}
                   value={
                     values.end_date !== ''
-                      ? new Date(dateFormatterString(values.end_date).getTime() + day)
+                      ? new Date(dateFormatterString(values.end_date).getTime())
                       : ''
                   }
                   disabled={!multiDay}
@@ -489,6 +490,12 @@ const DayPickerContainer = ({
   value,
 }: DatePickerContainerProps) => {
   const handleDayChange = (day: Date) => handleDayClick(day, dayToSetup, setFieldValue);
+  let _value = value;
+  if (value instanceof Date) {
+    const offset = new Date().getTimezoneOffset();
+    const offsetSign = offset < 0 ? -1 : 1;
+    _value = new Date(value.valueOf() + offset * 60 * 1000 * offsetSign);
+  }
   return (
     <div className={`date-picker-container ${dayToSetup === 'end_date' ? 'end-date-overlay' : ''}`}>
       <label>{text}</label>
@@ -496,7 +503,7 @@ const DayPickerContainer = ({
         placeholder={placeholder}
         dayPickerProps={{ disabledDays }}
         onDayChange={handleDayChange}
-        value={value}
+        value={_value}
         inputProps={{ readOnly: 'readonly', disabled: disabled }}
       />
       <ErrorMessage name={dayToSetup} component="p" className="bk-error" />

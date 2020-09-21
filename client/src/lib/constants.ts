@@ -38,6 +38,7 @@ const LABELS = {
 const ROUTES = {
   home: '/',
   scan: '/scan/:account',
+  scanHome: '/scan',
   token: '/token/:tokenId',
   callback: '/callback',
   signerClaimPage: '/signer/claim/:event',
