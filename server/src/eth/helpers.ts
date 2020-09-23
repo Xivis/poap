@@ -325,6 +325,7 @@ export async function getAllTokens(address: Address): Promise<TokenInfo[]> {
     if (!ev) {
       throw new Error(`Invalid EventId: ${id}`);
     }
+    ev.supply = 1;
     return ev;
   };
 

@@ -57,8 +57,6 @@ import {
 } from './db';
 
 import {
-  getAllTokens,
-  getTokenInfo,
   mintToken,
   mintEventToManyUsers,
   verifyClaim,
@@ -72,12 +70,16 @@ import {
   getTokenImg,
   getAllEventIds,
   signMessage,
-  isEventEditable
+  isEventEditable, getAllTokens, getTokenInfo
 } from './eth/helpers';
 
 import {
+  poapGraph
+} from './plugins/thegraph-utils';
+
+import {
   Omit, Claim, PoapEvent, PoapFullEvent, TransactionStatus, Address,
-  NotificationType, Notification, ClaimQR, UserRole, TokenInfo, FullEventTemplate
+  NotificationType, Notification, ClaimQR, UserRole, FullEventTemplate
 } from './types';
 import { TypedValue } from 'eth-crypto';
 import crypto from 'crypto';
@@ -86,7 +88,6 @@ import * as admin from 'firebase-admin';
 import { uploadFile } from './plugins/google-storage-utils';
 import { getUserRoles } from './plugins/groups-decorator';
 import { sleep } from './utils';
-import { getEventTokenSupply } from './plugins/thegraph-utils';
 import { sendNewEventEmailToAdmins } from "./plugins/sendgrid-utils";
 
 function buildMetadataJson(homeUrl: string, tokenUrl: string, ev: PoapEvent) {
@@ -333,17 +334,12 @@ export default async function routes(fastify: FastifyInstance) {
     },
     async (req, res) => {
       const address = req.params.address;
-      let tokens = await getAllTokens(address);
-
-      return await Promise.all(tokens.map(async (token): Promise<TokenInfo> => {
-        let supply = 1;
-        try {
-          supply = await getEventTokenSupply(token.event.id)
-        } catch (e) {
-          console.log('The Graph Query error')
-        }
-        return { ...token, event: { ...token.event, supply: supply } }
-      }));
+      try {
+        return await poapGraph.getAllTokens(address);
+      } catch(e) {
+        console.log('The Graph Query error')
+      }
+      return await getAllTokens(address);   
     }
   );
 
@@ -820,8 +816,12 @@ export default async function routes(fastify: FastifyInstance) {
     },
     async (req, res) => {
       const tokenId = req.params.tokenId;
-      const tokenInfo = await getTokenInfo(tokenId);
-      return tokenInfo;
+      try {
+        return await poapGraph.getTokenInfo(tokenId);
+      } catch(e) {
+        console.log('The Graph Query error');
+      }
+      return  await getTokenInfo(tokenId) ;
     }
   );
 

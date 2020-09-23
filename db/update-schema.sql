@@ -184,3 +184,9 @@ CREATE TABLE event_templates_history (
 ALTER TABLE events ADD COLUMN event_template_id INTEGER NULL REFERENCES event_templates (id);
 
 UPDATE event_templates SET secret_code = floor(100000 + random() * 899999);
+
+ALTER TABLE signers ADD COLUMN network VARCHAR(50);
+ALTER TABLE signers ADD CONSTRAINT chk_network CHECK (network IN ("MAINNET", "xDAI"));
+
+ALTER TABLE server_transactions ADD COLUMN network VARCHAR(50);
+ALTER TABLE server_transactions ADD CONSTRAINT chk_network CHECK (network IN ("MAINNET", "xDAI"));

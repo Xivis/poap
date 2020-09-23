@@ -68,7 +68,9 @@ CREATE TABLE signers (
     "signer" varchar(256) UNIQUE not null,
     "role" varchar(100) not null,
     "gas_price" varchar(1000) not null,
-    "created_date" timestamp with time zone not null default now()
+    "created_date" timestamp with time zone not null default now(),
+    "network" varchar(50),
+    CONSTRAINT chk_network CHECK (network IN ("MAINNET", "xDAI"))
 );
 
 CREATE TABLE poap_settings (
@@ -88,7 +90,9 @@ CREATE TABLE server_transactions (
     "arguments" varchar(1000) not null,
     "status" varchar(100) not null default 'pending',
     "gas_price" varchar(1000) not null,
-    "created_date" timestamp with time zone not null default now()
+    "created_date" timestamp with time zone not null default now(),
+    "network" varchar(50),
+    CONSTRAINT chk_network CHECK (network IN ("MAINNET", "xDAI"))
 );
 
 /* CREATE TABLE qr_claims */
