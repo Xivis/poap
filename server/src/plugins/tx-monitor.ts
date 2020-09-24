@@ -16,7 +16,7 @@ declare module 'fastify' {
 import cron from 'node-cron';
 
 import { getPendingTxs, updateTransactionStatus } from '../db';
-import { TransactionStatus } from '../types';
+import { TransactionStatus, Layer } from '../types';
 import getEnv from '../envs/index';
 
 export default fp(function transactionsMonitorCron(
@@ -25,12 +25,16 @@ export default fp(function transactionsMonitorCron(
   next
 ) {
   const monitor = async () => {
-    const env = getEnv();
+    const envMap = new Map()
+    envMap.set(Layer.layer1, getEnv({layer: Layer.layer1}));
+    envMap.set(Layer.layer2, getEnv({layer: Layer.layer2}));
+
     const pendingTransactions = await getPendingTxs();
     if (!pendingTransactions || pendingTransactions.length === 0) return;
 
-    const txPromises = pendingTransactions.map(async ({ tx_hash: txHash }) => {
-      const receipt = await env.provider.getTransactionReceipt(txHash).then((receipt) => {
+    const txPromises = pendingTransactions.map(async ({ tx_hash: txHash, layer: layer }) => {
+      const env = envMap.get(layer);
+      const receipt = await env.provider.getTransactionReceipt(txHash).then((receipt: { status: number; }) => {
         if(receipt) {
           if(receipt.status == 1) {
             updateTransactionStatus(txHash, TransactionStatus.passed);
