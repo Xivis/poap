@@ -93,7 +93,7 @@ function getL2Provider(): Provider {
 }
 
 function getProvider(layer?: Layer): Provider {
-  if (layer && layer === Layer.layer2) {
+  if (layer && layer == Layer.layer2) {
     return getL2Provider()
   }
   return getL1Provider()

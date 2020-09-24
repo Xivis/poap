@@ -334,21 +334,24 @@ export async function getAllTokens(address: Address): Promise<TokenInfo[]> {
     ev.supply = 1;
     return ev;
   };
-
-  const env = getEnv();
-  const contract = getContract(env.poapAdmin);
-  const tokensAmount = (await contract.functions.balanceOf(address)).toNumber();
-
   const tokens: TokenInfo[] = [];
-  for (let i = 0; i < tokensAmount; i++) {
-    const { tokenId, eventId } = await contract.functions.tokenDetailsOfOwnerByIndex(address, i);
-    tokens.push({
-      event: getEvent(eventId.toNumber()),
-      tokenId: tokenId.toString(),
-      owner: address,
-    });
+
+  const addLayerTokens = async (layer: Layer, tokens: TokenInfo[]) => {
+    const env = getEnv({layer});
+    const contract = getContract(env.poapAdmin, {layer});
+    const tokensAmount = (await contract.functions.balanceOf(address)).toNumber();
+    for (let i = 0; i < tokensAmount; i++) {
+      const { tokenId, eventId } = await contract.functions.tokenDetailsOfOwnerByIndex(address, i);
+      tokens.push({
+        event: getEvent(eventId.toNumber()),
+        tokenId: tokenId.toString(),
+        owner: address,
+      });
+    }
   }
 
+  await addLayerTokens(Layer.layer1, tokens);
+  await addLayerTokens(Layer.layer2, tokens);
   return tokens.sort((a:any, b:any) => {
     try{
       return new Date(b.event.start_date) > new Date(a.event.start_date) ? 1 : -1
@@ -371,9 +374,9 @@ export async function getAllEventIds(address: Address): Promise<number[]> {
   return eventIds;
 }
 
-export async function getTokenInfo(tokenId: string | number): Promise<TokenInfo> {
-  const env = getEnv();
-  const contract = getContract(env.poapAdmin);
+export async function getLayerTokenInfo(tokenId: string | number, layer: Layer): Promise<TokenInfo> {
+  const env = getEnv({layer});
+  const contract = getContract(env.poapAdmin, {layer});
   const eventId = await contract.functions.tokenEvent(tokenId);
   const owner = await contract.functions.ownerOf(tokenId);
   const event = await getEvent(eventId.toNumber());
@@ -385,6 +388,17 @@ export async function getTokenInfo(tokenId: string | number): Promise<TokenInfo>
     tokenId: tokenId.toString(),
     owner,
   };
+} 
+
+export async function getTokenInfo(tokenId: string | number): Promise<TokenInfo> {
+  let token: TokenInfo;
+  try {
+    // First try L1
+    token = await getLayerTokenInfo(tokenId, Layer.layer1);
+  } catch (e) {
+    token = await getLayerTokenInfo(tokenId, Layer.layer2);
+  }
+  return token
 }
 
 export async function getTokenImg(tokenId: string | number): Promise<null | string> {
