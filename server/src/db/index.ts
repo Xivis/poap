@@ -18,7 +18,7 @@ import {
   NotificationType,
   eventHost,
   qrRoll,
-  EventTemplate, FullEventTemplate
+  EventTemplate, FullEventTemplate, Layer
 } from '../types';
 import { ContractTransaction } from 'ethers';
 
@@ -100,8 +100,8 @@ export async function updatePoapSettingByName(name: string, type: string, value:
   return res.rowCount === 1;
 }
 
-export async function getSigner(address: string): Promise<null | Signer> {
-  const res = await db.oneOrNone<Signer>('SELECT * FROM signers WHERE signer ILIKE $1', [address]);
+export async function getSigner(address: string, layer: Layer = Layer.layer1): Promise<null | Signer> {
+  const res = await db.oneOrNone<Signer>('SELECT * FROM signers WHERE signer ILIKE $1 AND layer = $2', [address, layer]);
   return res;
 }
 
@@ -116,10 +116,10 @@ export async function getAvailableHelperSigners(): Promise<null | Signer[]> {
   return res;
 }
 
-export async function getLastSignerTransaction(signer: string): Promise<null | Transaction> {
+export async function getLastSignerTransaction(signer: string, layer: Layer = Layer.layer1): Promise<null | Transaction> {
   const res = await db.oneOrNone<Transaction>(`
   SELECT * FROM server_transactions
-  WHERE signer ILIKE $1 ORDER BY nonce DESC LIMIT 1`, [signer]);
+  WHERE signer ILIKE $1 AND layer = $2 ORDER BY nonce DESC LIMIT 1`, [signer, layer]);
   return res
 }
 
@@ -243,9 +243,9 @@ export async function createEvent(event: Omit<PoapFullEvent, 'id'>): Promise<Poa
   };
 }
 
-export async function saveTransaction(hash: string, nonce: number, operation: string, params: string, signer: Address, status: string, gas_price: string): Promise<boolean> {
-  let query = "INSERT INTO server_transactions(tx_hash, nonce, operation, arguments, signer, status, gas_price) VALUES (${hash}, ${nonce}, ${operation}, ${params}, ${signer}, ${status}, ${gas_price})";
-  let values = { hash, nonce, operation, params: params.substr(0, 1950), signer, status, gas_price };
+export async function saveTransaction(hash: string, nonce: number, operation: string, params: string, signer: Address, status: string, gas_price: string, layer: Layer = Layer.layer1): Promise<boolean> {
+  let query = "INSERT INTO server_transactions(tx_hash, nonce, operation, arguments, signer, status, gas_price, layer) VALUES (${hash}, ${nonce}, ${operation}, ${params}, ${signer}, ${status}, ${gas_price}, ${layer})";
+  let values = { hash, nonce, operation, params: params.substr(0, 1950), signer, status, gas_price, layer };
   try {
     const res = await db.result(query, values);
     return res.rowCount === 1;

@@ -2,11 +2,11 @@ import { GraphQLClient, gql } from 'graphql-request'
 import { getEvent, getEvents } from '../db';
 import { Address, TokenInfo } from '../types';
 
-export const mainnetSubgraph = new GraphQLClient('https://api.thegraph.com/subgraphs/name/poap-xyz/poap')
+const mainnetSubgraph = new GraphQLClient('https://api.thegraph.com/subgraphs/name/poap-xyz/poap')
 
-export const xDaiSubgraph = new GraphQLClient('https://api.thegraph.com/subgraphs/name/poap-xyz/poap-xdai')
+const xDaiSubgraph = new GraphQLClient('https://api.thegraph.com/subgraphs/name/poap-xyz/poap-xdai')
 
-export async function getTokenInfo(tokenId: string | number): Promise<TokenInfo> {
+async function getTokenInfo(tokenId: string | number): Promise<TokenInfo> {
     const query = gql`
     {
       token (id: ${tokenId}) {
@@ -38,7 +38,7 @@ export async function getTokenInfo(tokenId: string | number): Promise<TokenInfo>
 }
 
 
-export async function getAllTokens(address: Address): Promise<TokenInfo[]> {
+async function getAllTokens(address: Address): Promise<TokenInfo[]> {
   const events = await getEvents();
   const tokens: TokenInfo[] = []
 
@@ -96,7 +96,7 @@ export async function getAllTokens(address: Address): Promise<TokenInfo[]> {
   })
 }
 
-export const poapGraph = {
+export default {
     mainnetGraph: mainnetSubgraph,
     xDaiGraph: xDaiSubgraph,
     getTokenInfo: getTokenInfo,

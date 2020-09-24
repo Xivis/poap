@@ -73,13 +73,12 @@ import {
   isEventEditable, getAllTokens, getTokenInfo
 } from './eth/helpers';
 
-import {
-  poapGraph
-} from './plugins/thegraph-utils';
+import poapGraph from './plugins/thegraph-utils';
 
 import {
   Omit, Claim, PoapEvent, PoapFullEvent, TransactionStatus, Address,
-  NotificationType, Notification, ClaimQR, UserRole, FullEventTemplate
+  NotificationType, Notification, ClaimQR, UserRole, FullEventTemplate,
+  Layer
 } from './types';
 import { TypedValue } from 'eth-crypto';
 import crypto from 'crypto';
@@ -709,7 +708,7 @@ export default async function routes(fastify: FastifyInstance) {
         qr_claim.delegated_mint = true
 
       } else {
-        const tx_mint = await mintToken(qr_claim.event.id, parsed_address, false);
+        const tx_mint = await mintToken(qr_claim.event.id, parsed_address, false, {layer: Layer.layer2});
         if (!tx_mint || !tx_mint.hash) {
           await unclaimQrClaim(req.body.qr_hash);
           return new createError.InternalServerError('There was a problem in token mint');

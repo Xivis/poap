@@ -26,6 +26,7 @@ import {
   Signer,
   TransactionStatus,
   OperationType,
+  Layer
 } from '../types';
 
 const Logger = pino();
@@ -37,16 +38,16 @@ export function getABI(name: string) {
 
 const ABI = getABI('Poap');
 
-export function getContract(wallet: Wallet): Poap {
-  const env = getEnv();
+export function getContract(wallet: Wallet, extraParams?: any): Poap {
+  const env = getEnv(extraParams);
   return new Contract(env.poapAddress, ABI, wallet) as Poap;
 }
 
 /**
  * Get an available helper signer in order to sign a new requested transaction
  */
-export async function getHelperSigner(requiredBalance: number = 0): Promise<null | Wallet> {
-  const env = getEnv();
+export async function getHelperSigner(requiredBalance: number = 0, extraParams?: any): Promise<null | Wallet> {
+  const env = getEnv(extraParams);
   let signers: null | Signer[] = await getAvailableHelperSigners();
 
   let wallet: null | Wallet = null;
@@ -82,8 +83,8 @@ export async function getHelperSigner(requiredBalance: number = 0): Promise<null
 /**
  * Get an available helper signer in order to sign a new requested transaction
  */
-export async function getSignerWallet(address: Address): Promise<Wallet> {
-  const env = getEnv();
+export async function getSignerWallet(address: Address, extraParams?: any): Promise<Wallet> {
+  const env = getEnv(extraParams);
   const signer: null | Signer = await getSigner(address);
   if (signer) {
     const wallet = env.poapHelpers[signer.signer.toLowerCase()];
@@ -109,12 +110,12 @@ export function estimateMintingGas(n: number) {
 /**
  * Get current gas price from Poap Settings singleton
  */
-export async function getCurrentGasPrice(address: string) {
+export async function getCurrentGasPrice(address: string, layer?: Layer) {
   // Default gas price (to be used only when no gas-price configuration detected)
   let gasPrice = 5e9;
 
   // Get defined gasPrice for selected signer
-  let signer: Signer | null = await getSigner(address);
+  let signer: Signer | null = await getSigner(address, layer);
   if (signer) {
     if (signer.gas_price) {
       return parseInt(signer.gas_price);
@@ -131,7 +132,7 @@ export async function getCurrentGasPrice(address: string) {
 }
 
 export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
-  const env = getEnv();
+  const env = getEnv(extraParams);
   let estimate_mint_gas = 1;
   let signerWallet: Wallet;
   let gasPrice: number = 0;
@@ -141,18 +142,18 @@ export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
 
   // Use extraParams signer if it's specified in extraParams
   if (extraParams && extraParams.signer) {
-    signerWallet = await getSignerWallet(extraParams.signer.toLowerCase());
+    signerWallet = await getSignerWallet(extraParams.signer.toLowerCase(), extraParams);
   } else if (onlyAdminSigner) {
     signerWallet = env.poapAdmin;
   } else {
-    const helperWallet = await getHelperSigner(gasPrice);
+    const helperWallet = await getHelperSigner(gasPrice, extraParams);
     signerWallet = helperWallet ? helperWallet : env.poapAdmin;
   }
-
-  const contract = getContract(signerWallet);
+  console.log(signerWallet);
+  const contract = getContract(signerWallet, extraParams);
 
   if (gasPrice == 0) {
-    gasPrice = await getCurrentGasPrice(signerWallet.address);
+    gasPrice = await getCurrentGasPrice(signerWallet.address, env.layer);
   }
 
   if (extraParams && extraParams.estimate_mint_gas) {
@@ -168,7 +169,7 @@ export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
   if (extraParams && 'nonce' in extraParams && Number.isFinite(extraParams.nonce) && extraParams.nonce >= 0) {
     transactionParams.nonce = extraParams.nonce;
   } else  {
-    const lastTransaction = await getLastSignerTransaction(signerWallet.address);
+    const lastTransaction = await getLastSignerTransaction(signerWallet.address, env.layer);
     if (lastTransaction && lastTransaction.nonce > 0) {
       console.log(`>> Last tx: ${lastTransaction.tx_hash} (${lastTransaction.nonce})`);
       transactionParams.nonce = lastTransaction.nonce + 1
@@ -185,12 +186,16 @@ export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
 
 async function processTransaction(tx: ContractTransaction, txObj: any, operation: string, args: string, awaitTx: boolean, extraParams: any) {
   let saveTx: boolean = true;
+  let layer: Layer = Layer.layer1;
   if (!tx.hash) return;
-
   if (extraParams && 'original_tx' in extraParams) {
     if (extraParams.original_tx.toLowerCase() === tx.hash.toLowerCase()) {
       saveTx = false;
     }
+  }
+
+  if (extraParams && extraParams.layer) {
+    layer = extraParams.layer;
   }
 
   if (saveTx) {
@@ -201,7 +206,8 @@ async function processTransaction(tx: ContractTransaction, txObj: any, operation
       args,
       txObj.signerWallet.address,
       TransactionStatus.pending,
-      txObj.transactionParams.gasPrice.toString()
+      txObj.transactionParams.gasPrice.toString(),
+      layer
     );
   }
 

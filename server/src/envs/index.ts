@@ -1,10 +1,11 @@
 import { Provider, InfuraProvider, JsonRpcProvider } from 'ethers/providers';
 // import { Wallet, getDefaultProvider } from 'ethers';
 import { Wallet } from 'ethers';
-import { Address } from '../types';
+import { Address, Layer } from '../types';
 
 export interface EnvVariables {
   provider: Provider;
+  layer: Layer;
   poapAdmin: Wallet;
   poapAddress: Address;
   poapVoteAddress: Address;
@@ -58,10 +59,9 @@ function ensureEnvVariable(name: string): string {
   return process.env[name]!;
 }
 
-export default function getEnv(): EnvVariables {
+function getL1Provider(): Provider {
   let provider: Provider;
   let envProvider = ensureEnvVariable('PROVIDER');
-
   if(envProvider == 'infura') {
     const infuraNet = ensureEnvVariable('ETH_NETWORK');
     const infuraPK = ensureEnvVariable('INFURA_PK');
@@ -75,12 +75,47 @@ export default function getEnv(): EnvVariables {
     const provider_url = ensureEnvVariable('PROVIDER_RPC_URL');
     provider = new JsonRpcProvider(provider_url, network);
   }
+  return provider;
+}
 
+function getL2Provider(): Provider {
+  let provider: Provider;
+  let envProvider = ensureEnvVariable('L2_PROVIDER');
+
+  if(envProvider == 'local') {
+    provider = new JsonRpcProvider('http://localhost:8545');
+  } else {
+    const provider_url = ensureEnvVariable('L2_PROVIDER_RPC_URL');
+    provider = new JsonRpcProvider(provider_url);
+  }
+
+  return provider;
+}
+
+function getProvider(layer?: Layer): Provider {
+  if (layer && layer === Layer.layer2) {
+    return getL2Provider()
+  }
+  return getL1Provider()
+} 
+
+export default function getEnv(extraParams?: any): EnvVariables {
+  let layer: Layer = Layer.layer1;
+  let poapAddress = ensureEnvVariable('POAP_CONTRACT_ADDR');
+
+  if(extraParams && extraParams.layer === Layer.layer2) {
+    layer = extraParams.layer;
+    poapAddress = ensureEnvVariable('L2_POAP_CONTRACT_ADDR');
+  }
+
+  const provider = getProvider(layer);
+  
   const ownerPK = ensureEnvVariable('POAP_OWNER_PK');
 
   return {
     provider,
-    poapAddress: ensureEnvVariable('POAP_CONTRACT_ADDR'),
+    layer,
+    poapAddress: poapAddress,
     poapVoteAddress: ensureEnvVariable('POAP_VOTE_CONTRACT_ADDR'),
     poapAdmin: new Wallet(ownerPK, provider),
     poapHelpers: getHelperWallets(provider),

@@ -112,6 +112,7 @@ export interface Transaction {
   status: TransactionStatus;
   gas_price: string;
   created_date: Date;
+  layer: Layer;
 }
 
 export interface ClaimQR {
@@ -214,4 +215,9 @@ export interface UnlockTask extends Task{
 
 export enum Services {
   unlockProtocol = 'unlock-protocol',
+}
+
+export enum Layer {
+  layer1 = 'Layer1',
+  layer2 = 'Layer2',
 }
