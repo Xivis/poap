@@ -40,12 +40,8 @@ function formatDate(dbDate: string): string {
   return format(new Date(dbDate), 'DD-MMM-YYYY');
 }
 
-export async function getEvents(ids?: number[] | string[]): Promise<PoapEvent[]> {
-  let events = 'SELECT ' + publicEventColumns + ' FROM events ORDER BY start_date DESC'
-  if (ids) {
-    events += 'WHERE id IN ${ids}'
-  }
-  const res = await db.manyOrNone<PoapEvent>(events, {ids: ids});
+export async function getEvents(): Promise<PoapEvent[]> {
+  const res = await db.manyOrNone<PoapEvent>('SELECT ' + publicEventColumns + ' FROM events ORDER BY start_date DESC');
   return res.map(event => {
     return {
       ...event,
