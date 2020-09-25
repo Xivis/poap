@@ -637,13 +637,11 @@ export async function getClaimHash(hash: string): Promise<HashClaim> {
 export async function postClaimHash(
   qr_hash: string,
   address: string,
-  secret: string,
-  method: string
+  secret: string
 ): Promise<HashClaim> {
-  let delegated = method === 'web3';
   return fetchJson(`${API_BASE}/actions/claim-qr`, {
     method: 'POST',
-    body: JSON.stringify({ qr_hash, address, secret, delegated }),
+    body: JSON.stringify({ qr_hash, address, secret }),
     headers: { 'Content-Type': 'application/json' },
   });
 }

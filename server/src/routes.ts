@@ -45,7 +45,6 @@ import {
   createQrClaims,
   checkNumericIdExists,
   checkQrHashExists,
-  updateDelegatedQrClaim,
   getEventTemplate,
   getPaginatedEventTemplates,
   getTotalEventTemplates,
@@ -69,7 +68,6 @@ import {
   checkAddress,
   getTokenImg,
   getAllEventIds,
-  signMessage,
   isEventEditable, getAllTokens, getTokenInfo
 } from './eth/helpers';
 
@@ -80,7 +78,6 @@ import {
   NotificationType, Notification, ClaimQR, UserRole, FullEventTemplate,
   Layer
 } from './types';
-import { TypedValue } from 'eth-crypto';
 import crypto from 'crypto';
 import getEnv from './envs';
 import * as admin from 'firebase-admin';
@@ -95,6 +92,7 @@ function buildMetadataJson(homeUrl: string, tokenUrl: string, ev: PoapEvent) {
     external_url: tokenUrl,
     home_url: homeUrl,
     image_url: ev.image_url,
+    image: ev.image_url,
     name: ev.name,
     year: ev.year,
     tags: ['poap', 'event'],
@@ -336,9 +334,10 @@ export default async function routes(fastify: FastifyInstance) {
       try {
         return await poapGraph.getAllTokens(address);
       } catch(e) {
-        console.log('The Graph Query error')
+        console.log('The Graph Query error');
+        console.log(e)
       }
-      return await getAllTokens(address);   
+      return await getAllTokens(address);
     }
   );
 
@@ -601,8 +600,7 @@ export default async function routes(fastify: FastifyInstance) {
           properties: {
             address: { type: 'string' },
             qr_hash: { type: 'string' },
-            secret: { type: 'string' },
-            delegated: { type: 'boolean' }
+            secret: { type: 'string' }
           }
         },
         response: {
@@ -685,43 +683,25 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.BadRequest('Address is not valid');
       }
 
-      const dual_qr_claim = await checkDualQrClaim(qr_claim.event.id, parsed_address, qr_claim.delegated_mint);
+      const dual_qr_claim = await checkDualQrClaim(qr_claim.event.id, parsed_address);
       if (!dual_qr_claim) {
         await unclaimQrClaim(req.body.qr_hash);
         return new createError.BadRequest('Address already claimed a code for this event');
       }
 
-      // Check if the claim is delegated
-      if (qr_claim.delegated_mint || req.body.delegated) {
-        // get signed message
-        let params: TypedValue[] = [
-          {type: "uint256", value: event.id},
-          {type: "address", value: parsed_address.toLowerCase()}
-        ];
-        let message = signMessage(env.poapAdmin.privateKey, params);
-
-        // update database
-        await updateDelegatedQrClaim(req.body.qr_hash, parsed_address, req.body.address, message);
-
-        // update qr_claim to return
-        qr_claim.delegated_signed_message = message
-        qr_claim.delegated_mint = true
-
-      } else {
-        const tx_mint = await mintToken(qr_claim.event.id, parsed_address, false, {layer: Layer.layer2});
-        if (!tx_mint || !tx_mint.hash) {
-          await unclaimQrClaim(req.body.qr_hash);
-          return new createError.InternalServerError('There was a problem in token mint');
-        }
-
-        let set_qr_claim_hash = await updateQrClaim(req.body.qr_hash, parsed_address, req.body.address, tx_mint);
-        if (!set_qr_claim_hash) {
-          return new createError.InternalServerError('There was a problem saving tx_hash');
-        }
-
-        qr_claim.tx_hash = tx_mint.hash
-        qr_claim.signer = tx_mint.from
+      const tx_mint = await mintToken(qr_claim.event.id, parsed_address, false, {layer: Layer.layer2});
+      if (!tx_mint || !tx_mint.hash) {
+        await unclaimQrClaim(req.body.qr_hash);
+        return new createError.InternalServerError('There was a problem in token mint');
       }
+
+      let set_qr_claim_hash = await updateQrClaim(req.body.qr_hash, parsed_address, req.body.address, tx_mint);
+      if (!set_qr_claim_hash) {
+        return new createError.InternalServerError('There was a problem saving tx_hash');
+      }
+
+      qr_claim.tx_hash = tx_mint.hash
+      qr_claim.signer = tx_mint.from
 
       qr_claim.beneficiary = parsed_address
       qr_claim.tx_status = null

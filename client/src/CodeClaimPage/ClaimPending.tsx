@@ -2,14 +2,14 @@ import React, { useEffect } from 'react';
 
 /* Helpers */
 import { HashClaim } from '../api';
+import { blockExplorerLinks } from '../lib/constants';
 
 /* Components */
-import { LinkButton } from '../components/LinkButton';
 
+import { LinkButton } from '../components/LinkButton';
 /* Assets */
 import Spinner from '../images/etherscan-spinner.svg';
 import ClaimFooterMessage from './ClaimFooterMessage';
-import { etherscanLinks } from '../lib/constants';
 
 /*
  * @dev: Component to show user that transactions is being mined
@@ -21,7 +21,7 @@ const ClaimPending: React.FC<{ claim: HashClaim; checkClaim: (hash: string) => v
   useEffect(() => {
     const interval = setInterval(() => {
       checkClaim(claim.qr_hash);
-    }, 10000);
+    }, 1000);
     return () => clearInterval(interval);
   }, []); /* eslint-disable-line react-hooks/exhaustive-deps */
 
@@ -33,11 +33,11 @@ const ClaimPending: React.FC<{ claim: HashClaim; checkClaim: (hash: string) => v
         Pending
       </div>
       <div className={'text-info'}>
-        Come back in a few minutes to check the status, or follow the transaction on Etherscan
+        Come back in a few minutes to check the status, or follow the transaction on the block explorer
       </div>
       <LinkButton
-        text={'View on Etherscan'}
-        link={etherscanLinks.tx(claim.tx_hash)}
+        text={'View Transaction'}
+        link={blockExplorerLinks.tx(claim.tx_hash)}
         extraClass={'link-btn'}
         target={'_blank'}
       />

@@ -25,7 +25,7 @@ export const TemplatePreview: FC<Props> = ({ template }) => {
     <div className={'code-claim-page'}>
       <TemplateClaimHeader title={title} image={image} claimed={false} template={template} />
       <div className="claim-body template">
-        <ClaimForm template={template} onSubmit={() => false} method="POST" />
+        <ClaimForm template={template} onSubmit={() => false} />
       </div>
       <TemplateClaimFooter template={template} />
     </div>

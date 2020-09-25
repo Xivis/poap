@@ -149,7 +149,7 @@ export async function getTxObj(onlyAdminSigner: boolean, extraParams?: any) {
     const helperWallet = await getHelperSigner(gasPrice, extraParams);
     signerWallet = helperWallet ? helperWallet : env.poapAdmin;
   }
-  console.log(signerWallet);
+
   const contract = getContract(signerWallet, extraParams);
 
   if (gasPrice == 0) {
@@ -388,7 +388,7 @@ export async function getLayerTokenInfo(tokenId: string | number, layer: Layer):
     tokenId: tokenId.toString(),
     owner,
   };
-} 
+}
 
 export async function getTokenInfo(tokenId: string | number): Promise<TokenInfo> {
   let token: TokenInfo;

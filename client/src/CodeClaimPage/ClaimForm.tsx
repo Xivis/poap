@@ -25,10 +25,9 @@ type QRFormValues = {
 
 const ClaimForm: React.FC<{
   claim?: HashClaim;
-  method: string;
   template?: Template;
   onSubmit: (claim: HashClaim) => void;
-}> = ({ claim, onSubmit, method, template }) => {
+}> = ({ claim, onSubmit, template }) => {
   const [enabledWeb3, setEnabledWeb3] = useState<boolean | null>(null);
   const [account, setAccount] = useState<string>('');
 
@@ -59,8 +58,7 @@ const ClaimForm: React.FC<{
         const newClaim = await postClaimHash(
           claim.qr_hash.toLowerCase(),
           values.address.toLowerCase(),
-          claim.secret,
-          method
+          claim.secret
         );
 
         onSubmit(newClaim);
