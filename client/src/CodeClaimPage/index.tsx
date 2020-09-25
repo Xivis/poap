@@ -2,13 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { RouteComponentProps } from 'react-router';
 
 /* Helpers */
-import { HashClaim, getClaimHash } from '../api';
+import { HashClaim, getClaimHash, getTokensFor } from '../api';
 
 /* Components*/
 import ClaimHeader from './ClaimHeader';
 import QRHashForm from './QRHashForm';
 import ClaimLoading from './ClaimLoading';
 import ClaimForm from './ClaimForm';
+import ClaimBlocked from './ClaimBlocked';
 import ClaimPending from './ClaimPending';
 import ClaimFinished from './ClaimFinished';
 import ClaimBumped from './ClaimBumped';
@@ -27,6 +28,8 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
   const [claim, setClaim] = useState<null | HashClaim>(null);
   const [claimError, setClaimError] = useState<boolean>(false);
   const [isClaimLoading, setIsClaimLoading] = useState<boolean>(false);
+  const [isVerified, setIsVerified] = useState<boolean>(false);
+  const [beneficiaryHasToken, setBeneficiaryHasToken] = useState<boolean>(false);
 
   let { hash } = match.params;
   let title = 'POAP Claim';
@@ -35,6 +38,13 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
   useEffect(() => {
     if (hash) fetchClaim(hash);
   }, []); /* eslint-disable-line react-hooks/exhaustive-deps */
+
+  useEffect(() => {
+    console.log('please verity');
+    if (claim && !isVerified) {
+      checkUserTokens();
+    }
+  }, [claim]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   const fetchClaim = (hash: string) => {
     setIsClaimLoading(true);
@@ -49,13 +59,30 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
       .finally(() => setIsClaimLoading(false));
   };
 
+  const checkUserTokens = () => {
+    if (!claim || !claim.beneficiary) {
+      setIsVerified(true);
+      return;
+    }
+    getTokensFor(claim.beneficiary)
+      .then((tokens) => {
+        const hasToken = tokens.filter((token) => token.event.id === claim.event_id).length > 0;
+        if (hasToken) {
+          setBeneficiaryHasToken(true);
+        }
+      })
+      .finally(() => {
+        setIsVerified(true);
+      });
+  };
+
   const continueClaim = (claim: HashClaim) => {
     setClaim(claim);
   };
 
   let body = <QRHashForm loading={isClaimLoading} checkClaim={fetchClaim} error={claimError} />;
 
-  if (claim) {
+  if (claim && isVerified) {
     body = <ClaimForm claim={claim} onSubmit={continueClaim} />;
 
     title = claim.event.name;
@@ -63,11 +90,16 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
       image = claim.event.image_url;
     }
     if (claim.claimed) {
+
+      if (!claim.tx_status && !beneficiaryHasToken) {
+        body = <ClaimBlocked claim={claim} />
+      }
+
       // POAP minting
       if (claim.tx_status && claim.tx_status === TX_STATUS.pending) {
         body = <ClaimPending claim={claim} checkClaim={fetchClaim} />;
       }
-      if (claim.tx_status && claim.tx_status === TX_STATUS.passed) {
+      if ((claim.tx_status && claim.tx_status === TX_STATUS.passed) || beneficiaryHasToken)  {
         body = <ClaimFinished claim={claim} />;
       }
       if (claim.tx_status && claim.tx_status === TX_STATUS.bumped) {
@@ -76,7 +108,7 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
     }
   }
 
-  if (hash && !claim && !claimError) {
+  if ((hash && !claim && !claimError) || !isVerified) {
     body = <ClaimLoading />;
   }
 

@@ -39,7 +39,23 @@ module.exports = {
       },
       gas: 5000000,
       gasPrice: 5e9,
-      network_id: 3,
+      network_id: 77,
+    },
+    xdai: {
+      // address: 0xe583f95bF95d0883F94EfE844442C8bfc9dd7A7F
+      provider: function() {
+        if (!process.env.POAP_XDAI_PK) {
+          console.error('POAP_XDAI_PK env variable is needed');
+          process.abort();
+        }
+        return new HDWalletProvider(
+          process.env.POAP_XDAI_PK,
+          "https://dai.poa.network"
+        );
+      },
+      gas: 5000000,
+      gasPrice: 5e9,
+      network_id: 100,
     },
     mainnet: {
       // address: 0xe583f95bF95d0883F94EfE844442C8bfc9dd7A7F
