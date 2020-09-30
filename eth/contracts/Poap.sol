@@ -37,7 +37,7 @@ contract Poap is Initializable, ERC721, ERC721Enumerable, PoapRoles, PoapPausabl
 
 
     bytes4 private constant _INTERFACE_ID_ERC721_METADATA = 0x5b5e139f;
-    
+
     /**
      * @dev Gets the token name
      * @return string representing the token name
@@ -100,8 +100,8 @@ contract Poap is Initializable, ERC721, ERC721Enumerable, PoapRoles, PoapPausabl
      * @param to The address that will receive the minted tokens.
      * @return A boolean that indicates if the operation was successful.
      */
-    function mintToken(uint256 eventId, address to) 
-        public whenNotPaused onlyEventMinter(eventId) returns (bool) 
+    function mintToken(uint256 eventId, address to)
+        public whenNotPaused onlyEventMinter(eventId) returns (bool)
     {
         lastId += 1;
         return _mintToken(eventId, lastId, to);
@@ -113,12 +113,12 @@ contract Poap is Initializable, ERC721, ERC721Enumerable, PoapRoles, PoapPausabl
      * @param to The address that will receive the minted tokens.
      * @return A boolean that indicates if the operation was successful.
      */
-    function mintEventToManyUsers(uint256 eventId, address[] memory to) 
-        public whenNotPaused onlyEventMinter(eventId) returns (bool) 
+    function mintEventToManyUsers(uint256 eventId, address[] memory to)
+        public whenNotPaused onlyEventMinter(eventId) returns (bool)
     {
         for (uint256 i = 0; i < to.length; ++i) {
             _mintToken(eventId, lastId + 1 + i, to[i]);
-        }        
+        }
         lastId += to.length;
         return true;
     }
@@ -129,12 +129,12 @@ contract Poap is Initializable, ERC721, ERC721Enumerable, PoapRoles, PoapPausabl
      * @param to The address that will receive the minted tokens.
      * @return A boolean that indicates if the operation was successful.
      */
-    function mintUserToManyEvents(uint256[] memory eventIds, address to) 
-        public whenNotPaused onlyAdmin() returns (bool) 
+    function mintUserToManyEvents(uint256[] memory eventIds, address to)
+        public whenNotPaused onlyAdmin() returns (bool)
     {
         for (uint256 i = 0; i < eventIds.length; ++i) {
             _mintToken(eventIds[i], lastId + 1 + i, to);
-        }        
+        }
         lastId += eventIds.length;
         return true;
     }
@@ -146,14 +146,14 @@ contract Poap is Initializable, ERC721, ERC721Enumerable, PoapRoles, PoapPausabl
     function burn(uint256 tokenId) public {
         require(_isApprovedOrOwner(msg.sender, tokenId) || isAdmin(msg.sender));
         _burn(tokenId);
-    }    
+    }
 
-    function initialize(string memory __name, string memory __symbol, string memory __baseURI, address[] memory admins) 
-        public initializer 
+    function initialize(string memory __name, string memory __symbol, string memory __baseURI, address[] memory admins)
+        public initializer
     {
         ERC721.initialize();
         ERC721Enumerable.initialize();
-        PoapRoles.initialize(msg.sender); 
+        PoapRoles.initialize(msg.sender);
         PoapPausable.initialize();
 
         // Add the requested admins
@@ -164,7 +164,7 @@ contract Poap is Initializable, ERC721, ERC721Enumerable, PoapRoles, PoapPausabl
         _name = __name;
         _symbol = __symbol;
         _baseURI = __baseURI;
-        
+
         // register the supported interfaces to conform to ERC721 via ERC165
         _registerInterface(_INTERFACE_ID_ERC721_METADATA);
     }
@@ -172,7 +172,7 @@ contract Poap is Initializable, ERC721, ERC721Enumerable, PoapRoles, PoapPausabl
     /**
      * @dev Internal function to burn a specific token
      * Reverts if the token does not exist
-     * 
+     *
      * @param owner owner of the token to burn
      * @param tokenId uint256 ID of the token being burned by the msg.sender
      */
@@ -180,7 +180,7 @@ contract Poap is Initializable, ERC721, ERC721Enumerable, PoapRoles, PoapPausabl
         super._burn(owner, tokenId);
 
         delete _tokenEvent[tokenId];
-    }    
+    }
 
     /**
      * @dev Function to mint tokens
@@ -224,8 +224,8 @@ contract Poap is Initializable, ERC721, ERC721Enumerable, PoapRoles, PoapPausabl
      * @dev Function to concat strings
      * Taken from https://github.com/oraclize/ethereum-api/blob/master/oraclizeAPI_0.5.sol
      */
-    function _strConcat(string memory _a, string memory _b, string memory _c, string memory _d, string memory _e) 
-        internal pure returns (string memory _concatenatedString) 
+    function _strConcat(string memory _a, string memory _b, string memory _c, string memory _d, string memory _e)
+        internal pure returns (string memory _concatenatedString)
     {
         bytes memory _ba = bytes(_a);
         bytes memory _bb = bytes(_b);
@@ -252,6 +252,10 @@ contract Poap is Initializable, ERC721, ERC721Enumerable, PoapRoles, PoapPausabl
             babcde[k++] = _be[i];
         }
         return string(babcde);
+    }
+
+    function removeAdmin(address account) public onlyAdmin {
+        _removeAdmin(account);
     }
 
 }
