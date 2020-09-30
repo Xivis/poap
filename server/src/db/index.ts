@@ -101,14 +101,14 @@ export async function getSigner(address: string, layer: Layer = Layer.layer1): P
   return res;
 }
 
-export async function getAvailableHelperSigners(): Promise<null | Signer[]> {
+export async function getAvailableHelperSigners(layer: Layer = Layer.layer1): Promise<null | Signer[]> {
   const res = await db.manyOrNone(`
     SELECT s.id, s.signer, SUM(case when st.status = 'pending' then 1 else 0 end) as pending_tx
     FROM signers s LEFT JOIN server_transactions st on LOWER(s.signer) = LOWER(st.signer)
-    WHERE s.role != 'administrator'
+    WHERE s.role != 'administrator' AND layer = $1
     GROUP BY s.id, s.signer
     ORDER BY pending_tx, s.id ASC
-  `);
+  `, [layer]);
   return res;
 }
 

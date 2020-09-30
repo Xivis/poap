@@ -112,7 +112,7 @@ From root folder:
 
     cd eth/
     Update zos.json contracts from Poap to XPoap
-    npx zos session --network ropsten --from 0xe583f95bF95d0883F94EfE844442C8bfc9dd7A7F --expires 3600
+    npx zos session --network xdai --from 0xe583f95bF95d0883F94EfE844442C8bfc9dd7A7F --expires 3600
     npx zos push
     npx zos create XPoap --init initialize --args '"POAP","The Proof of Attendance Protocol","https://api.poap.xyz/metadata/",[]'
 
@@ -207,4 +207,3 @@ Steps:
         }```
 
  create user roles in auth0 using the role 'UserRole' in /server/src/types.ts
- 

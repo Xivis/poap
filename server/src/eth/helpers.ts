@@ -48,7 +48,9 @@ export function getContract(wallet: Wallet, extraParams?: any): Poap {
  */
 export async function getHelperSigner(requiredBalance: number = 0, extraParams?: any): Promise<null | Wallet> {
   const env = getEnv(extraParams);
-  let signers: null | Signer[] = await getAvailableHelperSigners();
+
+  // FIXME - is it querying with layer?
+  let signers: null | Signer[] = await getAvailableHelperSigners(env.layer);
 
   let wallet: null | Wallet = null;
 
