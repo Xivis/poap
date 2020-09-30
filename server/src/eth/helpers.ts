@@ -79,7 +79,7 @@ export async function getHelperSigner(requiredBalance: number = 0, extraParams?:
  */
 export async function getSignerWallet(address: Address, extraParams?: any): Promise<Wallet> {
   const env = getEnv(extraParams);
-  const signer: null | Signer = await getSigner(address);
+  const signer: null | Signer = await getSigner(address, env.layer);
   if (signer) {
     const wallet = env.poapHelpers[signer.signer.toLowerCase()];
     return wallet;

@@ -393,7 +393,8 @@ export default async function routes(fastify: FastifyInstance) {
 
       await mintEventToManyUsers(req.body.eventId, parsed_addresses, false, {
         'signer': req.body.signer_address,
-        'estimate_mint_gas': parsed_addresses.length
+        'estimate_mint_gas': parsed_addresses.length,
+        'layer': Layer.layer2
       });
       res.status(204);
       return;
@@ -436,7 +437,8 @@ export default async function routes(fastify: FastifyInstance) {
 
       await mintUserToManyEvents(req.body.eventIds, parsed_address, false, {
         'signer': req.body.signer_address,
-        'estimate_mint_gas': req.body.eventIds.length
+        'estimate_mint_gas': req.body.eventIds.length,
+        'layer': Layer.layer2
       });
       res.status(204);
       return;
