@@ -74,8 +74,11 @@ export async function getTotalTransactions(statusList: string[], signer: string 
   return res.rows[0].count;
 }
 
-export async function getSigners(): Promise<Signer[]> {
-  const res = await db.manyOrNone<Signer>('SELECT * FROM signers ORDER BY id ASC');
+export async function getSigners(layer: Layer = Layer.layer1): Promise<Signer[]> {
+  const res = await db.manyOrNone<Signer>(
+    'SELECT * FROM signers WHERE layer = ${layer} ORDER BY id ASC',
+    { layer }
+  );
   return res;
 }
 
@@ -105,7 +108,7 @@ export async function getAvailableHelperSigners(layer: Layer = Layer.layer1): Pr
   const res = await db.manyOrNone(`
     SELECT s.id, s.signer, SUM(case when st.status = 'pending' then 1 else 0 end) as pending_tx
     FROM signers s LEFT JOIN server_transactions st on LOWER(s.signer) = LOWER(st.signer)
-    WHERE s.role != 'administrator' AND layer = $1
+    WHERE s.role != 'administrator' AND st.layer = $1
     GROUP BY s.id, s.signer
     ORDER BY pending_tx, s.id ASC
   `, [layer]);
@@ -129,12 +132,14 @@ export async function getPendingTxs(): Promise<Transaction[]> {
   return res;
 }
 
-export async function getPendingTxsAmount(signer: Signer): Promise<Signer> {
+export async function getPendingTxsAmount(signer: Signer, layer: Layer = Layer.layer1): Promise<Signer> {
   const signer_address = signer.signer
   const status = TransactionStatus.pending;
-  const res = await db.result('SELECT COUNT(*) FROM server_transactions WHERE status = ${status} AND signer ILIKE ${signer_address}',
+  const res = await db.result(
+    'SELECT COUNT(*) FROM server_transactions WHERE status = ${status} AND layer = ${layer} AND signer ILIKE ${signer_address}',
     {
       status,
+      layer,
       signer_address
     });
   signer.pending_tx = res.rows[0].count;
