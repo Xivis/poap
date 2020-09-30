@@ -1,33 +1,26 @@
-import { Contract, ContractTransaction, Wallet, getDefaultProvider, utils } from 'ethers';
+import { Contract, ContractTransaction, getDefaultProvider, utils, Wallet } from 'ethers';
 import { verifyMessage } from 'ethers/utils';
 import { hash, sign, TypedValue } from 'eth-crypto';
 import { differenceInDays, isFuture } from 'date-fns';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import pino from 'pino';
+import poapGraph from '../plugins/thegraph-utils';
 import {
+  getAvailableHelperSigners,
   getEvent,
   getEvents,
-  getPoapSettingByName,
-  saveTransaction,
-  getSigner,
-  getAvailableHelperSigners,
   getLastSignerTransaction,
+  getPoapSettingByName,
+  getSigner,
   getTransaction,
+  saveTransaction,
+  updateBumpedQrClaim,
   updateTransactionStatus,
-  updateBumpedQrClaim
 } from '../db';
 import getEnv from '../envs';
 import { Poap } from './Poap';
-import {
-  Address,
-  Claim,
-  TokenInfo,
-  Signer,
-  TransactionStatus,
-  OperationType,
-  Layer
-} from '../types';
+import { Address, Claim, Layer, OperationType, Signer, TokenInfo, TransactionStatus } from '../types';
 
 const Logger = pino();
 const ABI_DIR = join(__dirname, '../../abi');
@@ -404,15 +397,14 @@ export async function getTokenInfo(tokenId: string | number): Promise<TokenInfo>
 }
 
 export async function getTokenImg(tokenId: string | number): Promise<null | string> {
-  const env = getEnv();
-  const contract = getContract(env.poapAdmin);
-  const eventId = await contract.functions.tokenEvent(tokenId);
-  const event = await getEvent(eventId.toNumber());
-  if (!event) {
-    return 'https://www.poap.xyz/events/badges/POAP.png'
+  let image_url = 'https://www.poap.xyz/events/badges/POAP.png';
+  try {
+    const token = await poapGraph.getTokenInfo(tokenId)
+    image_url = token.event.image_url
+  } catch (e) {
+    console.log('The Graph Query error');
   }
-
-  return event.image_url
+  return image_url;
 }
 
 export async function verifyClaim(claim: Claim): Promise<string | boolean> {
