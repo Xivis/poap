@@ -2,81 +2,92 @@ import { FastifyInstance } from 'fastify';
 import unidecode from 'unidecode';
 import createError from 'http-errors';
 import {
-  getEvent,
-  getEventByFancyId,
-  getFullEventByFancyId,
-  getEvents,
-  updateEvent,
-  createEvent,
-  saveEventUpdate,
-  getPoapSettingByName,
-  getPoapSettings,
-  updatePoapSettingByName,
-  getTransactions,
-  getTotalTransactions,
-  getSigners,
-  updateSignerGasPrice,
-  getQrClaim,
-  getTransaction,
-  claimQrClaim,
-  updateQrClaim,
   checkDualQrClaim,
-  getPendingTxsAmount,
-  unclaimQrClaim,
-  createTask,
-  getTaskCreator,
-  getNotifications,
-  getTotalNotifications,
-  createNotification,
-  getEventHost,
-  getRangeClaimedQr,
-  updateEventOnQrRange,
-  getEventHostQrRolls,
-  getRangeNotOwnedQr,
-  getTotalQrClaims,
-  getPaginatedQrClaims,
-  getClaimedQrsList,
-  getNotOwnedQrList,
-  updateQrClaims,
-  updateQrScanned,
-  getClaimedQrsHashList,
-  updateQrClaimsHashes,
-  getEventHostByPassphrase,
-  createQrClaims,
   checkNumericIdExists,
   checkQrHashExists,
-  getEventTemplate,
-  getPaginatedEventTemplates,
-  getTotalEventTemplates,
+  claimQrClaim,
+  createEvent,
   createEventTemplate,
-  getFullEventTemplateById,
+  createNotification,
+  createQrClaims,
+  createTask,
+  getClaimedQrsHashList,
+  getClaimedQrsList,
+  getEvent,
+  getEventByFancyId,
+  getEventHost,
+  getEventHostByPassphrase,
+  getEventHostQrRolls,
+  getEvents,
+  getEventTemplate,
   getEventTemplatesByName,
+  getFullEventByFancyId,
+  getFullEventTemplateById,
+  getNotifications,
+  getNotOwnedQrList,
+  getPaginatedEventTemplates,
+  getPaginatedQrClaims,
+  getPendingTxsAmount,
+  getPoapSettingByName,
+  getPoapSettings,
+  getQrClaim,
+  getRangeClaimedQr,
+  getRangeNotOwnedQr,
+  getSigners,
+  getTaskCreator,
+  getTotalEventTemplates,
+  getTotalNotifications,
+  getTotalQrClaims,
+  getTotalTransactions,
+  getTransaction,
+  getTransactions,
+  saveEventTemplateUpdate,
+  saveEventUpdate,
+  unclaimQrClaim,
+  updateEvent,
+  updateEventOnQrRange,
   updateEventTemplate,
-  saveEventTemplateUpdate
+  updatePoapSettingByName,
+  updateQrClaim,
+  updateQrClaims,
+  updateQrClaimsHashes,
+  updateQrScanned,
+  updateSignerGasPrice,
 } from './db';
 
 import {
-  mintToken,
-  mintEventToManyUsers,
-  verifyClaim,
-  mintUserToManyEvents,
-  burnToken,
   bumpTransaction,
-  getAddressBalance,
-  resolveName,
-  lookupAddress,
+  burnToken,
   checkAddress,
-  getTokenImg,
+  getAddressBalance,
   getAllEventIds,
-  isEventEditable, getAllTokens, getTokenInfo
+  getAllTokens,
+  getTokenImg,
+  getTokenInfo,
+  isEventEditable,
+  lookupAddress,
+  mintEventToManyUsers,
+  mintToken,
+  mintUserToManyEvents,
+  resolveName,
+  verifyClaim,
 } from './eth/helpers';
 
 import poapGraph from './plugins/thegraph-utils';
 
 import {
-  Omit, Claim, PoapEvent, PoapFullEvent, TransactionStatus, Address,
-  NotificationType, Notification, ClaimQR, UserRole, FullEventTemplate,
-  Layer
+  Address,
+  Claim,
+  ClaimQR,
+  FullEventTemplate,
+  Layer,
+  Notification,
+  NotificationType,
+  Omit,
+  PoapEvent,
+  PoapFullEvent,
+  TransactionStatus,
+  UserRole,
 } from './types';
 import crypto from 'crypto';
 import getEnv from './envs';
@@ -84,7 +95,7 @@ import * as admin from 'firebase-admin';
 import { uploadFile } from './plugins/google-storage-utils';
 import { getUserRoles } from './plugins/groups-decorator';
 import { sleep } from './utils';
-import { sendNewEventEmailToAdmins } from "./plugins/sendgrid-utils";
+import { sendNewEventEmailToAdmins } from './plugins/sendgrid-utils';
 
 function buildMetadataJson(homeUrl: string, tokenUrl: string, ev: PoapEvent) {
   return {
@@ -1473,13 +1484,13 @@ export default async function routes(fastify: FastifyInstance) {
     }
   },
     async (req, res) => {
-      let signers = await getSigners();
+      let signers = await getSigners(Layer.layer2);
 
       if (!signers) {
         return new createError.NotFound('Signers not found');
       }
-      signers = await Promise.all(signers.map(signer => getPendingTxsAmount(signer)));
-      signers = await Promise.all(signers.map(signer => getAddressBalance(signer)));
+      signers = await Promise.all(signers.map(signer => getPendingTxsAmount(signer, Layer.layer2)));
+      signers = await Promise.all(signers.map(signer => getAddressBalance(signer, {layer: Layer.layer2})));
 
       return signers
     });

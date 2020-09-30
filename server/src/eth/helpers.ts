@@ -42,13 +42,12 @@ export function getContract(wallet: Wallet, extraParams?: any): Poap {
 export async function getHelperSigner(requiredBalance: number = 0, extraParams?: any): Promise<null | Wallet> {
   const env = getEnv(extraParams);
 
-  // FIXME - is it querying with layer?
   let signers: null | Signer[] = await getAvailableHelperSigners(env.layer);
 
   let wallet: null | Wallet = null;
 
   if (signers) {
-    signers = await Promise.all(signers.map(signer => getAddressBalance(signer)));
+    signers = await Promise.all(signers.map(signer => getAddressBalance(signer, extraParams)));
     signers = signers.map(signer => {
       return {
         ...signer,
@@ -433,8 +432,8 @@ export async function verifyClaim(claim: Claim): Promise<string | boolean> {
   return true;
 }
 
-export async function getAddressBalance(signer: Signer): Promise<Signer> {
-  const env = getEnv();
+export async function getAddressBalance(signer: Signer, extraParams?: any): Promise<Signer> {
+  const env = getEnv(extraParams);
   let balance = await env.provider.getBalance(signer.signer);
 
   signer.balance = balance.toString();
