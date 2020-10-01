@@ -1,24 +1,26 @@
 import { format } from 'date-fns';
 import pgPromise from 'pg-promise';
 import {
+  Address,
+  ClaimQR,
+  eventHost,
+  EventTemplate,
+  FullEventTemplate,
+  Layer,
+  Notification,
+  NotificationType,
+  Omit,
   PoapEvent,
   PoapFullEvent,
   PoapSetting,
-  Omit,
+  qrRoll,
+  Services,
   Signer,
-  Address,
+  Task,
+  TaskCreator,
   Transaction,
   TransactionStatus,
-  ClaimQR,
-  Task,
   UnlockTask,
-  TaskCreator,
-  Services,
-  Notification,
-  NotificationType,
-  eventHost,
-  qrRoll,
-  EventTemplate, FullEventTemplate, Layer
 } from '../types';
 import { ContractTransaction } from 'ethers';
 
@@ -709,6 +711,12 @@ export async function updateEventTemplate(
       }
   );
   return res.rowCount === 1;
+}
+
+export async function getDelegatedClaims(): Promise<null | ClaimQR[]> {
+  return db.manyOrNone<ClaimQR>(
+    'SELECT * FROM qr_claims WHERE delegated_signed_message IS NOT NULL ORDER BY id DESC;'
+  );
 }
 
 export async function saveEventTemplateUpdate(eventTemplateId: number, field: string, newValue: string, oldValue: string, isAdmin: boolean): Promise<boolean> {
