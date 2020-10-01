@@ -1472,6 +1472,7 @@ export default async function routes(fastify: FastifyInstance) {
                     arguments: { type: 'string' },
                     status: { type: 'string' },
                     gas_price: { type: 'string' },
+                    layer: { type: 'string' },
                     created_date: { type: 'string' }
                   }
                 }

@@ -160,6 +160,7 @@ export interface Transaction {
   gas_price: string;
   signer: string;
   status: string;
+  layer: string;
 }
 export interface PaginatedTransactions {
   limit: number;

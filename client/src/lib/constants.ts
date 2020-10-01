@@ -136,6 +136,11 @@ const TX_STATUS = {
   bumped: 'bumped',
 };
 
+const LAYERS = {
+  layer1: 'Layer1',
+  layer2: 'Layer2',
+};
+
 const layerOneNetwork =
   process.env.REACT_APP_ETH_NETWORK === 'mainnet' ? '' : `${process.env.REACT_APP_ETH_NETWORK}.`;
 const layerTwoNetwork = process.env.REACT_APP_L2_ETH_NETWORK;
@@ -145,16 +150,18 @@ const etherscanLinks = {
   address: (address: string): string => `https://${layerOneNetwork}etherscan.io/address/${address}`,
 };
 
-const blockExplorerLinks = {
+const blockscoutLinks = {
   tx: (hash: string): string => `https://blockscout.com/poa/${layerTwoNetwork}/tx/${hash}`,
+  address: (address: string): string => `https://blockscout.com/poa/${layerTwoNetwork}/address/${address}`,
 };
 
 export {
   ROLES,
   ROUTES,
   TX_STATUS,
+  LAYERS,
   etherscanLinks,
-  blockExplorerLinks,
+  blockscoutLinks,
   LABELS,
   IMAGE_SUPPORTED_FORMATS,
   COLORS,

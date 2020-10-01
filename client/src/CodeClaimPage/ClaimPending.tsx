@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 
 /* Helpers */
 import { HashClaim } from '../api';
-import { blockExplorerLinks } from '../lib/constants';
+import { blockscoutLinks } from '../lib/constants';
 
 /* Components */
 
@@ -37,7 +37,7 @@ const ClaimPending: React.FC<{ claim: HashClaim; checkClaim: (hash: string) => v
       </div>
       <LinkButton
         text={'View Transaction'}
-        link={blockExplorerLinks.tx(claim.tx_hash)}
+        link={blockscoutLinks.tx(claim.tx_hash)}
         extraClass={'link-btn'}
         target={'_blank'}
       />

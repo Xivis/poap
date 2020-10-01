@@ -8,7 +8,7 @@ import { ErrorMessage, Field, FieldProps, Form, Formik, FormikActions } from 'fo
 
 /* Helpers */
 import { GasPriceSchema } from '../lib/schemas';
-import { TX_STATUS, etherscanLinks } from '../lib/constants';
+import { TX_STATUS, LAYERS, etherscanLinks, blockscoutLinks } from '../lib/constants';
 import { Transaction, getTransactions, bumpTransaction, AdminAddress, getSigners } from '../api';
 import { convertFromGWEI, convertToGWEI, reduceAddress } from '../lib/helpers';
 /* Components */
@@ -195,6 +195,7 @@ const TransactionsPage: FC = () => {
 
         {transactions &&
           transactions.map((tx, i) => {
+            const blockExplorer = tx.layer === LAYERS.layer1 ? etherscanLinks : blockscoutLinks;
             return (
               <div className={`row ${i % 2 === 0 ? 'even' : 'odd'}`} key={tx.id}>
                 <div className={'col-md-1 center'}>
@@ -203,13 +204,13 @@ const TransactionsPage: FC = () => {
                 </div>
                 <div className={'col-md-3'}>
                   <span className={'visible-sm'}>Tx: </span>
-                  <a href={etherscanLinks.tx(tx.tx_hash)} target={'_blank'}>
+                  <a href={blockExplorer.tx(tx.tx_hash)} target={'_blank'}>
                     {tx.tx_hash && reduceAddress(tx.tx_hash)}
                   </a>
                 </div>
                 <div className={'col-md-3'}>
                   <span className={'visible-sm'}>Signer: </span>
-                  <a href={etherscanLinks.address(tx.signer)} target={'_blank'}>
+                  <a href={blockExplorer.address(tx.signer)} target={'_blank'}>
                     {tx.signer && reduceAddress(tx.signer)}
                   </a>
                   <span className={'nonce'} title={'Nonce'}>{tx.nonce}</span>
