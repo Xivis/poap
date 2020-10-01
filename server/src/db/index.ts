@@ -108,7 +108,7 @@ export async function getAvailableHelperSigners(layer: Layer = Layer.layer1): Pr
   const res = await db.manyOrNone(`
     SELECT s.id, s.signer, SUM(case when st.status = 'pending' then 1 else 0 end) as pending_tx
     FROM signers s LEFT JOIN server_transactions st on LOWER(s.signer) = LOWER(st.signer)
-    WHERE s.role != 'administrator' AND st.layer = $1
+    WHERE s.role != 'administrator' AND s.layer = $1
     GROUP BY s.id, s.signer
     ORDER BY pending_tx, s.id ASC
   `, [layer]);

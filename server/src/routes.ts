@@ -66,6 +66,7 @@ import {
   getTokenInfo,
   isEventEditable,
   lookupAddress,
+  mintDeliveryToken,
   mintEventToManyUsers,
   mintToken,
   mintUserToManyEvents,
@@ -85,7 +86,7 @@ import {
   NotificationType,
   Omit,
   PoapEvent,
-  PoapFullEvent,
+  PoapFullEvent, Transaction,
   TransactionStatus,
   UserRole,
 } from './types';
@@ -729,6 +730,70 @@ export default async function routes(fastify: FastifyInstance) {
       }
 
       return qr_claim
+    }
+  );
+
+  fastify.post(
+    '/actions/claim-delivery',
+    {
+      schema: {
+        description: 'Mint tokens that were registered in a poap delivery contract',
+        tags: ['Actions',],
+        body: {
+          type: 'object',
+          required: ['contract', 'index', 'recipient', 'events', 'proofs'],
+          properties: {
+            contract: { type: 'string' },
+            index: { type: 'number' },
+            recipient: { type: 'string' },
+            events: { type: 'array' },
+            proofs: { type: 'array' },
+          },
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              tx_hash: { type: 'string' },
+              beneficiary: { type: 'string' },
+              signer: { type: 'string' },
+              created_date: { type: 'string' },
+              tx_status: { type: 'string' },
+              layer: { type: 'string' },
+            }
+          }
+        },
+      },
+    },
+    async (req, res) => {
+      const { contract, index, recipient, events, proofs} = req.body;
+      let tx: Transaction | null = null;
+
+      const parsed_address = await checkAddress(recipient);
+
+      if (!parsed_address) {
+        return new createError.BadRequest('Address is not valid');
+      }
+
+      const tx_mint = await mintDeliveryToken(contract, index, parsed_address, events, proofs, true, {layer: Layer.layer2});
+
+      if (tx_mint && tx_mint.hash) {
+        tx = await getTransaction(tx_mint.hash);
+      }
+
+      if(!tx) {
+        return new createError.InternalServerError('There was a problem in token mint');
+      }
+
+      res.status(200);
+      return {
+        tx_hash: tx.tx_hash,
+        beneficiary: parsed_address,
+        signer: tx.signer,
+        created_date: tx.created_date,
+        tx_status: tx.status,
+        layer: tx.layer,
+      };
     }
   );
 

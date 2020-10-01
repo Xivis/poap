@@ -4,6 +4,7 @@ export type Address = string;
 
 export enum OperationType {
   mintToken = 'mintToken',
+  mintDeliveryToken = 'mintDeliveryToken',
   mintEventToManyUsers = 'mintEventToManyUsers',
   mintUserToManyEvents = 'mintUserToManyEvents',
   burnToken = 'burnToken',

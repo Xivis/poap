@@ -29,11 +29,13 @@ export function getABI(name: string) {
   return JSON.parse(readFileSync(join(ABI_DIR, `${name}.json`)).toString());
 }
 
-const ABI = getABI('Poap');
+const POAP_ABI = getABI('Poap');
+
+const POAP_DELIVERY_ABI = getABI('PoapDelivery');
 
 export function getContract(wallet: Wallet, extraParams?: any): Poap {
   const env = getEnv(extraParams);
-  return new Contract(env.poapAddress, ABI, wallet) as Poap;
+  return new Contract(env.poapAddress, POAP_ABI, wallet) as Poap;
 }
 
 /**
@@ -240,6 +242,36 @@ export async function mintUserToManyEvents(eventIds: number[], toAddr: Address, 
   const txObj = await getTxObj(true, extraParams);
   const tx = await txObj.contract.functions.mintUserToManyEvents(eventIds, toAddr, txObj.transactionParams);
   await processTransaction(tx, txObj, OperationType.mintUserToManyEvents, JSON.stringify({ eventIds, toAddr }), awaitTx, extraParams);
+}
+
+export async function mintDeliveryToken(contract: Address, index: number, recipient: Address, events: number[], proofs: string[], awaitTx: boolean = true, extraParams?: any): Promise<null | ContractTransaction> {
+  let tx: ContractTransaction;
+  let txObj: any;
+
+  try {
+    txObj = await getTxObj(false, {
+      ...extraParams,
+      estimate_mint_gas: events.length
+    });
+    // Instantiate the poap delivery contract
+    const deliveryContract = new Contract(contract, POAP_DELIVERY_ABI, txObj.signerWallet);
+    tx = await deliveryContract.functions.claim(index, recipient, events, proofs, txObj.transactionParams);
+  }
+  catch (error) {
+    console.error(error);
+    return null;
+  }
+
+  await processTransaction(
+    tx,
+    txObj,
+    OperationType.mintDeliveryToken,
+    JSON.stringify([index, recipient, events, proofs]),
+    awaitTx,
+    extraParams
+  );
+
+  return tx;
 }
 
 export async function burnToken(tokenId: string | number, awaitTx: boolean = true, extraParams?: any): Promise<boolean> {
