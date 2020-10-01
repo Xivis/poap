@@ -255,6 +255,12 @@ export async function mintDeliveryToken(contract: Address, index: number, recipi
     });
     // Instantiate the poap delivery contract
     const deliveryContract = new Contract(contract, POAP_DELIVERY_ABI, txObj.signerWallet);
+    const claimed = await deliveryContract.functions.claimed(recipient);
+
+    if(claimed) {
+      return null;
+    }
+
     tx = await deliveryContract.functions.claim(index, recipient, events, proofs, txObj.transactionParams);
   }
   catch (error) {
