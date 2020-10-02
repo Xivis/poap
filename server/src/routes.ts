@@ -775,7 +775,7 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.BadRequest('Address is not valid');
       }
 
-      const tx_mint = await mintDeliveryToken(contract, index, parsed_address, events, proofs, true, {
+      const tx_mint = await mintDeliveryToken(contract, index, parsed_address, events, proofs, false, {
           layer: Layer.layer2
         });
 

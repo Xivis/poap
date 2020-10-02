@@ -713,12 +713,6 @@ export async function updateEventTemplate(
   return res.rowCount === 1;
 }
 
-export async function getDelegatedClaims(): Promise<null | ClaimQR[]> {
-  return db.manyOrNone<ClaimQR>(
-    'SELECT * FROM qr_claims WHERE delegated_signed_message IS NOT NULL ORDER BY id DESC;'
-  );
-}
-
 export async function saveEventTemplateUpdate(eventTemplateId: number, field: string, newValue: string, oldValue: string, isAdmin: boolean): Promise<boolean> {
   let query = 'INSERT INTO event_templates_history (event_template_id, field, old_value, new_value, from_admin) ' +
       'VALUES (${eventTemplateId}, ${field}, ${oldValue}, ${newValue}, ${isAdmin}) RETURNING id'
