@@ -307,7 +307,8 @@ export async function bumpTransaction(hash: string, gasPrice: string, updateTx: 
         signer: transaction.signer,
         gas_price: gasPrice,
         nonce: transaction.nonce,
-        original_tx: hash
+        original_tx: hash,
+        layer: transaction.layer
       })
     }
     case OperationType.mintEventToManyUsers: {
@@ -317,7 +318,8 @@ export async function bumpTransaction(hash: string, gasPrice: string, updateTx: 
         gas_price: gasPrice,
         nonce: transaction.nonce,
         estimate_mint_gas: toAddresses.length,
-        original_tx: hash
+        original_tx: hash,
+        layer: transaction.layer
       })
       break;
     }
@@ -327,7 +329,8 @@ export async function bumpTransaction(hash: string, gasPrice: string, updateTx: 
         signer: transaction.signer,
         gas_price: gasPrice,
         nonce: transaction.nonce,
-        original_tx: hash
+        original_tx: hash,
+        layer: transaction.layer
       })
       if (new_tx && new_tx.hash) {
         await updateBumpedQrClaim(eventId, toAddr, transaction.signer, hash, new_tx.hash);
@@ -341,7 +344,8 @@ export async function bumpTransaction(hash: string, gasPrice: string, updateTx: 
         gas_price: gasPrice,
         nonce: transaction.nonce,
         estimate_mint_gas: eventIds.length,
-        original_tx: hash
+        original_tx: hash,
+        layer: transaction.layer
       })
       break;
     }
@@ -419,6 +423,7 @@ export async function getLayerTokenInfo(tokenId: string | number, layer: Layer):
     event,
     tokenId: tokenId.toString(),
     owner,
+    layer,
   };
 }
 

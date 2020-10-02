@@ -1,13 +1,16 @@
 import { GraphQLClient, gql } from 'graphql-request'
 import { getEvent, getEvents } from '../db';
-import { Address, TokenInfo } from '../types';
+import { Address, Layer, TokenInfo } from '../types';
+import getEnv from '../envs';
 
-const mainnetSubgraph = new GraphQLClient('https://api.thegraph.com/subgraphs/name/poap-xyz/poap')
 
-const xDaiSubgraph = new GraphQLClient('https://api.thegraph.com/subgraphs/name/poap-xyz/poap-xdai')
 
 async function getTokenInfo(tokenId: string | number): Promise<TokenInfo> {
-    const query = gql`
+  const env = getEnv()
+  const l1Subgraph = new GraphQLClient(env.l1_subgraph_url)
+  const l2Subgraph = new GraphQLClient(env.l2_subgraph_url)
+
+  const query = gql`
     {
       token (id: ${tokenId}) {
         id
@@ -20,9 +23,11 @@ async function getTokenInfo(tokenId: string | number): Promise<TokenInfo> {
       }
     }
   `
-  let data = await mainnetSubgraph.request(query);
+  let layer: Layer = Layer.layer1;
+  let data = await l1Subgraph.request(query);
   if (data.token === null) {
-      data = await xDaiSubgraph.request(query);
+      data = await l2Subgraph.request(query);
+      layer = Layer.layer2;
   }
   const token = data.token;
   const event = await getEvent(token.event.id);
@@ -33,12 +38,16 @@ async function getTokenInfo(tokenId: string | number): Promise<TokenInfo> {
   return {
     event,
     tokenId: tokenId.toString(),
-    owner
+    owner,
+    layer
   };
 }
 
 
 async function getAllTokens(address: Address): Promise<TokenInfo[]> {
+  const env = getEnv()
+  const l1Subgraph = new GraphQLClient(env.l1_subgraph_url)
+  const l2Subgraph = new GraphQLClient(env.l2_subgraph_url)
   const events = await getEvents();
   const tokens: TokenInfo[] = []
 
@@ -76,8 +85,8 @@ async function getAllTokens(address: Address): Promise<TokenInfo[]> {
     }
   `
   // Get the data from both subgraphs
-  let l1Data = await mainnetSubgraph.request(query);
-  let l2Data = await xDaiSubgraph.request(query);
+  let l1Data = await l1Subgraph.request(query);
+  let l2Data = await l2Subgraph.request(query);
     
   // Add the data to the tokens array
   if (l1Data.account) {
@@ -97,8 +106,6 @@ async function getAllTokens(address: Address): Promise<TokenInfo[]> {
 }
 
 export default {
-    mainnetGraph: mainnetSubgraph,
-    xDaiGraph: xDaiSubgraph,
     getTokenInfo: getTokenInfo,
     getAllTokens: getAllTokens
 }

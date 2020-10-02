@@ -37,6 +37,7 @@ export interface TokenInfo {
   tokenId: string;
   owner: Address;
   event: PoapEvent;
+  layer?: Layer;
 }
 
 export interface EventTemplate {
