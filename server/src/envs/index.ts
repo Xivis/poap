@@ -23,6 +23,8 @@ export interface EnvVariables {
   sendgridNewEventTemplate: string;
   sendgridSenderEmail: string;
   adminEmails: string[];
+  l1_subgraph_url: string;
+  l2_subgraph_url: string;
 }
 
 export interface PoapHelpers {
@@ -132,5 +134,7 @@ export default function getEnv(extraParams?: any): EnvVariables {
     sendgridNewEventTemplate: ensureEnvVariable('SENDGRID_NEW_EVENT_TEMPLATE'),
     sendgridSenderEmail: ensureEnvVariable('SENDGRID_SENDER_EMAIL'),
     adminEmails: getAdminEmails(),
+    l1_subgraph_url: ensureEnvVariable('L1_POAP_SUBGRAPH_URL'),
+    l2_subgraph_url: ensureEnvVariable('L2_POAP_SUBGRAPH_URL'),
   };
 }

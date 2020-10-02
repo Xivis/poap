@@ -86,7 +86,9 @@ import {
   NotificationType,
   Omit,
   PoapEvent,
-  PoapFullEvent, Transaction,
+  PoapFullEvent,
+  TokenInfo,
+  Transaction,
   TransactionStatus,
   UserRole,
 } from './types';
@@ -905,10 +907,18 @@ export default async function routes(fastify: FastifyInstance) {
       },
     },
     async (req, res) => {
-      const isOk = await burnToken(req.params.tokenId, false);
+      let token: TokenInfo;
+      const tokenId: number = req.params.tokenId
+      try {
+        token = await poapGraph.getTokenInfo(req.params.tokenId);
+      } catch(e) {
+        token = await getTokenInfo(tokenId) ;
+      }
+      const isOk = await burnToken(req.params.tokenId, false, {layer: token.layer});
       if (!isOk) {
         return new createError.NotFound('Invalid token or action');
       }
+
       res.status(204);
       return;
     }

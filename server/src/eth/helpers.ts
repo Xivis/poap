@@ -419,6 +419,7 @@ export async function getLayerTokenInfo(tokenId: string | number, layer: Layer):
     event,
     tokenId: tokenId.toString(),
     owner,
+    layer,
   };
 }
 
