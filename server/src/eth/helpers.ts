@@ -419,11 +419,17 @@ export async function getAllTokens(address: Address): Promise<TokenInfo[]> {
     const tokensAmount = (await contract.functions.balanceOf(address)).toNumber();
     for (let i = 0; i < tokensAmount; i++) {
       const { tokenId, eventId } = await contract.functions.tokenDetailsOfOwnerByIndex(address, i);
-      tokens.push({
-        event: getEvent(eventId.toNumber()),
-        tokenId: tokenId.toString(),
-        owner: address,
+      // Check if the token is already in the array (prevents sending the same token two times)
+      const token_in_array = tokens.find(array_token => {
+        return array_token.tokenId === tokenId.toString()
       });
+      if(!token_in_array){
+        tokens.push({
+          event: getEvent(eventId.toNumber()),
+          tokenId: tokenId.toString(),
+          owner: address,
+        });
+      }
     }
   }
 

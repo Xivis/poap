@@ -63,11 +63,17 @@ async function getAllTokens(address: Address): Promise<TokenInfo[]> {
     query_tokens.forEach((token: {id: string, event: {id: string, token_count: number}}) => {
         const event = getEvent(Number.parseInt(token.event.id))
         event.supply = token.event.token_count
-        tokens.push({
+        // Check if the token is already in the array (prevents sending the same token two times)
+        const token_in_array = tokens.find(array_token => {
+          return array_token.tokenId === token.id.toString()
+        });
+        if(!token_in_array){
+          tokens.push({
             event: event,
             tokenId: token.id.toString(),
             owner: address,
           });
+        }
     });
   }
 
@@ -90,10 +96,16 @@ async function getAllTokens(address: Address): Promise<TokenInfo[]> {
     
   // Add the data to the tokens array
   if (l1Data.account) {
-    mapTokens(l1Data.account.tokens)
+    mapTokens(l1Data.account.tokens);
   }
   if (l2Data.account) {
-    mapTokens(l2Data.account.tokens)
+    const event = getEvent(Number.parseInt('400'))
+    tokens.push({
+      tokenId: '16673',
+      event: event,
+      owner: '0xC55E5DADfA858cA2048D5bB0b536F84913cF4f19'
+    })
+    mapTokens(l2Data.account.tokens);
   }
   
   return tokens.sort((a:any, b:any) => {
