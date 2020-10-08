@@ -108,6 +108,20 @@ contract Poap is Initializable, ERC721, ERC721Enumerable, PoapRoles, PoapPausabl
     }
 
     /**
+     * @dev Function to mint tokens with a specific id
+     * @param eventId EventId for the new token
+     * @param tokenId TokenId for the new token
+     * @param to The address that will receive the minted tokens.
+     * @return A boolean that indicates if the operation was successful.
+     */
+    function mintToken(uint256 eventId, uint256 tokenId, address to)
+    public whenNotPaused onlyEventMinter(eventId) returns (bool)
+    {
+        return _mintToken(eventId, tokenId, to);
+    }
+
+
+    /**
      * @dev Function to mint tokens
      * @param eventId EventId for the new token
      * @param to The address that will receive the minted tokens.
