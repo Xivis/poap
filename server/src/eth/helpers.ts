@@ -7,10 +7,12 @@ import { join } from 'path';
 import pino from 'pino';
 import poapGraph from '../plugins/thegraph-utils';
 import {
+  createTask,
   getAvailableHelperSigners,
   getEvent,
   getEvents,
   getLastSignerTransaction,
+  getMigrationTask,
   getPoapSettingByName,
   getSigner,
   getTransaction,
@@ -20,7 +22,8 @@ import {
 } from '../db';
 import getEnv from '../envs';
 import { Poap } from './Poap';
-import { Address, Claim, Layer, OperationType, Signer, TokenInfo, TransactionStatus } from '../types';
+import { Address, Claim, Layer, OperationType, Services, Signer, TokenInfo, TransactionStatus } from '../types';
+import { AddressZero } from 'ethers/constants';
 
 const Logger = pino();
 const ABI_DIR = join(__dirname, '../../abi');
@@ -285,6 +288,44 @@ export async function burnToken(tokenId: string | number, awaitTx: boolean = tru
   const tx = await txObj.contract.functions.burn(tokenId, txObj.transactionParams);
   await processTransaction(tx, txObj, OperationType.burnToken, tokenId.toString(), awaitTx, extraParams);
   return true;
+}
+
+export async function migrateToken(tokenId: string): Promise<string | undefined> {
+  const env = getEnv({layer: Layer.layer1});
+  // Check if the migration task exists
+  let task = await getMigrationTask(tokenId);
+  // If exists: Return the signature
+  if (task) {
+    return task.task_data.signature;
+  }
+
+  // Get the owner and the event
+  const token = await poapGraph.getTokenInfo(tokenId);
+  console.log(token);
+  // Check that it doesn't exist in L1 and that the owner is not 0x000
+  if(token.layer == Layer.layer1 || token.owner == AddressZero) {
+    return;
+  }
+
+  // Sign the message
+  const params: TypedValue[] = [
+    {type: "uint256", value: token.event.id},
+    {type: "uint256", value: tokenId},
+    {type: "address", value: token.owner}
+  ];
+  const message = signMessage(env.poapAdmin.privateKey, params);
+
+  // Create a migration task
+  await createTask(Services.migrationService, {
+    eventId: token.event.id,
+    tokenId: tokenId,
+    owner: token.owner,
+    signature: message,
+    signer: env.poapAdmin.address,
+  })
+
+  // return the message signed
+  return message
 }
 
 export async function bumpTransaction(hash: string, gasPrice: string, updateTx: boolean) {

@@ -216,8 +216,19 @@ export interface UnlockTask extends Task{
   }
 }
 
+export interface MigrateTask extends Task{
+  task_data: {
+    tokenId: string,
+    eventId: string,
+    owner: Address,
+    signature: string,
+    signer: Address,
+  }
+}
+
 export enum Services {
   unlockProtocol = 'unlock-protocol',
+  migrationService = 'migrate',
 }
 
 export enum Layer {

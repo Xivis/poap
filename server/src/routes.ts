@@ -66,6 +66,7 @@ import {
   getTokenInfo,
   isEventEditable,
   lookupAddress,
+  migrateToken,
   mintDeliveryToken,
   mintEventToManyUsers,
   mintToken,
@@ -833,6 +834,42 @@ export default async function routes(fastify: FastifyInstance) {
 
       res.status(204);
       return;
+    }
+  );
+
+  fastify.post(
+    '/actions/migrate',
+    {
+      schema: {
+        description: 'Endpoint to migrate a token from L2 to L1',
+        tags: ['Actions',],
+        body: {
+          type: 'object',
+          required: ['tokenId'],
+          properties: {
+            tokenId: { type: 'string' },
+          },
+        },
+        response: {
+          200: {
+            type: 'string',
+          }
+        },
+        security: [
+          {
+            "authorization": []
+          }
+        ]
+      },
+    },
+    async (req, res) => {
+      const message = await migrateToken(req.body.tokenId);
+
+      if (!message) {
+        throw new createError.BadRequest(`Couldn't create a message for the token ${req.body.tokenId}`);
+      }
+      res.status(200);
+      return message;
     }
   );
 
@@ -1682,7 +1719,7 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.NotFound('Invalid or expired token');
       }
 
-      const task = await createTask(req.body, taskCreator.task_name);
+      const task = await createTask(taskCreator.task_name, req.body);
       if (!task) {
         return new createError.BadRequest('Couldn\'t create the task');
       }

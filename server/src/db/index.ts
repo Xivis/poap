@@ -7,6 +7,7 @@ import {
   EventTemplate,
   FullEventTemplate,
   Layer,
+  MigrateTask,
   Notification,
   NotificationType,
   Omit,
@@ -353,7 +354,7 @@ export async function getTaskCreator(apiKey: string): Promise<null | TaskCreator
   return res;
 }
 
-export async function createTask(data: any, taskName: string): Promise<null | Task> {
+export async function createTask(taskName: string, data: any): Promise<null | Task> {
   const task = await db.one(
     'INSERT INTO tasks(name, task_data) VALUES(${taskName}, ${data}) RETURNING id, name, task_data, status, return_data',
     { taskName, data }
@@ -375,6 +376,12 @@ export async function hasToken(unlockTask: UnlockTask): Promise<boolean> {
     'SELECT * FROM tasks WHERE status<>\'FINISH_WITH_ERROR\' AND id < ${taskId} AND name=${unlockProtocol} AND task_data ->> \'accountAddress\' = ${address}',
     { taskId, address, unlockProtocol })
   return res.rowCount > 0;
+}
+
+export async function getMigrationTask(tokenId: number | string): Promise<null | MigrateTask> {
+  return db.oneOrNone(
+    'SELECT * FROM tasks WHERE status<>\'FINISH_WITH_ERROR\' AND name=${migrationService} AND task_data ->> \'tokenId\' = ${tokenId}',
+    { tokenId, migrationService: Services.migrationService });
 }
 
 export async function finishTaskWithErrors(errors: string, taskId: number) {
