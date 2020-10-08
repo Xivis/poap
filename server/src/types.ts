@@ -114,6 +114,7 @@ export interface Transaction {
   status: TransactionStatus;
   gas_price: string;
   created_date: Date;
+  result: any;
   layer: Layer;
 }
 

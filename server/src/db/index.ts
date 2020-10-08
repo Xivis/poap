@@ -260,11 +260,12 @@ export async function saveTransaction(hash: string, nonce: number, operation: st
   return false;
 }
 
-export async function updateTransactionStatus(hash: string, status: TransactionStatus) {
+export async function updateTransactionStatus(hash: string, status: TransactionStatus, result?: any) {
   const res = await db.result(
-    'update server_transactions set status=${status} where tx_hash = ${hash}',
+    'update server_transactions set status=${status}, result=${result} where tx_hash = ${hash}',
     {
       status,
+      result,
       hash,
     }
   );

@@ -91,6 +91,7 @@ CREATE TABLE server_transactions (
     "status" varchar(100) not null default 'pending',
     "gas_price" varchar(1000) not null,
     "created_date" timestamp with time zone not null default now(),
+    "result" json,
     "layer" varchar(50),
     CONSTRAINT chk_layer CHECK (layer IN ('Layer1', 'Layer2'))
 );
