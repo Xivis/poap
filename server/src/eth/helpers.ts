@@ -295,7 +295,7 @@ export async function migrateToken(tokenId: string): Promise<string | undefined>
   // Check if the migration task exists
   let task = await getMigrationTask(tokenId);
   // If exists: Return the signature
-  if (task) {
+  if (task && task.task_data.signature) {
     return task.task_data.signature;
   }
 

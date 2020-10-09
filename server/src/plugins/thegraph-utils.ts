@@ -104,12 +104,6 @@ async function getAllTokens(address: Address): Promise<TokenInfo[]> {
     mapTokens(l1Data.account.tokens);
   }
   if (l2Data.account) {
-    const event = getEvent(Number.parseInt('400'))
-    tokens.push({
-      tokenId: '16673',
-      event: event,
-      owner: '0xC55E5DADfA858cA2048D5bB0b536F84913cF4f19'
-    })
     mapTokens(l2Data.account.tokens);
   }
   
