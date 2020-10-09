@@ -384,6 +384,12 @@ export async function getMigrationTask(tokenId: number | string): Promise<null |
     { tokenId, migrationService: Services.migrationService });
 }
 
+export async function updateTaskData(taskId: number, task_data: any) {
+  await db.result(
+    'UPDATE tasks SET task_data = ${task_data} WHERE name=${migrationService} AND id=${taskId}',
+    { taskId, migrationService: Services.migrationService, task_data });
+}
+
 export async function finishTaskWithErrors(errors: string, taskId: number) {
   await db.result(
     'UPDATE tasks SET status=\'FINISH_WITH_ERROR\', return_data=${errors} where id=${taskId}',

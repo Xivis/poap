@@ -283,11 +283,11 @@ export async function mintDeliveryToken(contract: Address, index: number, recipi
   return tx;
 }
 
-export async function burnToken(tokenId: string | number, awaitTx: boolean = true, extraParams?: any): Promise<boolean> {
+export async function burnToken(tokenId: string | number, awaitTx: boolean = true, extraParams?: any): Promise<null | ContractTransaction> {
   const txObj = await getTxObj(true, extraParams);
   const tx = await txObj.contract.functions.burn(tokenId, txObj.transactionParams);
   await processTransaction(tx, txObj, OperationType.burnToken, tokenId.toString(), awaitTx, extraParams);
-  return true;
+  return tx;
 }
 
 export async function migrateToken(tokenId: string): Promise<string | undefined> {
@@ -301,7 +301,7 @@ export async function migrateToken(tokenId: string): Promise<string | undefined>
 
   // Get the owner and the event
   const token = await poapGraph.getTokenInfo(tokenId);
-  console.log(token);
+
   // Check that it doesn't exist in L1 and that the owner is not 0x000
   if(token.layer == Layer.layer1 || token.owner == AddressZero) {
     return;
@@ -483,6 +483,12 @@ export async function getTokenInfo(tokenId: string | number): Promise<TokenInfo>
     token = await getLayerTokenInfo(tokenId, Layer.layer2);
   }
   return token
+}
+
+export async function isBurned(tokenId: string | number, layer: Layer =Layer.layer1): Promise<boolean> {
+  let token: TokenInfo;
+  token = await getLayerTokenInfo(tokenId, layer);
+  return token.owner === AddressZero;
 }
 
 export async function getTokenImg(tokenId: string | number): Promise<null | string> {

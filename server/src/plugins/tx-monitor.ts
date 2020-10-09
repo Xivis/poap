@@ -23,6 +23,7 @@ declare module 'fastify' {
 
 
 function getTokenIds(receipt: TransactionReceipt): number[] {
+  ethers.errors.setLogLevel('error');
   const abi = new ethers.utils.Interface(getABI('Poap'));
   let tokens: number[] = [];
   if (!receipt || !receipt.logs) {

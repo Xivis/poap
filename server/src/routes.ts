@@ -951,8 +951,8 @@ export default async function routes(fastify: FastifyInstance) {
       } catch(e) {
         token = await getTokenInfo(tokenId) ;
       }
-      const isOk = await burnToken(req.params.tokenId, false, {layer: token.layer});
-      if (!isOk) {
+      const tx = await burnToken(req.params.tokenId, false, {layer: token.layer});
+      if (!tx) {
         return new createError.NotFound('Invalid token or action');
       }
 

@@ -223,6 +223,7 @@ export interface MigrateTask extends Task{
     owner: Address,
     signature: string,
     signer: Address,
+    tx_hash?: Address,
   }
 }
 

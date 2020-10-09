@@ -30,6 +30,11 @@ async function getTokenInfo(tokenId: string | number): Promise<TokenInfo> {
       layer = Layer.layer2;
   }
   const token = data.token;
+
+  if(!token){
+    throw new Error('Invalid Token');
+  }
+
   const event = await getEvent(token.event.id);
   const owner = token.owner.id;
   if (!event) {
