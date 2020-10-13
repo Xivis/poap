@@ -300,7 +300,13 @@ export async function migrateToken(tokenId: string): Promise<string | undefined>
   }
 
   // Get the owner and the event
-  const token = await poapGraph.getTokenInfo(tokenId);
+  let token: TokenInfo | null = null;
+  try{
+    // First try with The Graph
+    token = await poapGraph.getTokenInfo(tokenId);
+  } catch (e) {
+    token = await getTokenInfo(tokenId);
+  }
 
   // Check that it doesn't exist in L1 and that the owner is not 0x000
   if(token.layer == Layer.layer1 || token.owner == AddressZero) {

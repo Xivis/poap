@@ -2,12 +2,6 @@
   &.backoffice {
     padding-bottom: 200px;
 
-    /* Tooltips */
-    .backoffice-tooltip {
-      text-align: center;
-      padding: 0 5px;
-    }
-
     .event-table-tooltip {
       text-align: center;
       padding: 0 5px;
@@ -851,6 +845,7 @@
 .backoffice-tooltip {
   text-align: center;
   padding: 0 5px;
+  min-width: 350px;
 }
 
 .color-picker-container {

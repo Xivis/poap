@@ -137,6 +137,7 @@ export interface ClaimQR {
   delegated_mint: boolean;
   delegated_signed_message: string;
   event_template?: null | EventTemplate;
+  result?: any;
 }
 
 export interface Claim extends ClaimProof {

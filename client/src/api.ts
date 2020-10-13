@@ -116,6 +116,9 @@ export type EventTemplate = {
   title_link: string;
 };
 
+export interface QrResult {
+  token: number;
+};
 export interface HashClaim {
   id: number;
   qr_hash: string;
@@ -134,13 +137,14 @@ export interface HashClaim {
   secret: string;
   delegated_mint: boolean;
   delegated_signed_message: string;
-}
+  result: QrResult | null;
+};
 export interface PoapSetting {
   id: number;
   name: string;
   type: string;
   value: string;
-}
+};
 export interface AdminAddress {
   id: number;
   signer: Address;
@@ -149,7 +153,7 @@ export interface AdminAddress {
   balance: string;
   created_date: string;
   pending_tx: number;
-}
+};
 export interface Transaction {
   id: number;
   tx_hash: string;
@@ -161,13 +165,13 @@ export interface Transaction {
   signer: string;
   status: string;
   layer: string;
-}
+};
 export interface PaginatedTransactions {
   limit: number;
   offset: number;
   total: number;
   transactions: Transaction[];
-}
+};
 
 export interface Notification {
   id: number;
@@ -176,14 +180,14 @@ export interface Notification {
   type: string;
   event_id: number;
   event: PoapEvent;
-}
+};
 
 export interface PaginatedNotifications {
   limit: number;
   offset: number;
   total: number;
   notifications: Notification[];
-}
+};
 
 export type QrCode = {
   beneficiary: string;
@@ -215,6 +219,10 @@ export type PaginatedQrCodes = {
 export type ENSQueryResult = { valid: false } | { valid: true; ens: string };
 
 export type AddressQueryResult = { valid: false } | { valid: true; ens: string };
+
+export interface MigrateResponse {
+  signature: string;
+}
 
 const API_BASE =
   process.env.NODE_ENV === 'development'
@@ -643,6 +651,14 @@ export async function postClaimHash(
   return fetchJson(`${API_BASE}/actions/claim-qr`, {
     method: 'POST',
     body: JSON.stringify({ qr_hash, address, secret }),
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+export async function postTokenMigration(tokenId: number): Promise<MigrateResponse> {
+  return fetchJson(`${API_BASE}/actions/migrate`, {
+    method: 'POST',
+    body: JSON.stringify({ tokenId }),
     headers: { 'Content-Type': 'application/json' },
   });
 }

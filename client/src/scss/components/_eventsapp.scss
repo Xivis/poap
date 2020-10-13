@@ -575,6 +575,15 @@
           color: inherit;
         }
       }
+
+      .layer-checkbox {
+        cursor: pointer;
+        user-select: none;
+        svg {
+          position: relative;
+          top: 2px;
+        }
+      }
     }
 
     .claim-info {

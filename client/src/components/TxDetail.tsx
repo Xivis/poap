@@ -39,7 +39,7 @@ const TxDetail: FC<{hash: string, receipt: null | TransactionReceipt}> = ({hash,
   }
 
   return (
-    <div className={'tx-detail'}>
+    <div className={'tx-detail'} data-aos="fade-up" data-aos-delay="300">
       <div className={'tx-detail-title'}>Your transaction</div>
       <div className={'tx-detail-box'}>
         <div className={'tx-detail-cell'}>

@@ -4,11 +4,10 @@ import { Address, Layer, TokenInfo } from '../types';
 import getEnv from '../envs';
 
 
-
 async function getTokenInfo(tokenId: string | number): Promise<TokenInfo> {
-  const env = getEnv()
-  const l1Subgraph = new GraphQLClient(env.l1_subgraph_url)
-  const l2Subgraph = new GraphQLClient(env.l2_subgraph_url)
+  const env = getEnv();
+  const l1Subgraph = new GraphQLClient(env.l1_subgraph_url);
+  const l2Subgraph = new GraphQLClient(env.l2_subgraph_url);
 
   const query = gql`
     {
@@ -22,7 +21,7 @@ async function getTokenInfo(tokenId: string | number): Promise<TokenInfo> {
         }
       }
     }
-  `
+  `;
   let layer: Layer = Layer.layer1;
   let data = await l1Subgraph.request(query);
   if (data.token === null) {
@@ -98,7 +97,7 @@ async function getAllTokens(address: Address): Promise<TokenInfo[]> {
   // Get the data from both subgraphs
   let l1Data = await l1Subgraph.request(query);
   let l2Data = await l2Subgraph.request(query);
-    
+
   // Add the data to the tokens array
   if (l1Data.account) {
     mapTokens(l1Data.account.tokens);
@@ -106,7 +105,7 @@ async function getAllTokens(address: Address): Promise<TokenInfo[]> {
   if (l2Data.account) {
     mapTokens(l2Data.account.tokens);
   }
-  
+
   return tokens.sort((a:any, b:any) => {
     try{
       return new Date(b.event.start_date) > new Date(a.event.start_date) ? 1 : -1

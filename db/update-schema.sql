@@ -192,6 +192,7 @@ UPDATE signers SET layer = 'Layer1' WHERE id IS NOT NULL;
 ALTER TABLE server_transactions ADD COLUMN layer VARCHAR(50);
 ALTER TABLE server_transactions ADD CONSTRAINT chk_layer CHECK (layer IN ('Layer1', 'Layer2'));
 UPDATE server_transactions SET layer = 'Layer1' WHERE id IS NOT NULL;
+ALTER TABLE signers DROP CONSTRAINT signers_signer_key;
 
 ALTER TABLE server_transactions ADD COLUMN result json;
 

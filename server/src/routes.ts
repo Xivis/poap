@@ -556,7 +556,14 @@ export default async function routes(fastify: FastifyInstance) {
               },
               tx_status: { type: 'string' },
               delegated_mint: { type: 'boolean' },
-              delegated_signed_message: { type: 'string' }
+              delegated_signed_message: { type: 'string' },
+              result: {
+                type: 'object',
+                nullable: true,
+                properties: {
+                  token: { type: 'number' },
+                }
+              }
             }
           }
         }
@@ -591,8 +598,10 @@ export default async function routes(fastify: FastifyInstance) {
       qr_claim.tx_status = null;
       if (qr_claim.tx_hash) {
         const transaction_status = await getTransaction(qr_claim.tx_hash);
+        console.log(transaction_status);
         if (transaction_status) {
           qr_claim.tx_status = transaction_status.status;
+          qr_claim.result = transaction_status.result;
         }
       }
 
@@ -852,7 +861,10 @@ export default async function routes(fastify: FastifyInstance) {
         },
         response: {
           200: {
-            type: 'string',
+            type: 'object',
+            properties: {
+              signature: { type: 'string' }
+            }
           }
         },
         security: [
@@ -869,7 +881,7 @@ export default async function routes(fastify: FastifyInstance) {
         throw new createError.BadRequest(`Couldn't create a message for the token ${req.body.tokenId}`);
       }
       res.status(200);
-      return message;
+      return { signature: message };
     }
   );
 

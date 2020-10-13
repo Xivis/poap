@@ -4,8 +4,8 @@
   "private": true,
   "dependencies": {
     "@portis/web3": "^2.0.0-beta.57",
-    "@walletconnect/web3-provider": "1.1.0",
     "@types/react-color": "^3.0.4",
+    "@walletconnect/web3-provider": "1.1.0",
     "aos": "^2.3.4",
     "auth0-js": "^9.11.2",
     "classnames": "^2.2.6",
@@ -21,6 +21,7 @@
     "react-color": "^2.18.1",
     "react-day-picker": "^7.4.0",
     "react-dom": "^16.8.6",
+    "react-icons": "^3.11.0",
     "react-lightweight-tooltip": "^1.0.0",
     "react-modal": "^3.10.1",
     "react-paginate": "^6.3.0",

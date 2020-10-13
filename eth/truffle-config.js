@@ -25,6 +25,22 @@ module.exports = {
       gasPrice: 5e9,
       network_id: 3,
     },
+    kovan: {
+      // address: 0xd237716b056d5BF44181c471A7c633583b552D78
+      provider: function() {
+        if (!process.env.POAP_KOVAN_PK) {
+          console.error('POAP_KOVAN_PK env variable is needed');
+          process.abort();
+        }
+        return new HDWalletProvider(
+          process.env.POAP_ROPSTEN_PK,
+          'https://kovan.infura.io/v3/cf7a7eed37254ec4b95670607e76a917'
+        );
+      },
+      gas: 5000000,
+      gasPrice: 5e9,
+      network_id: 3,
+    },
     sokol: {
       // address: 0xe583f95bF95d0883F94EfE844442C8bfc9dd7A7F
       provider: function() {

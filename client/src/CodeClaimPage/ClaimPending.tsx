@@ -33,7 +33,7 @@ const ClaimPending: React.FC<{ claim: HashClaim; checkClaim: (hash: string) => v
         Pending
       </div>
       <div className={'text-info'}>
-        Come back in a few minutes to check the status, or follow the transaction on the block explorer
+        Please wait a few seconds, or follow the transaction on the block explorer
       </div>
       <LinkButton
         text={'View Transaction'}

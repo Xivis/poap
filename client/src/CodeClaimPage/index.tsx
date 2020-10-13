@@ -38,11 +38,11 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
   useEffect(() => {
     if (hash) fetchClaim(hash);
   }, []); /* eslint-disable-line react-hooks/exhaustive-deps */
-
   useEffect(() => {
-    console.log('please verity');
     if (claim && !isVerified) {
       checkUserTokens();
+    } else {
+      setIsVerified(true);
     }
   }, [claim]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
@@ -90,16 +90,14 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
       image = claim.event.image_url;
     }
     if (claim.claimed) {
-
       if (!claim.tx_status && !beneficiaryHasToken) {
-        body = <ClaimBlocked claim={claim} />
+        body = <ClaimBlocked claim={claim} />;
       }
-
       // POAP minting
       if (claim.tx_status && claim.tx_status === TX_STATUS.pending) {
         body = <ClaimPending claim={claim} checkClaim={fetchClaim} />;
       }
-      if ((claim.tx_status && claim.tx_status === TX_STATUS.passed) || beneficiaryHasToken)  {
+      if ((claim.tx_status && claim.tx_status === TX_STATUS.passed) || beneficiaryHasToken) {
         body = <ClaimFinished claim={claim} />;
       }
       if (claim.tx_status && claim.tx_status === TX_STATUS.bumped) {
