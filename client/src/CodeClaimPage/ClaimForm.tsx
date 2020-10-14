@@ -43,6 +43,7 @@ const ClaimForm: React.FC<{
   template?: Template;
   onSubmit: (claim: HashClaim) => void;
 }> = ({ claim, onSubmit, template }) => {
+  const [claimed, setClaimed] = useState<boolean>(false);
   const [enabledWeb3, setEnabledWeb3] = useState<boolean | null>(null);
   const [account, setAccount] = useState<string>('');
   const [migrateInProcess, setMigrateInProcess] = useState<boolean>(false);
@@ -74,13 +75,7 @@ const ClaimForm: React.FC<{
   }, [migrateInProcess, token]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
-    if (token) {
-      postTokenMigration(token).then((result) => {
-        if (result) {
-          migrateToken(result.signature);
-        }
-      });
-    }
+    startMigration();
   }, [token]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
   useEffect(() => {
@@ -137,6 +132,18 @@ const ClaimForm: React.FC<{
     }
   };
 
+  const startMigration = () => {
+    if (token) {
+      postTokenMigration(token)
+        .then((result) => {
+          if (result) {
+            migrateToken(result.signature);
+          }
+        })
+        .catch(showErrorMessage);
+    }
+  };
+
   const migrateToken = async (signature: string) => {
     let _web3 = web3;
     if (!_web3) {
@@ -180,21 +187,16 @@ const ClaimForm: React.FC<{
         (err: any, hash: string | null) => {
           if (err) {
             console.log('Error on Mint Token: ', err);
+            showErrorMessage();
           }
           if (hash) {
             setTxHash(hash);
-
-            // Save to local storage
-            // let localTxs = localStorage.getItem('claims')
-            // let claims = localTxs ? JSON.parse(localTxs) : {}
-            // claims = {...claims, [completeClaim.qr_hash]: hash}
-            // localStorage.setItem('claims', JSON.stringify(claims))
-            console.log('Save new Tx :)');
           }
         });
     } catch (e) {
       console.log('Error submitting transaction');
-      console.log(e)
+      console.log(e);
+      showErrorMessage();
     }
   };
 
@@ -207,7 +209,7 @@ const ClaimForm: React.FC<{
       }
     }
 
-    if (!receipt || !receipt.status || (txReceipt && !txReceipt.status)){
+    if (!receipt || !receipt.status || (txReceipt && !txReceipt.status)) {
       setMigrateInProcess(false);
     }
 
@@ -217,6 +219,10 @@ const ClaimForm: React.FC<{
   const toggleCheckbox = () => setMigrate(!migrate);
 
   const handleFormSubmit = async (values: QRFormValues, actions: FormikActions<QRFormValues>) => {
+    if (claimed) {
+      startMigration();
+      return
+    }
     try {
       actions.setSubmitting(true);
       if (claim) {
@@ -225,6 +231,7 @@ const ClaimForm: React.FC<{
           values.address.toLowerCase(),
           claim.secret
         );
+        setClaimed(true);
         if (migrate) {
           setMigrateInProcess(true);
           setCompleteClaim(newClaim);
@@ -249,6 +256,15 @@ const ClaimForm: React.FC<{
       if (claim && claim.tx_status === TX_STATUS.passed && claim.result && claim.result.token) {
         setToken(claim.result.token);
       }
+    });
+  };
+
+  const showErrorMessage = () => {
+    setMigrateInProcess(false);
+    let message = `Error while trying to submit transaction.\nPlease try again.`;
+    addToast(message, {
+      appearance: 'error',
+      autoDismiss: false,
     });
   };
 
@@ -286,13 +302,17 @@ const ClaimForm: React.FC<{
                         className={classNames(!!form.errors[field.name] && 'error')}
                         placeholder={'Input your Ethereum address or ENS name'}
                         {...field}
+                        disabled={claimed}
                       />
                     );
                   }}
                 />
                 <ErrorMessage name="gasPrice" component="p" className="bk-error" />
                 {status && <p className={status.ok ? 'bk-msg-ok' : 'bk-msg-error'}>{status.msg}</p>}
-                <div className={'layer-checkbox'} onClick={!isSubmitting && !migrateInProcess ? toggleCheckbox : () => {}}>
+                <div
+                  className={'layer-checkbox'}
+                  onClick={!isSubmitting && !migrateInProcess && !claimed ? toggleCheckbox : () => {}}
+                >
                   <CheckboxIcon color={mainColor ?? COLORS.primaryColor} />
                   {' '}
                   Free minting in xDAI

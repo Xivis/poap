@@ -918,7 +918,8 @@ export default async function routes(fastify: FastifyInstance) {
                 }
               },
               tokenId: { type: 'string' },
-              owner: { type: 'string' }
+              owner: { type: 'string' },
+              layer: { type: 'string' }
             }
           }
         }
@@ -926,11 +927,11 @@ export default async function routes(fastify: FastifyInstance) {
     },
     async (req, res) => {
       const tokenId = req.params.tokenId;
-      try {
-        return await poapGraph.getTokenInfo(tokenId);
-      } catch(e) {
-        console.log('The Graph Query error');
-      }
+      // try {
+      //   return await poapGraph.getTokenInfo(tokenId);
+      // } catch(e) {
+      //   console.log('The Graph Query error');
+      // }
       return  await getTokenInfo(tokenId) ;
     }
   );

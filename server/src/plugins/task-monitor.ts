@@ -35,7 +35,7 @@ export default fp(function taskMonitorCron(
           processUnlockTask(task as UnlockTask);
           break;
         case Services.migrationService:
-          processMigrationTask(task as MigrateTask);
+          await processMigrationTask(task as MigrateTask);
           break;
       }
     }
@@ -44,7 +44,7 @@ export default fp(function taskMonitorCron(
 
   fastify.decorate('updateTasks', async () => {
     // Run the task every minute
-    cron.schedule('*/5 * * * *', monitor);
+    cron.schedule('*/10 * * * *', monitor);
   });
   fastify.updateTasks();
 

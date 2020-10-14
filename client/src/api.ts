@@ -18,6 +18,7 @@ export interface TokenInfo {
   owner: string;
   event: PoapEvent;
   ownerText?: string;
+  layer: string;
 }
 
 export type QrCodesListAssignResponse = {
@@ -118,7 +119,7 @@ export type EventTemplate = {
 
 export interface QrResult {
   token: number;
-};
+}
 export interface HashClaim {
   id: number;
   qr_hash: string;

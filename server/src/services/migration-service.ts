@@ -50,5 +50,5 @@ export async function processMigrationTask(task :MigrateTask){
 
   // Update the task with the tx hash
   task.task_data.tx_hash = tx.hash;
-  await updateTaskData(task.id, task.task_data)
+  await updateTaskData(task.id, task.task_data);
 }
