@@ -258,11 +258,9 @@ export async function mintDeliveryToken(contract: Address, index: number, recipi
     });
     // Instantiate the poap delivery contract
     const deliveryContract = new Contract(contract, POAP_DELIVERY_ABI, txObj.signerWallet);
-    const claimed = await deliveryContract.functions.claimed(recipient);
 
-    if(claimed) {
-      return null;
-    }
+    // const claimed = await deliveryContract.functions.claimed(recipient);
+    // if (claimed) return null
 
     tx = await deliveryContract.functions.claim(index, recipient, events, proofs, txObj.transactionParams);
   }
@@ -275,7 +273,7 @@ export async function mintDeliveryToken(contract: Address, index: number, recipi
     tx,
     txObj,
     OperationType.mintDeliveryToken,
-    JSON.stringify([index, recipient, events, proofs]),
+    JSON.stringify([contract, index, recipient, events, proofs]),
     awaitTx,
     extraParams
   );
@@ -345,11 +343,11 @@ export async function bumpTransaction(hash: string, gasPrice: string, updateTx: 
   }
 
   // Parse available arguments saved in the database
-  const txJSON = JSON.parse(transaction.arguments)
+  const txJSON = transaction.arguments.substr(0, 1) === '[' ? JSON.parse(transaction.arguments) : transaction.arguments;
 
   switch (transaction.operation) {
     case OperationType.burnToken: {
-      const tokenId = txJSON
+      const tokenId = parseInt(txJSON, 10)
       await burnToken(tokenId, false, {
         signer: transaction.signer,
         gas_price: gasPrice,
@@ -394,6 +392,18 @@ export async function bumpTransaction(hash: string, gasPrice: string, updateTx: 
         original_tx: hash,
         layer: transaction.layer
       })
+      break;
+    }
+    case OperationType.mintDeliveryToken: {
+      const [contract, index, recipient, events, proofs] = txJSON
+      await mintDeliveryToken(contract, index, recipient, events, proofs, false, {
+        signer: transaction.signer,
+        gas_price: gasPrice,
+        nonce: transaction.nonce,
+        estimate_mint_gas: events.length,
+        original_tx: hash,
+        layer: transaction.layer
+      });
       break;
     }
     default: {
