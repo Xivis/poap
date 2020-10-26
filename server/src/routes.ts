@@ -75,6 +75,7 @@ import {
   resolveName,
   validEmail,
   verifyClaim,
+  getEmailTokens,
 } from './eth/helpers';
 
 import poapGraph from './plugins/thegraph-utils';
@@ -311,7 +312,7 @@ export default async function routes(fastify: FastifyInstance) {
         description: 'get all address tokens',
         tags: ['Actions',],
         params: {
-          address: 'address#',
+          address: { type:'string' },
         },
         response: {
           200: {
@@ -348,6 +349,14 @@ export default async function routes(fastify: FastifyInstance) {
     },
     async (req, res) => {
       const address = req.params.address;
+      // First check if it's an email address
+      if (validEmail(address)) {
+        return await getEmailTokens(address);
+      }
+      // Check if it's a valid ethereum address
+      if (!await checkAddress(address)) {
+        return new createError.BadRequest('Address is not valid');
+      }
       try {
         return await poapGraph.getAllTokens(address);
       } catch(e) {

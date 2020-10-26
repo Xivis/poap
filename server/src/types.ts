@@ -35,7 +35,8 @@ export enum UserRole {
 
 export interface TokenInfo {
   tokenId: string;
-  owner: Address;
+  // It can be an ethereum address or an email
+  owner: string;
   event: PoapEvent;
   layer?: Layer;
 }

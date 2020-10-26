@@ -596,6 +596,13 @@ export async function getQrRolls(): Promise<null | qrRoll[]> {
   return res;
 }
 
+export async function getQrByUserInput(user_input: string): Promise<ClaimQR[]> {
+  const res = await db.manyOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE user_input = ${user_input}', {
+    user_input
+  });
+  return res;
+}
+
 export async function getQrRoll(qrRollId: string): Promise<null | eventHost> {
   const res = await db.oneOrNone<eventHost>('SELECT * FROM qr_roll WHERE id=${qrRollId} AND is_active = true', { qrRollId });
   return res;

@@ -13,7 +13,7 @@ import {
   getEvents,
   getLastSignerTransaction,
   getMigrationTask,
-  getPoapSettingByName,
+  getPoapSettingByName, getQrByUserInput,
   getSigner,
   getTransaction,
   saveTransaction,
@@ -415,6 +415,32 @@ export async function bumpTransaction(hash: string, gasPrice: string, updateTx: 
     await updateTransactionStatus(hash, TransactionStatus.bumped);
   }
 }
+
+export async function getEmailTokens(email: string): Promise<TokenInfo[]> {
+  const events = await getEvents();
+
+  const getEvent = (id: number) => {
+    const ev = events.find(e => e.id === id);
+    if (!ev) {
+      throw new Error(`Invalid EventId: ${id}`);
+    }
+    ev.supply = 1;
+    return ev;
+  };
+
+  const tokens: TokenInfo[] = [];
+
+  (await getQrByUserInput(email)).forEach(claim => {
+    tokens.push({
+      event: getEvent(claim.event_id),
+      tokenId: '',
+      owner: email,
+    });
+  });
+
+  return tokens;
+}
+
 
 export async function getAllTokens(address: Address): Promise<TokenInfo[]> {
   const events = await getEvents();
