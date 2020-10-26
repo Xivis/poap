@@ -161,3 +161,11 @@ CREATE TABLE qr_roll (
     "event_host_id" integer,
     "is_active" boolean default true
 );
+
+CREATE TABLE email_claims (
+    "id" SERIAL PRIMARY KEY,
+    "email" varchar(256),
+    "token" uuid default gen_random_uuid() not null unique,
+    "end_date" timestamp with time zone,
+    "processed" boolean default false
+);

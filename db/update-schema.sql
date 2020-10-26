@@ -196,3 +196,11 @@ ALTER TABLE signers DROP CONSTRAINT signers_signer_key;
 
 ALTER TABLE server_transactions ADD COLUMN result json;
 
+CREATE TABLE email_claims (
+    "id" SERIAL PRIMARY KEY,
+    "email" varchar(256),
+    "token" uuid default gen_random_uuid() not null unique,
+    "end_date" timestamp with time zone,
+    "processed" boolean default false
+);
+
