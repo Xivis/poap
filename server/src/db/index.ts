@@ -329,6 +329,16 @@ export async function updateQrClaim(qrHash: string, beneficiary: string, user_in
   return res.rowCount === 1;
 }
 
+export async function updateQrInput(qrHash: string, user_input: string) {
+
+  const res = await db.result('UPDATE qr_claims SET user_input=${user_input} WHERE qr_hash = ${qrHash}',
+    {
+      user_input,
+      qrHash
+    });
+  return res.rowCount === 1;
+}
+
 export async function updateDelegatedQrClaim(qrHash: string, beneficiary: string, user_input: string, message: string) {
   const res = await db.result('UPDATE qr_claims SET delegated_mint=TRUE, delegated_signed_message=${message}, beneficiary=${beneficiary}, user_input=${user_input} WHERE qr_hash = ${qrHash}',
     {

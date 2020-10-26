@@ -51,6 +51,7 @@ import {
   updateQrClaim,
   updateQrClaims,
   updateQrClaimsHashes,
+  updateQrInput,
   updateQrScanned,
   updateSignerGasPrice,
 } from './db';
@@ -72,6 +73,7 @@ import {
   mintToken,
   mintUserToManyEvents,
   resolveName,
+  validEmail,
   verifyClaim,
 } from './eth/helpers';
 
@@ -702,6 +704,13 @@ export default async function routes(fastify: FastifyInstance) {
         return new createError.InternalServerError('QR Claim is not assigned to an event');
       }
       qr_claim.event = event
+
+      // First check if it's an email address
+      if (validEmail(req.body.address)) {
+        await updateQrInput(req.body.qr_hash, req.body.address);
+        qr_claim.user_input = req.body.address;
+        return qr_claim
+      }
 
       const parsed_address = await checkAddress(req.body.address);
       if (!parsed_address) {

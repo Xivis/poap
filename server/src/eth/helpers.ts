@@ -565,6 +565,11 @@ export async function lookupAddress(address: string): Promise<string> {
   return resolved
 }
 
+export function validEmail(email: string) {
+  const re = /^(([^<>()\[\]\.,;:\s@\"]+(\.[^<>()\[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
+  return re.test(String(email).toLowerCase());
+}
+
 export async function checkAddress(address: string): Promise<string | null> {
   let response: string | null = null;
   try {
