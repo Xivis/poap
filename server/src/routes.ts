@@ -54,6 +54,7 @@ import {
   updateQrInput,
   updateQrScanned,
   updateSignerGasPrice,
+  getActiveEmailClaims, saveEmailClaim, getQrByUserInput,
 } from './db';
 
 import {
@@ -760,6 +761,57 @@ export default async function routes(fastify: FastifyInstance) {
       }
 
       return qr_claim
+    }
+  );
+
+  fastify.post(
+    '/actions/claim-email',
+    {
+      schema: {
+        description: 'Send email to redeem tokens',
+        tags: ['Actions',],
+        body: {
+          type: 'object',
+          required: ['email'],
+          properties: {
+            email: { type: 'string' }
+          }
+        },
+        response: {
+          200: {
+            type: 'boolean',
+          }
+        }
+      },
+    },
+    async (req, res) => {
+      const email = req.body.email;
+      // If it's an invalid email: throw error
+      if(!validEmail(email)){
+        return new createError.BadRequest('Invalid email');
+      }
+      // If there is an email claim in progress: throw error
+      const activeEmailClaims = await getActiveEmailClaims(email);
+      if(activeEmailClaims.length > 0){
+        return new createError.BadRequest('YOu already have an active claim');
+      }
+
+      // Set the expiration time to an hour from now
+      const now = new Date();
+      now.setHours( now.getHours() + 1 );
+
+      // Get unclaimed QRs
+      const unclaimedQr = (await getQrByUserInput(email)).filter(claim => {return claim.tx_hash === ''});
+      // If there isn't any unclaimed QR: Just return
+      if(unclaimedQr.length === 0) {
+        return true;
+      }
+      // Create an email claim
+      const claim = await saveEmailClaim(email, now);
+      console.log(claim.token);
+      // Send mail
+      // TODO: send email and add error logic
+      return true;
     }
   );
 

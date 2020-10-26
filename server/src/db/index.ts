@@ -3,6 +3,7 @@ import pgPromise from 'pg-promise';
 import {
   Address,
   ClaimQR,
+  EmailClaim,
   eventHost,
   EventTemplate,
   FullEventTemplate,
@@ -596,7 +597,7 @@ export async function getQrRolls(): Promise<null | qrRoll[]> {
   return res;
 }
 
-export async function getQrByUserInput(user_input: string): Promise<ClaimQR[]> {
+export async function getQrByUserInput(user_input: string, claimed: boolean = false): Promise<ClaimQR[]> {
   const res = await db.manyOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE user_input = ${user_input}', {
     user_input
   });
@@ -750,4 +751,17 @@ export async function saveEventTemplateUpdate(eventTemplateId: number, field: st
 
   await db.one(query, {eventTemplateId, field, oldValue, newValue, isAdmin})
   return true
+}
+
+export async function getActiveEmailClaims(email: string): Promise<EmailClaim[]> {
+  return db.manyOrNone<EmailClaim>(
+    'SELECT * FROM email_claims WHERE email = ${email} AND processed = false AND end_date >= now()',
+    { email }
+  );
+}
+
+export async function saveEmailClaim(email: string, end_date: Date): Promise<{token: string}> {
+  let query = 'INSERT INTO email_claims (email, end_date) VALUES (${email}, ${end_date}) RETURNING token'
+  return db.one(query, { email, end_date });
+
 }

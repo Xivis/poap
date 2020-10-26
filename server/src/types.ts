@@ -238,3 +238,11 @@ export enum Layer {
   layer1 = 'Layer1',
   layer2 = 'Layer2',
 }
+
+export interface EmailClaim {
+  id: number;
+  email: string;
+  token: object;
+  end_date: Date;
+  processed: boolean;
+}
