@@ -126,17 +126,12 @@ export const RedeemPage: FC<RouteComponentProps> = ({ match }) => {
 
         <div className="redeem-poaps-container events-logos">
           {tokens.length > 0 ? (
-            tokens.map((token: TokenInfo) => (
-              <Link
-                key={token.tokenId}
-                to={{ pathname: `/token/${token.tokenId}` }}
-                className="event-circle"
-                data-aos="fade-up"
-              >
+            tokens.map((token: TokenInfo, index) => (
+              <a key={index} href={'#'} className="event-circle" data-aos="fade-up">
                 {typeof token.event.image_url === 'string' && (
                   <img src={token.event.image_url} alt={token.event.name} />
                 )}
-              </Link>
+              </a>
             ))
           ) : (
             <span>Loading Tokens</span>
@@ -147,4 +142,4 @@ export const RedeemPage: FC<RouteComponentProps> = ({ match }) => {
       <ScanFooter path="home" />
     </div>
   );
-}
+};

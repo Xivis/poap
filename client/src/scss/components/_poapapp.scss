@@ -272,3 +272,121 @@
   display: flex;
   justify-content: center;
 }
+
+/* ******************************************************
+   Email Redeem
+   ****************************************************** */
+
+.scan-email-badge-container {
+  display: flex;
+  flex-direction: column;
+
+  background-color: $color-light-violet;
+  border: 1px solid $color-primary;
+  border-radius: 4px;
+
+  padding: 16px;
+
+  margin-bottom: 12px;
+}
+
+.scan-email-badge {
+  color: $color-primary;
+}
+
+.width-700 {
+  max-width: 700px;
+}
+
+.scan-email-badge-button-container {
+  display: flex;
+  justify-content: center;
+
+  margin-top: 12px;
+}
+
+.scan-email-badge-button {
+  display: flex;
+  justify-content: center;
+
+  color: $color-primary;
+
+  background-color: $color-invert;
+
+  border: 1px solid $color-primary;
+  border-radius: 4px;
+
+  padding: 8px 16px;
+
+  cursor: pointer;
+}
+
+.redeem-page {
+  min-height: 100vh;
+}
+
+.redeem-content-container {
+  max-width: 600px;
+  margin: 0 auto;
+
+  input {
+    text-align: center;
+
+    margin-top: 24px;
+  }
+}
+
+.redeem-text-container {
+  text-align: center;
+}
+
+.redeem-text {
+  font-size: 16px;
+  padding: 25px 0;
+  font-family: $font-family-narrow;
+  color: $color-medium-violet;
+  width: 70%;
+
+  &.vertical-margin {
+    margin: 12px 0 24px;
+  }
+
+  span {
+    color: $color-primary;
+    font-weight: 600;
+  }
+}
+
+.redeem-poaps-container {
+  margin-top: 24px;
+}
+
+.events-logos {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+
+  .event-circle {
+    width: 95px;
+    height: 95px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin: 0 12px 12px 0;
+    background-color: $color-primary;
+    -webkit-box-shadow: 0px 10px 30px -5px rgba($color-primary, 0.5);
+    -moz-box-shadow: 0px 10px 30px -5px rgba($color-primary, 0.5);
+    box-shadow: 0px 10px 30px -5px rgba($color-primary, 0.5);
+
+    @media (min-width: $bp-mw) {
+      margin: 0 24px 24px 0;
+    }
+  }
+}
+
+.mb-24 {
+  margin-bottom: 36px;
+}
+
+.width500 {
+  width: 500px !important;
+}

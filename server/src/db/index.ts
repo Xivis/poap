@@ -291,6 +291,13 @@ export async function checkDualQrClaim(eventId: number, address: string): Promis
   return count === '0';
 }
 
+export async function checkDualEmailQrClaim(eventId: number, email: string): Promise<boolean> {
+  let query = 'SELECT COUNT(*) FROM qr_claims WHERE event_id = ${eventId} AND user_input = ${email} AND is_active = true';
+  const res = await db.result(query, {eventId, email});
+  let count = res.rows[0].count;
+  return count === '0';
+}
+
 export async function checkQrHashExists(qrHash: string): Promise<boolean> {
   const res = await db.oneOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE qr_hash = ${qrHash}', {
     qrHash,

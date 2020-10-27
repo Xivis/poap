@@ -9,7 +9,7 @@ const ClaimLoading: React.FC = () => {
       <div className={'claim-preloader'}>
         <img src={LoadingSpinner} alt={'Loading'} />
       </div>
-      <div className={'text-info'}>Please wait a moment while we get the QR code information.</div>
+      <div className={'text-info'}>Please wait a moment</div>
     </div>
   );
 };

@@ -3,6 +3,7 @@ import unidecode from 'unidecode';
 import createError from 'http-errors';
 import {
   checkDualQrClaim,
+  checkDualEmailQrClaim,
   checkNumericIdExists,
   checkQrHashExists,
   claimQrClaim,
@@ -722,7 +723,13 @@ export default async function routes(fastify: FastifyInstance) {
 
       // First check if it's an email address
       if (validEmail(req.body.address)) {
-        await updateQrInput(req.body.qr_hash, req.body.address);
+        const email = req.body.address.toLowerCase();
+        const dual_qr_claim = await checkDualEmailQrClaim(qr_claim.event.id, email);
+        if (!dual_qr_claim) {
+          await unclaimQrClaim(req.body.qr_hash);
+          return new createError.BadRequest('Email already claimed a code for this event');
+        }
+        await updateQrInput(req.body.qr_hash, email);
         qr_claim.user_input = req.body.address;
         return qr_claim
       }

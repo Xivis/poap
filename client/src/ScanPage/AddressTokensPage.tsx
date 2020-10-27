@@ -37,7 +37,6 @@ type TokenByYear = {
 };
 
 export const AddressTokensPage: FC<RouteComponentProps> = ({ location, match }) => {
-
   const [state, setState] = useState<AddressTokensPageState>({
     tokens: null,
     error: false,
@@ -46,7 +45,7 @@ export const AddressTokensPage: FC<RouteComponentProps> = ({ location, match }) 
     loading: false,
     isRedeemModalOpen: false,
     isRedeemLoading: false,
-  };
+  });
 
   const { addToast } = useToasts();
   const { tokens, error, address, ens, loading, isRedeemLoading, isRedeemModalOpen } = state;
@@ -159,19 +158,29 @@ export const AddressTokensPage: FC<RouteComponentProps> = ({ location, match }) 
             <h2>{year}</h2>
             {tokens.length > 0 ? (
               <div className="events-logos">
-                {tokens.map((t) => (
-                  <Link
-                    key={t.tokenId}
-                    to={{
-                      pathname: `/token/${t.tokenId}`,
-                      state: t,
-                    }}
-                    className="event-circle"
-                    data-aos="fade-up"
-                  >
-                    {typeof t.event.image_url === 'string' && <img src={t.event.image_url} alt={t.event.name} />}
-                  </Link>
-                ))}
+                {tokens.map((t, index) => {
+                  if (t.tokenId) {
+                    return (
+                      <Link
+                        key={t.tokenId}
+                        to={{
+                          pathname: `/token/${t.tokenId}`,
+                          state: t,
+                        }}
+                        className="event-circle"
+                        data-aos="fade-up"
+                      >
+                        {typeof t.event.image_url === 'string' && <img src={t.event.image_url} alt={t.event.name} />}
+                      </Link>
+                    );
+                  } else {
+                    return (
+                      <a href={'#'} className="event-circle" data-aos="fade-up" key={index}>
+                        {typeof t.event.image_url === 'string' && <img src={t.event.image_url} alt={t.event.name} />}
+                      </a>
+                    );
+                  }
+                })}
               </div>
             ) : (
               <>
@@ -201,10 +210,10 @@ export const AddressTokensPage: FC<RouteComponentProps> = ({ location, match }) 
             </h1>
           )}
 
-          {!error && !loading && address && isValidEmail(address) && (
+          {!error && !loading && address && isValidEmail(address) && tokens && tokens.length > 0 && (
             <div className="scan-email-badge-container">
               <span className="scan-email-badge">
-                This badges are not in an Ethereum Wallet yet. When you're ready to claim your POAPS, please click on
+                These badges are not in an Ethereum Wallet yet. When you're ready to claim your POAPS, please click on
                 the button below
               </span>
               <div className="scan-email-badge-button-container">
@@ -264,4 +273,4 @@ export const AddressTokensPage: FC<RouteComponentProps> = ({ location, match }) 
       </ReactModal>
     </main>
   );
-}
+};
