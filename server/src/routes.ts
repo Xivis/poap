@@ -11,6 +11,7 @@ import {
   createNotification,
   createQrClaims,
   createTask,
+  getActiveEmailClaims,
   getClaimedQrsHashList,
   getClaimedQrsList,
   getEvent,
@@ -30,6 +31,7 @@ import {
   getPendingTxsAmount,
   getPoapSettingByName,
   getPoapSettings,
+  getQrByUserInput,
   getQrClaim,
   getRangeClaimedQr,
   getRangeNotOwnedQr,
@@ -41,20 +43,22 @@ import {
   getTotalTransactions,
   getTransaction,
   getTransactions,
+  saveEmailClaim,
   saveEventTemplateUpdate,
   saveEventUpdate,
   unclaimQrClaim,
+  updateEmailQrClaims,
   updateEvent,
   updateEventOnQrRange,
   updateEventTemplate,
   updatePoapSettingByName,
+  updateProcessedEmailClaim,
   updateQrClaim,
   updateQrClaims,
   updateQrClaimsHashes,
   updateQrInput,
   updateQrScanned,
   updateSignerGasPrice,
-  getActiveEmailClaims, saveEmailClaim, getQrByUserInput,
 } from './db';
 
 import {
@@ -64,6 +68,7 @@ import {
   getAddressBalance,
   getAllEventIds,
   getAllTokens,
+  getEmailTokens,
   getTokenImg,
   getTokenInfo,
   isEventEditable,
@@ -76,7 +81,6 @@ import {
   resolveName,
   validEmail,
   verifyClaim,
-  getEmailTokens,
 } from './eth/helpers';
 
 import poapGraph from './plugins/thegraph-utils';
@@ -786,10 +790,12 @@ export default async function routes(fastify: FastifyInstance) {
     },
     async (req, res) => {
       const email = req.body.email;
+
       // If it's an invalid email: throw error
       if(!validEmail(email)){
         return new createError.BadRequest('Invalid email');
       }
+
       // If there is an email claim in progress: throw error
       const activeEmailClaims = await getActiveEmailClaims(email);
       if(activeEmailClaims.length > 0){
@@ -800,18 +806,88 @@ export default async function routes(fastify: FastifyInstance) {
       const now = new Date();
       now.setHours( now.getHours() + 1 );
 
-      // Get unclaimed QRs
-      const unclaimedQr = (await getQrByUserInput(email)).filter(claim => {return claim.tx_hash === ''});
       // If there isn't any unclaimed QR: Just return
-      if(unclaimedQr.length === 0) {
+      if((await getQrByUserInput(email, false)).length === 0) {
+        await sleep(1000);
         return true;
       }
+
       // Create an email claim
       const claim = await saveEmailClaim(email, now);
       console.log(claim.token);
       // Send mail
       // TODO: send email and add error logic
       return true;
+    }
+  );
+
+  fastify.post(
+    '/actions/redeem-email-tokens',
+    {
+      schema: {
+        description: 'Redeem tokens saved with an email',
+        tags: ['Actions',],
+        body: {
+          type: 'object',
+          required: ['email', 'address', 'token'],
+          properties: {
+            email: { type: 'string' },
+            token: { type: 'string' },
+            address: 'address#'
+          }
+        },
+        response: {
+          200: {
+            type: 'string'
+          }
+        }
+      },
+    },
+    async (req, res) => {
+      const email = req.body.email;
+      const address = req.body.address;
+      const token = req.body.token;
+
+      // If it's an invalid email: throw error
+      if(!validEmail(email)){
+        return new createError.BadRequest('Invalid email');
+      }
+
+      const parsed_address = await checkAddress(address);
+      if (!parsed_address) {
+        return new createError.BadRequest('Address is not valid');
+      }
+
+      // If there isn't a valid email claim: throw error
+      const activeEmailClaims = await getActiveEmailClaims(email, token);
+      if(activeEmailClaims.length === 0){
+        return new createError.BadRequest('Email claim not found');
+      }
+
+      // Get all the qr claims that do not have a transaction
+      const activeQrs = await getQrByUserInput(email, false)
+
+      // Get all the different events id
+      const event_ids = activeQrs.map(qr => qr.event_id);
+
+      // Mint all the tokens
+      const tx = await mintUserToManyEvents(event_ids, parsed_address, false, {
+        'estimate_mint_gas': event_ids.length,
+        'layer': Layer.layer2
+      });
+
+      if(!tx) {
+        return new createError.InternalServerError('There was a problem in token mint');
+      }
+
+      // Update the Qr claims with the transaction and the address
+      await updateEmailQrClaims(email, parsed_address, tx);
+
+      // Processed the email claim
+      await updateProcessedEmailClaim(email);
+
+      res.status(200);
+      return tx.hash;
     }
   );
 

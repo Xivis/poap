@@ -204,3 +204,4 @@ CREATE TABLE email_claims (
     "processed" boolean default false
 );
 
+ALTER TABLE qr_claims DROP CONSTRAINT qr_claims_tx_hash_key;

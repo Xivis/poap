@@ -241,10 +241,11 @@ export async function mintEventToManyUsers(eventId: number, toAddr: Address[], a
   await processTransaction(tx, txObj, OperationType.mintEventToManyUsers, JSON.stringify([eventId, toAddr]), awaitTx, extraParams);
 }
 
-export async function mintUserToManyEvents(eventIds: number[], toAddr: Address, awaitTx: boolean = true, extraParams?: any) {
+export async function mintUserToManyEvents(eventIds: number[], toAddr: Address, awaitTx: boolean = true, extraParams?: any): Promise<null | ContractTransaction> {
   const txObj = await getTxObj(true, extraParams);
   const tx = await txObj.contract.functions.mintUserToManyEvents(eventIds, toAddr, txObj.transactionParams);
   await processTransaction(tx, txObj, OperationType.mintUserToManyEvents, JSON.stringify({ eventIds, toAddr }), awaitTx, extraParams);
+  return tx;
 }
 
 export async function mintDeliveryToken(contract: Address, index: number, recipient: Address, events: number[], proofs: string[], awaitTx: boolean = true, extraParams?: any): Promise<null | ContractTransaction> {
@@ -430,7 +431,7 @@ export async function getEmailTokens(email: string): Promise<TokenInfo[]> {
 
   const tokens: TokenInfo[] = [];
 
-  (await getQrByUserInput(email)).forEach(claim => {
+  (await getQrByUserInput(email, false)).forEach(claim => {
     tokens.push({
       event: getEvent(claim.event_id),
       tokenId: '',

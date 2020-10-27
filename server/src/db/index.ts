@@ -330,6 +330,20 @@ export async function updateQrClaim(qrHash: string, beneficiary: string, user_in
   return res.rowCount === 1;
 }
 
+export async function updateEmailQrClaims(user_input: string, beneficiary: string, tx: ContractTransaction) {
+  const tx_hash = tx.hash
+  const signer = tx.from
+
+  const res = await db.result('UPDATE qr_claims SET tx_hash=${tx_hash}, beneficiary=${beneficiary}, signer=${signer} WHERE user_input=${user_input} AND tx_hash IS NULL',
+    {
+      tx_hash,
+      signer,
+      beneficiary,
+      user_input,
+    });
+  return res.rowCount === 1;
+}
+
 export async function updateQrInput(qrHash: string, user_input: string) {
 
   const res = await db.result('UPDATE qr_claims SET user_input=${user_input} WHERE qr_hash = ${qrHash}',
@@ -597,8 +611,23 @@ export async function getQrRolls(): Promise<null | qrRoll[]> {
   return res;
 }
 
-export async function getQrByUserInput(user_input: string, claimed: boolean = false): Promise<ClaimQR[]> {
-  const res = await db.manyOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE user_input = ${user_input}', {
+export async function getQrByUserInput(user_input: string, minted?: boolean): Promise<ClaimQR[]> {
+  let query = 'SELECT * FROM qr_claims WHERE user_input = ${user_input}';
+  if(minted !== undefined) {
+    if(minted) {
+      query = query + " AND tx_hash IS NOT NULL ''"
+    } else {
+      query = query + " AND tx_hash IS NULL"
+    }
+  }
+  const res = await db.manyOrNone<ClaimQR>(query, {
+    user_input
+  });
+  return res;
+}
+
+export async function getNonMintedQrByUserInput(user_input: string): Promise<ClaimQR[]> {
+  const res = await db.manyOrNone<ClaimQR>('SELECT * FROM qr_claims WHERE user_input = ${user_input} AND tx_hash', {
     user_input
   });
   return res;
@@ -753,15 +782,30 @@ export async function saveEventTemplateUpdate(eventTemplateId: number, field: st
   return true
 }
 
-export async function getActiveEmailClaims(email: string): Promise<EmailClaim[]> {
+export async function getActiveEmailClaims(email?: string, token?: string): Promise<EmailClaim[]> {
+  const now = new Date();
+  let query = 'SELECT * FROM email_claims WHERE processed = false AND end_date >= ${now}'
+  if(email) {
+    query = query + ' AND email = ${email}'
+  }
+  if(token) {
+    query = query + ' AND token = ${token}'
+  }
+
   return db.manyOrNone<EmailClaim>(
-    'SELECT * FROM email_claims WHERE email = ${email} AND processed = false AND end_date >= now()',
-    { email }
+    query,
+    { email, token, now }
   );
 }
 
 export async function saveEmailClaim(email: string, end_date: Date): Promise<{token: string}> {
   let query = 'INSERT INTO email_claims (email, end_date) VALUES (${email}, ${end_date}) RETURNING token'
   return db.one(query, { email, end_date });
+}
+
+export async function updateProcessedEmailClaim(email: string): Promise<boolean> {
+  let query = 'UPDATE email_claims SET processed = true WHERE email = ${email} AND processed = false'
+  const res = await db.result(query, { email });
+  return res.rowCount === 1;
 
 }
