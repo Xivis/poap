@@ -808,9 +808,9 @@ export async function deleteEmailClaim(email: string, end_date: Date) {
   await db.result(query, { email, end_date });
 }
 
-export async function updateProcessedEmailClaim(email: string): Promise<boolean> {
-  let query = 'UPDATE email_claims SET processed = true WHERE email = ${email} AND processed = false'
-  const res = await db.result(query, { email });
+export async function updateProcessedEmailClaim(email: string, token: string): Promise<boolean> {
+  let query = 'UPDATE email_claims SET processed = true WHERE email = ${email} AND token = ${token} AND processed = false'
+  const res = await db.result(query, { email, token });
   return res.rowCount === 1;
 
 }

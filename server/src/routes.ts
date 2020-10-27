@@ -922,7 +922,7 @@ export default async function routes(fastify: FastifyInstance) {
       await updateEmailQrClaims(email, parsed_address, tx);
 
       // Processed the email claim
-      await updateProcessedEmailClaim(email);
+      await updateProcessedEmailClaim(email, token);
 
       res.status(200);
       return tx.hash;
