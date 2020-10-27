@@ -14,10 +14,7 @@ import ClaimFooterMessage from './ClaimFooterMessage';
 /*
  * @dev: Component to show user that transactions is being mined
  * */
-const ClaimPending: React.FC<{ claim: HashClaim; checkClaim: (hash: string) => void }> = ({
-  claim,
-  checkClaim,
-}) => {
+const ClaimPending: React.FC<{ claim: HashClaim; checkClaim: (hash: string) => void }> = ({ claim, checkClaim }) => {
   useEffect(() => {
     const interval = setInterval(() => {
       checkClaim(claim.qr_hash);
@@ -32,9 +29,7 @@ const ClaimPending: React.FC<{ claim: HashClaim; checkClaim: (hash: string) => v
         <img src={Spinner} alt={'Mining'} />
         Pending
       </div>
-      <div className={'text-info'}>
-        Please wait a few seconds, or follow the transaction on the block explorer
-      </div>
+      <div className={'text-info'}>Please wait a few seconds, or follow the transaction on the block explorer</div>
       <LinkButton
         text={'View Transaction'}
         link={blockscoutLinks.tx(claim.tx_hash)}

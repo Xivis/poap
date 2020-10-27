@@ -139,13 +139,13 @@ export interface HashClaim {
   delegated_mint: boolean;
   delegated_signed_message: string;
   result: QrResult | null;
-};
+}
 export interface PoapSetting {
   id: number;
   name: string;
   type: string;
   value: string;
-};
+}
 export interface AdminAddress {
   id: number;
   signer: Address;
@@ -154,7 +154,7 @@ export interface AdminAddress {
   balance: string;
   created_date: string;
   pending_tx: number;
-};
+}
 export interface Transaction {
   id: number;
   tx_hash: string;
@@ -166,13 +166,13 @@ export interface Transaction {
   signer: string;
   status: string;
   layer: string;
-};
+}
 export interface PaginatedTransactions {
   limit: number;
   offset: number;
   total: number;
   transactions: Transaction[];
-};
+}
 
 export interface Notification {
   id: number;
@@ -181,14 +181,14 @@ export interface Notification {
   type: string;
   event_id: number;
   event: PoapEvent;
-};
+}
 
 export interface PaginatedNotifications {
   limit: number;
   offset: number;
   total: number;
   notifications: Notification[];
-};
+}
 
 export type QrCode = {
   beneficiary: string;
@@ -299,16 +299,12 @@ export function getTokenInfo(tokenId: string): Promise<TokenInfo> {
 }
 
 export async function getEvents(): Promise<PoapEvent[]> {
-  return authClient.isAuthenticated()
-    ? secureFetch(`${API_BASE}/events`)
-    : fetchJson(`${API_BASE}/events`);
+  return authClient.isAuthenticated() ? secureFetch(`${API_BASE}/events`) : fetchJson(`${API_BASE}/events`);
 }
 
 export type TemplateResponse = TemplatesResponse<Template>;
 
-export async function getTemplates({ limit = 10, offset = 0, name = '' }: Params = {}): Promise<
-  TemplateResponse
-> {
+export async function getTemplates({ limit = 10, offset = 0, name = '' }: Params = {}): Promise<TemplateResponse> {
   return fetchJson(`${API_BASE}/event-templates?limit=${limit}&offset=${offset}&name=${name}`);
 }
 
@@ -321,9 +317,7 @@ export async function getTemplateById(id?: number): Promise<Template> {
 
 export async function getEvent(fancyId: string): Promise<null | PoapFullEvent> {
   const isAdmin = authClient.isAuthenticated();
-  return isAdmin
-    ? secureFetch(`${API_BASE}/events-admin/${fancyId}`)
-    : fetchJson(`${API_BASE}/events/${fancyId}`);
+  return isAdmin ? secureFetch(`${API_BASE}/events-admin/${fancyId}`) : fetchJson(`${API_BASE}/events/${fancyId}`);
 }
 
 export async function getSetting(settingName: string): Promise<null | PoapSetting> {
@@ -370,11 +364,7 @@ export async function checkSigner(signerIp: string, eventId: number): Promise<bo
   }
 }
 
-export async function requestProof(
-  signerIp: string,
-  eventId: number,
-  claimer: string
-): Promise<ClaimProof> {
+export async function requestProof(signerIp: string, eventId: number, claimer: string): Promise<ClaimProof> {
   return fetchJson(`${signerIp}/api/proof`, {
     method: 'POST',
     body: JSON.stringify({ eventId, claimer }),
@@ -398,7 +388,7 @@ export async function sendNotification(
   title: string,
   description: string,
   notificationType: string,
-  selectedEventId: number | null
+  selectedEventId: number | null,
 ): Promise<any> {
   return secureFetchNoResponse(`${API_BASE}/notifications`, {
     method: 'POST',
@@ -412,11 +402,7 @@ export async function sendNotification(
   });
 }
 
-export async function mintEventToManyUsers(
-  eventId: number,
-  addresses: string[],
-  signer_address: string
-): Promise<any> {
+export async function mintEventToManyUsers(eventId: number, addresses: string[], signer_address: string): Promise<any> {
   return secureFetchNoResponse(`${API_BASE}/actions/mintEventToManyUsers`, {
     method: 'POST',
     body: JSON.stringify({
@@ -428,11 +414,7 @@ export async function mintEventToManyUsers(
   });
 }
 
-export async function mintUserToManyEvents(
-  eventIds: number[],
-  address: string,
-  signer_address: string
-): Promise<any> {
+export async function mintUserToManyEvents(eventIds: number[], address: string, signer_address: string): Promise<any> {
   return secureFetchNoResponse(`${API_BASE}/actions/mintUserToManyEvents`, {
     method: 'POST',
     body: JSON.stringify({
@@ -466,7 +448,7 @@ export async function createTemplate(event: FormData): Promise<Template> {
   });
 }
 
-export async function updateTemplate(event: FormData, id: number): Promise<void>  {
+export async function updateTemplate(event: FormData, id: number): Promise<void> {
   return fetchJsonNoResponse(`${API_BASE}/event-templates/${id}`, {
     method: 'PUT',
     body: event,
@@ -490,7 +472,7 @@ export function getNotifications(
   offset: number,
   type?: string,
   recipientFilter?: string,
-  eventId?: number
+  eventId?: number,
 ): Promise<PaginatedNotifications> {
   let paramsObject = { limit, offset };
 
@@ -515,23 +497,18 @@ export async function getQrCodes(
   passphrase: string,
   claimed?: boolean,
   scanned?: boolean,
-  event_id?: number
+  event_id?: number,
 ): Promise<PaginatedQrCodes> {
   const isAdmin = authClient.isAuthenticated();
-  const params = queryString.stringify(
-    { limit, offset, claimed, event_id, scanned, passphrase },
-    { sort: false }
-  );
-  return isAdmin
-    ? secureFetch(`${API_BASE}/qr-code?${params}`)
-    : fetchJson(`${API_BASE}/qr-code?${params}`);
+  const params = queryString.stringify({ limit, offset, claimed, event_id, scanned, passphrase }, { sort: false });
+  return isAdmin ? secureFetch(`${API_BASE}/qr-code?${params}`) : fetchJson(`${API_BASE}/qr-code?${params}`);
 }
 
 export async function qrCodesRangeAssign(
   from: number,
   to: number,
   eventId: number | null,
-  passphrase?: string
+  passphrase?: string,
 ): Promise<void> {
   const isAdmin = authClient.isAuthenticated();
 
@@ -559,7 +536,7 @@ export async function qrCodesRangeAssign(
 
 export async function qrCodesListAssign(
   qrHashes: string[],
-  eventId: number | null
+  eventId: number | null,
 ): Promise<QrCodesListAssignResponse> {
   console.log(eventId);
   return secureFetch(`${API_BASE}/qr-code/list-assign`, {
@@ -576,7 +553,7 @@ export async function qrCreateMassive(
   qrHashes: string[],
   qrIds: string[],
   delegated_mint: boolean,
-  event?: string
+  event?: string,
 ): Promise<void> {
   let unstringifiedBody = {
     qr_list: qrHashes,
@@ -598,7 +575,7 @@ export async function qrCreateMassive(
 export async function qrCodesSelectionUpdate(
   qrCodesIds: string[],
   eventId: number | null,
-  passphrase?: string
+  passphrase?: string,
 ): Promise<void> {
   const isAdmin = authClient.isAuthenticated();
 
@@ -626,7 +603,7 @@ export function getTransactions(
   limit: number,
   offset: number,
   status: string,
-  signer: string
+  signer: string,
 ): Promise<PaginatedTransactions> {
   const params = queryString.stringify({ limit, offset, status, signer }, { sort: false });
   return secureFetch(`${API_BASE}/transactions?${params}`);
@@ -644,11 +621,7 @@ export async function getClaimHash(hash: string): Promise<HashClaim> {
   return fetchJson(`${API_BASE}/actions/claim-qr?qr_hash=${hash}`);
 }
 
-export async function postClaimHash(
-  qr_hash: string,
-  address: string,
-  secret: string
-): Promise<HashClaim> {
+export async function postClaimHash(qr_hash: string, address: string, secret: string): Promise<HashClaim> {
   return fetchJson(`${API_BASE}/actions/claim-qr`, {
     method: 'POST',
     body: JSON.stringify({ qr_hash, address, secret }),
@@ -660,6 +633,18 @@ export async function postTokenMigration(tokenId: number): Promise<MigrateRespon
   return fetchJson(`${API_BASE}/actions/migrate`, {
     method: 'POST',
     body: JSON.stringify({ tokenId }),
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+export function redeemPoaps(): Promise<void> {
+  return fetchJson(`${API_BASE}/redeem`);
+}
+
+export async function redeemWithEmail(address: string, uid: string): Promise<void> {
+  return fetchJson(`${API_BASE}/redeem`, {
+    method: 'POST',
+    body: JSON.stringify({ beneficiary: address, uid }),
     headers: { 'Content-Type': 'application/json' },
   });
 }

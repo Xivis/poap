@@ -102,21 +102,21 @@ const ClaimForm: React.FC<{
       walletconnect: {
         package: WalletConnectProvider,
         options: {
-          infuraId: process.env.REACT_APP_INFURA_ID
-        }
+          infuraId: process.env.REACT_APP_INFURA_ID,
+        },
       },
       portis: {
         package: Portis,
         options: {
-          id: process.env.REACT_APP_PORTIS_APP_ID
-        }
-      }
-    }
+          id: process.env.REACT_APP_PORTIS_APP_ID,
+        },
+      },
+    };
 
     const web3Modal = new Web3Modal({
       network: NETWORK,
       cacheProvider: false,
-      providerOptions
+      providerOptions,
     });
 
     try {
@@ -159,7 +159,7 @@ const ClaimForm: React.FC<{
     const account = accounts[0];
 
     if (NETWORK && network && NETWORK.indexOf(network) === -1) {
-      let message = `Wrong network, please connect to ${NETWORK}.\nCurrently on ${network}`
+      let message = `Wrong network, please connect to ${NETWORK}.\nCurrently on ${network}`;
       addToast(message, {
         appearance: 'error',
         autoDismiss: false,
@@ -172,19 +172,17 @@ const ClaimForm: React.FC<{
 
     try {
       const contract = new _web3.eth.Contract(abi, CONTRACT_ADDRESS);
-      let gas = 1000000
+      let gas = 1000000;
       try {
-        gas = await contract.methods.mintToken(
-          event.id, token, beneficiary, signature
-        ).estimateGas({ from: account })
+        gas = await contract.methods.mintToken(event.id, token, beneficiary, signature).estimateGas({ from: account });
         gas = Math.floor(gas * 1.3);
       } catch (e) {
         console.log('Error calculating gas');
       }
 
-      contract.methods.mintToken(event.id, token, beneficiary, signature).send(
-        { from: account, gas: gas },
-        (err: any, hash: string | null) => {
+      contract.methods
+        .mintToken(event.id, token, beneficiary, signature)
+        .send({ from: account, gas: gas }, (err: any, hash: string | null) => {
           if (err) {
             console.log('Error on Mint Token: ', err);
             showErrorMessage();
@@ -201,9 +199,9 @@ const ClaimForm: React.FC<{
   };
 
   const getReceipt = async () => {
-    let receipt: null | TransactionReceipt = null
+    let receipt: null | TransactionReceipt = null;
     if (web3 && txHash !== '' && !txReceipt) {
-      receipt = await web3.eth.getTransactionReceipt(txHash)
+      receipt = await web3.eth.getTransactionReceipt(txHash);
       if (receipt) {
         setTimeout(() => setTxReceipt(receipt), 1000);
       }
@@ -221,16 +219,12 @@ const ClaimForm: React.FC<{
   const handleFormSubmit = async (values: QRFormValues, actions: FormikActions<QRFormValues>) => {
     if (claimed) {
       startMigration();
-      return
+      return;
     }
     try {
       actions.setSubmitting(true);
       if (claim) {
-        const newClaim = await postClaimHash(
-          claim.qr_hash.toLowerCase(),
-          values.address.toLowerCase(),
-          claim.secret
-        );
+        const newClaim = await postClaimHash(claim.qr_hash.toLowerCase(), values.address.toLowerCase(), claim.secret);
         setClaimed(true);
         if (migrate) {
           setMigrateInProcess(true);
@@ -250,7 +244,7 @@ const ClaimForm: React.FC<{
   };
 
   const fetchClaim = async () => {
-    if (!claim) return
+    if (!claim) return;
     getClaimHash(claim.qr_hash.toLowerCase()).then((claim) => {
       setCompleteClaim(claim);
       if (claim && claim.tx_status === TX_STATUS.passed && claim.result && claim.result.token) {
@@ -272,9 +266,8 @@ const ClaimForm: React.FC<{
 
   const migrationText = (
     <div className={'backoffice-tooltip'}>
-      All POAPs are minted in xDAI, but should you want your POAP in mainnet, un-check this checkbox
-      so that you can submit the transaction to migrate the badge to mainnet.
-      You'll need to pay for the transaction cost.
+      All POAPs are minted in xDAI, but should you want your POAP in mainnet, un-check this checkbox so that you can
+      submit the transaction to migrate the badge to mainnet. You'll need to pay for the transaction cost.
     </div>
   );
 
@@ -300,7 +293,7 @@ const ClaimForm: React.FC<{
                         autoComplete="off"
                         style={{ borderColor: mainColor ?? COLORS.primaryColor }}
                         className={classNames(!!form.errors[field.name] && 'error')}
-                        placeholder={'Input your Ethereum address or ENS name'}
+                        placeholder={'Input your Ethereum address or ENS name or email'}
                         {...field}
                         disabled={claimed}
                       />
@@ -313,10 +306,7 @@ const ClaimForm: React.FC<{
                   className={'layer-checkbox'}
                   onClick={!isSubmitting && !migrateInProcess && !claimed ? toggleCheckbox : () => {}}
                 >
-                  <CheckboxIcon color={mainColor ?? COLORS.primaryColor} />
-                  {' '}
-                  Free minting in xDAI
-                  {' '}
+                  <CheckboxIcon color={mainColor ?? COLORS.primaryColor} /> Free minting in xDAI{' '}
                   <Tooltip content={[migrationText]}>
                     <FiHelpCircle color={mainColor ?? COLORS.primaryColor} />
                   </Tooltip>
@@ -347,12 +337,7 @@ const ClaimForm: React.FC<{
         </Formik>
       </div>
 
-      {txHash &&
-        <TxDetail
-          hash={txHash}
-          receipt={txReceipt}
-        />
-      }
+      {txHash && <TxDetail hash={txHash} receipt={txReceipt} />}
 
       {txReceipt && !txReceipt.status && (
         <div className={'text-info'}>
