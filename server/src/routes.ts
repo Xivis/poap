@@ -769,6 +769,40 @@ export default async function routes(fastify: FastifyInstance) {
     }
   );
 
+  fastify.get(
+    '/actions/claim-email',
+    {
+      schema: {
+        description: 'Get the email claim information',
+        tags: ['Actions',],
+        querystring: {
+          token: { type: 'string' },
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              token: { type: 'string' },
+              end_date: { type: 'string' },
+              email: { type: 'string' },
+              processed: { type: 'boolean' },
+            }
+          }
+        }
+      }
+    },
+    async (req, res) => {
+      // Get the email claim
+      const emailClaims = await getActiveEmailClaims(undefined ,req.query.token);
+      // If it isn't valid: throw error
+      if(emailClaims.length == 0) {
+        return new createError.BadRequest('Invalid token');
+      }
+      // Return the first valid email claim
+      return emailClaims[0];
+    }
+  );
+
   fastify.post(
     '/actions/claim-email',
     {
