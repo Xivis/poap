@@ -11,6 +11,7 @@ import {
   createNotification,
   createQrClaims,
   createTask,
+  deleteEmailClaim,
   getActiveEmailClaims,
   getClaimedQrsHashList,
   getClaimedQrsList,
@@ -107,7 +108,7 @@ import * as admin from 'firebase-admin';
 import { uploadFile } from './plugins/google-storage-utils';
 import { getUserRoles } from './plugins/groups-decorator';
 import { sleep } from './utils';
-import { sendNewEventEmailToAdmins } from './plugins/sendgrid-utils';
+import { sendNewEventEmailToAdmins, sendRedeemTokensEmail } from './plugins/sendgrid-utils';
 
 function buildMetadataJson(homeUrl: string, tokenUrl: string, ev: PoapEvent) {
   return {
@@ -814,10 +815,13 @@ export default async function routes(fastify: FastifyInstance) {
 
       // Create an email claim
       const claim = await saveEmailClaim(email, now);
-      console.log(claim.token);
       // Send mail
-      // TODO: send email and add error logic
-      return true;
+      const response = await sendRedeemTokensEmail(email, claim.token);
+      // If the email failed: Remove email claim
+      if(!response) {
+        await deleteEmailClaim(email, now);
+      }
+      return response;
     }
   );
 

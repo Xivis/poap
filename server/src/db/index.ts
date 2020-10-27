@@ -803,6 +803,11 @@ export async function saveEmailClaim(email: string, end_date: Date): Promise<{to
   return db.one(query, { email, end_date });
 }
 
+export async function deleteEmailClaim(email: string, end_date: Date) {
+  let query = 'DELETE FROM email_claims WHERE email = ${email} AND end_date = ${end_date}'
+  await db.result(query, { email, end_date });
+}
+
 export async function updateProcessedEmailClaim(email: string): Promise<boolean> {
   let query = 'UPDATE email_claims SET processed = true WHERE email = ${email} AND processed = false'
   const res = await db.result(query, { email });
