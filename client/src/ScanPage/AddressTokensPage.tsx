@@ -11,7 +11,7 @@ import classNames from 'classnames';
 import delve from 'dlv';
 
 /* Helpers */
-import { TokenInfo, getTokensFor, resolveENS, getENSFromAddress, redeemPoaps } from '../api';
+import { TokenInfo, getTokensFor, resolveENS, getENSFromAddress, requestEmailRedeem } from '../api';
 import { isValidAddress, isValidEmail } from '../lib/helpers';
 
 /* Assets */
@@ -63,21 +63,22 @@ export const AddressTokensPage: FC<RouteComponentProps> = ({ location, match }) 
   };
 
   const handleRedeemConfirm = () => {
+    if (!address) return;
     setState((oldState) => ({ ...oldState, isRedeemLoading: true }));
 
-    redeemPoaps()
+    requestEmailRedeem(address)
       .then(() => {
         setState((oldState) => ({ ...oldState, isRedeemModalOpen: false }));
 
-        const successMessage = 'Your Poaps were redeemed successfully';
+        const successMessage = 'Your request was processed correcty! Please, check your email';
 
         addToast(successMessage, {
           appearance: 'success',
           autoDismiss: true,
         });
       })
-      .catch(() => {
-        const errorMessage = 'An error occurred redeeming your Poaps';
+      .catch((e: Error) => {
+        const errorMessage = `An error occurred claiming your POAPs:\n${e.message}`;
 
         addToast(errorMessage, {
           appearance: 'error',
@@ -210,20 +211,6 @@ export const AddressTokensPage: FC<RouteComponentProps> = ({ location, match }) 
             </h1>
           )}
 
-          {!error && !loading && address && isValidEmail(address) && tokens && tokens.length > 0 && (
-            <div className="scan-email-badge-container">
-              <span className="scan-email-badge">
-                These badges are not in an Ethereum Wallet yet. When you're ready to claim your POAPS, please click on
-                the button below
-              </span>
-              <div className="scan-email-badge-button-container">
-                <button onClick={handleOpenRedeemModalClick} className="scan-email-badge-button">
-                  Redeem
-                </button>
-              </div>
-            </div>
-          )}
-
           {error && !loading && (
             <div className="bk-msg-error">
               There was an error.
@@ -235,7 +222,7 @@ export const AddressTokensPage: FC<RouteComponentProps> = ({ location, match }) 
           {loading === true && (
             <>
               <Loading />
-              <div style={{ textAlign: 'center' }}>Waiting for your tokens... Hang tight</div>
+              <div style={{ textAlign: 'center' }}>Waiting for your tokens...</div>
             </>
           )}
 
@@ -247,15 +234,31 @@ export const AddressTokensPage: FC<RouteComponentProps> = ({ location, match }) 
           )}
 
           {tokens && tokens.length > 0 && renderTokens()}
+
+          {!error && !loading && address && isValidEmail(address) && tokens && tokens.length > 0 && (
+            <div className="scan-email-badge-container">
+              <span className="scan-email-badge">
+                <b>Note:</b> These badges are not in an Ethereum wallet yet. When you're ready to claim your POAPS, please click on
+                the button below
+              </span>
+              <div className="scan-email-badge-button-container">
+                <button onClick={handleOpenRedeemModalClick} className="btn btn-primary">
+                  Claim my POAPs
+                </button>
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
 
       <ReactModal isOpen={isRedeemModalOpen} shouldFocusAfterRender={true}>
         <div className={classNames('redeem-modal', isRedeemLoading && 'submitting')}>
+          <h2>Claim POAPs</h2>
           <span className="redeem-modal-paragraph">
-            To transfer your POAPs to your Ethereum wallet you will need access to the email{' '}
+            To claim your POAPs to your Ethereum wallet you will need access to the email{' '}
             <span className="redeem-modal-email">{address}</span> and the address of your wallet. You will receive an
-            email to verify that you own that email and instructions to redeem your POAPs
+            email to verify that you own that email and instructions to redeem your POAPs.
           </span>
           <div className="redeem-modal-buttons-container">
             <SubmitButton

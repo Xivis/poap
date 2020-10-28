@@ -637,8 +637,12 @@ export async function postTokenMigration(tokenId: number): Promise<MigrateRespon
   });
 }
 
-export function redeemPoaps(): Promise<void> {
-  return fetchJson(`${API_BASE}/redeem`);
+export function requestEmailRedeem(email: string): Promise<void> {
+  return fetchJson(`${API_BASE}/actions/claim-email`, {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
 
 export async function redeemWithEmail(address: string, uid: string): Promise<void> {

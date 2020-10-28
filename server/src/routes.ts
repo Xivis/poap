@@ -841,7 +841,7 @@ export default async function routes(fastify: FastifyInstance) {
       // If there is an email claim in progress: throw error
       const activeEmailClaims = await getActiveEmailClaims(email);
       if(activeEmailClaims.length > 0){
-        return new createError.BadRequest('YOu already have an active claim');
+        return new createError.BadRequest('You already have an active claim. Please check your email');
       }
 
       // Set the expiration time to an hour from now
