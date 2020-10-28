@@ -1,11 +1,15 @@
 import React, { FC, useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import delve from 'dlv';
-import { useToasts } from 'react-toast-notifications';
-import classNames from 'classnames';
 import { Formik, Form, Field, FieldProps } from 'formik';
+import { RouteComponentProps } from 'react-router-dom';
+import { useToasts } from 'react-toast-notifications';
+import { TransactionReceipt } from 'web3-core';
+import { Link } from 'react-router-dom';
+import classNames from 'classnames';
+import Web3 from 'web3';
+import delve from 'dlv';
 
 // components
+import { TxDetail } from '../components/TxDetail';
 import { ScanHeader, ScanFooter } from '../ScanPage';
 import { SubmitButton } from '../components/SubmitButton';
 
@@ -13,8 +17,10 @@ import { SubmitButton } from '../components/SubmitButton';
 import { RedeemSchema } from '../lib/schemas';
 
 // api
-import { redeemWithEmail, TokenInfo, getTokensFor } from '../api';
-import { RouteComponentProps } from 'react-router-dom';
+import { EmailClaim, redeemWithEmail, TokenInfo, getTokensFor, getEmailClaim } from '../api';
+
+/* Assets */
+import LoadingSpinner from '../images/loading.svg';
 
 type RedeemFormValues = {
   address: string;
@@ -25,31 +31,51 @@ const initialValues = { address: '' };
 export const RedeemPage: FC<RouteComponentProps> = ({ match }) => {
   // react hooks
   const [isRedeemLoading, setIsRedeemLoading] = useState<boolean>(false);
+  const [claim, setClaim] = useState<EmailClaim | null>(null);
   const [tokens, setTokens] = useState<TokenInfo[]>([]);
+  const [tokenError, setTokenError] = useState<boolean>(false);
+  const [txHash, setTxHash] = useState<string>('');
+  const [web3, setWeb3] = useState<any>(null);
+  const [txReceipt, setTxReceipt] = useState<null | TransactionReceipt>(null);
+  const [ethereumAddress, setEthereumAddress] = useState<string>('');
 
   // lib hooks
   const { addToast } = useToasts();
 
   // constants
   const uid = delve(match, 'params.uid');
-  const email = delve(match, 'params.email');
 
   // effects
   useEffect(() => {
-    getTokens();
+    getClaim();
   }, []) // eslint-disable-line
+  useEffect(() => {
+    if (claim) getTokens();
+  }, [claim]) // eslint-disable-line
+  useEffect(() => {
+    if (txHash && web3) {
+      const interval = setInterval(() => {
+        getReceipt();
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [txHash, web3]);
 
   // methods
-  const getTokens = async () => {
+  const getClaim = async () => {
     try {
-      // TODO: Uncomment next line when backend supports email
-      // How do we get the email? Will `/actions/scan/${email}` be a valid endpoint?
-      // const tokens = await getTokensFor(email);
-
-      // TODO: Remove next line when backend supports email
-      const mockAddress = '0x5A384227B65FA093DEC03Ec34e111Db80A040615';
-      const tokens = await getTokensFor(mockAddress);
-
+      let _claim = await getEmailClaim(uid);
+      setClaim(_claim);
+    } catch (e) {
+      setTokenError(true);
+      console.log('Error getting claim');
+      console.log(e);
+    }
+  };
+  const getTokens = async () => {
+    if (!claim) return;
+    try {
+      const tokens = await getTokensFor(claim.email);
       setTokens(tokens);
     } catch (error) {
       addToast(error.message, {
@@ -58,18 +84,28 @@ export const RedeemPage: FC<RouteComponentProps> = ({ match }) => {
       });
     }
   };
+  const getReceipt = async () => {
+    let receipt: null | TransactionReceipt = null;
+    if (web3 && txHash && !txReceipt) {
+      receipt = await web3.eth.getTransactionReceipt(txHash);
+      if (receipt) {
+        setTimeout(() => setTxReceipt(receipt), 1000);
+      }
+    }
+  };
 
   // handlers
   const handleForm = async (values: RedeemFormValues) => {
-    setIsRedeemLoading(true);
-    const { address } = values;
+    if (!claim) return;
 
-    redeemWithEmail(address, uid)
-      .then(() => {
-        addToast('POAPs loaded successfully', {
-          appearance: 'error',
-          autoDismiss: false,
-        });
+    const { address } = values;
+    setIsRedeemLoading(true);
+    setEthereumAddress(address);
+    redeemWithEmail(address, uid, claim.email)
+      .then((response) => {
+        const _web3 = new Web3(process.env.REACT_APP_L2_RPC_URL || '');
+        setWeb3(_web3);
+        setTxHash(response.tx_hash);
       })
       .catch((error) => {
         addToast(error.message, {
@@ -80,19 +116,34 @@ export const RedeemPage: FC<RouteComponentProps> = ({ match }) => {
       .finally(() => setIsRedeemLoading(false));
   };
 
-  return (
-    <div className="landing">
-      <ScanHeader sectionName="Redeem" />
+  let body = (
+    <div className={'preloader'}>
+      <img src={LoadingSpinner} alt={'Loading'} />
+    </div>
+  );
 
-      <div className="redeem-content-container">
+  if (tokenError) {
+    body = (
+      <div className={'token-error'}>
+        <div>We couldn't validate the information received.</div>
+        <div>The link could have expired or been already claimed.</div>
+        <div>
+          Check your POAPs <Link to={'/scan'}>here</Link> and request another email if needed.
+        </div>
+      </div>
+    );
+  }
+
+  if (claim && !tokenError) {
+    body = (
+      <>
         <Formik enableReinitialize onSubmit={handleForm} initialValues={initialValues} validationSchema={RedeemSchema}>
           {({ dirty, isValid, handleChange, values }) => {
             return (
               <Form className="claim-form">
-                <span className="redeem-text">
-                  This POAPs were claimed with email <span>{email}</span>, please enter your Ethereum address or ENS to
-                  claim them
-                </span>
+                <div className="redeem-text">
+                  This POAPs were claimed with email <span>{claim.email}</span>, please enter your Ethereum address or ENS to claim them
+                </div>
                 <Field
                   name="hash"
                   render={({ field, form }: FieldProps) => {
@@ -105,23 +156,37 @@ export const RedeemPage: FC<RouteComponentProps> = ({ match }) => {
                         name="address"
                         onChange={handleChange}
                         value={values.address}
+                        disabled={isRedeemLoading || !!txHash}
                       />
                     );
                   }}
                 />
-                <SubmitButton
-                  className="mb-24"
-                  text="Continue"
-                  isSubmitting={isRedeemLoading}
-                  canSubmit={isValid && dirty}
-                />
+                {!txHash && (
+                  <SubmitButton
+                    className="mb-24"
+                    text="Continue"
+                    isSubmitting={isRedeemLoading}
+                    canSubmit={isValid && dirty}
+                  />
+                )}
               </Form>
             );
           }}
         </Formik>
 
+        {txHash && <TxDetail hash={txHash} receipt={txReceipt} layer1={false} />}
+
+        {txReceipt && txReceipt.status && (
+          <div className="redeem-success">
+            <h6>Success!</h6>
+            <div>
+              Check your POAPs <Link to={`/scan/${ethereumAddress}`}>here</Link>
+            </div>
+          </div>
+        )}
+
         <div className="redeem-text-container">
-          <span className="redeem-text">Here is the list of the POAPs to be claimed:</span>
+          <div className="redeem-subtitle">POAPs to be claimed</div>
         </div>
 
         <div className="redeem-poaps-container events-logos">
@@ -137,8 +202,16 @@ export const RedeemPage: FC<RouteComponentProps> = ({ match }) => {
             <span>Loading Tokens</span>
           )}
         </div>
-      </div>
+      </>
+    );
+  }
 
+  return (
+    <div className="landing">
+      <ScanHeader sectionName="Claim" />
+      <div className="redeem-content-container">
+        {body}
+      </div>
       <ScanFooter path="home" />
     </div>
   );

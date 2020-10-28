@@ -3,9 +3,11 @@ import queryString from 'query-string';
 import { authClient } from './auth';
 
 export type Address = string;
-
 export type Params = {
   [key: string]: string | number | boolean | undefined;
+};
+export type TxHashResposne = {
+  tx_hash: string
 };
 export interface TemplatesResponse<Result> {
   total: number;
@@ -172,6 +174,13 @@ export interface PaginatedTransactions {
   offset: number;
   total: number;
   transactions: Transaction[];
+}
+export interface EmailClaim {
+  id: number;
+  email: string;
+  token: object;
+  end_date: Date;
+  processed: boolean;
 }
 
 export interface Notification {
@@ -637,6 +646,10 @@ export async function postTokenMigration(tokenId: number): Promise<MigrateRespon
   });
 }
 
+export function getEmailClaim(token: string): Promise<EmailClaim> {
+  return fetchJson(`${API_BASE}/actions/claim-email?token=${token}`);
+}
+
 export function requestEmailRedeem(email: string): Promise<void> {
   return fetchJson(`${API_BASE}/actions/claim-email`, {
     method: 'POST',
@@ -645,10 +658,10 @@ export function requestEmailRedeem(email: string): Promise<void> {
   });
 }
 
-export async function redeemWithEmail(address: string, uid: string): Promise<void> {
-  return fetchJson(`${API_BASE}/redeem`, {
+export async function redeemWithEmail(address: string, token: string, email: string): Promise<TxHashResposne> {
+  return fetchJson(`${API_BASE}/actions/redeem-email-tokens`, {
     method: 'POST',
-    body: JSON.stringify({ beneficiary: address, uid }),
+    body: JSON.stringify({ email, address, token }),
     headers: { 'Content-Type': 'application/json' },
   });
 }

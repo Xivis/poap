@@ -878,12 +878,15 @@ export default async function routes(fastify: FastifyInstance) {
           properties: {
             email: { type: 'string' },
             token: { type: 'string' },
-            address: 'address#'
+            address: { type: 'string' }
           }
         },
         response: {
           200: {
-            type: 'string'
+            type: 'object',
+            properties: {
+              tx_hash: { type: 'string' }
+            }
           }
         }
       },
@@ -910,7 +913,7 @@ export default async function routes(fastify: FastifyInstance) {
       }
 
       // Get all the qr claims that do not have a transaction
-      const activeQrs = await getQrByUserInput(email, false)
+      const activeQrs = await getQrByUserInput(email, false);
 
       // Get all the different events id
       const event_ids = activeQrs.map(qr => qr.event_id);
@@ -932,7 +935,7 @@ export default async function routes(fastify: FastifyInstance) {
       await updateProcessedEmailClaim(email, token);
 
       res.status(200);
-      return tx.hash;
+      return {tx_hash: tx.hash};
     }
   );
 

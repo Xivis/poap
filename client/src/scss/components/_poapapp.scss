@@ -311,36 +311,82 @@
   max-width: 600px;
   margin: 0 auto;
 
+  .claim-form {
+    text-align: center;
+  }
+
+  .preloader {
+    padding: 100px 0;
+    img {
+      width: 25px;
+    }
+  }
+
+  .token-error {
+    text-align: center;
+  }
+
   input {
     text-align: center;
 
     margin-top: 24px;
   }
-}
 
-.redeem-text-container {
-  text-align: center;
-}
-
-.redeem-text {
-  font-size: 16px;
-  padding: 25px 0;
-  font-family: $font-family-narrow;
-  color: $color-medium-violet;
-  width: 70%;
-
-  &.vertical-margin {
-    margin: 12px 0 24px;
+  .tx-detail {
+    padding: 30px 0;
+    .tx-detail-title {
+      display: none;
+    }
+    .tx-detail-box {
+      background: white;
+    }
   }
 
-  span {
+  .redeem-text-container {
+    text-align: center;
+  }
+
+  .redeem-success {
+    text-align: center;
+    padding-bottom: 50px;
+    h6{
+      color: $color-primary;
+      text-transform: uppercase;
+      font-size: 24px;
+      margin: 5px 0;
+    }
+  }
+
+  .redeem-subtitle {
+    text-align: left;
     color: $color-primary;
-    font-weight: 600;
+    font-weight: bold;
   }
-}
 
-.redeem-poaps-container {
-  margin-top: 24px;
+  .redeem-text {
+    font-size: 16px;
+    padding: 25px 0;
+    text-align: center;
+    max-width: 500px;
+    margin: 0 auto;
+
+    &.vertical-margin {
+      margin: 12px 0 24px;
+    }
+
+    span {
+      color: $color-primary;
+      font-weight: 600;
+    }
+  }
+
+  .redeem-poaps-container {
+    margin-top: 24px;
+  }
+
+  .event-circle {
+    margin: 10px !important;
+  }
 }
 
 .events-logos {
