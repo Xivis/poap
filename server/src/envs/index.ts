@@ -21,6 +21,7 @@ export interface EnvVariables {
   googleStorageBucket: string;
   sendgridApiKey: string;
   sendgridNewEventTemplate: string;
+  sendgridNewEventTemplateTemplate: string;
   sendgridRedeemTokensTemplate: string;
   sendgridSenderEmail: string;
   adminEmails: string[];
@@ -133,6 +134,7 @@ export default function getEnv(extraParams?: any): EnvVariables {
     googleStorageBucket: ensureEnvVariable('GOOGLE_STORAGE_BUCKET'),
     sendgridApiKey: ensureEnvVariable('SENDGRID_API_KEY'),
     sendgridNewEventTemplate: ensureEnvVariable('SENDGRID_NEW_EVENT_TEMPLATE'),
+    sendgridNewEventTemplateTemplate: ensureEnvVariable('SENDGRID_NEW_EVENT_TEMPLATE_TEMPLATE'),
     sendgridRedeemTokensTemplate: ensureEnvVariable('SENDGRID_REDEEM_TOKENS_TEMPLATE'),
     sendgridSenderEmail: ensureEnvVariable('SENDGRID_SENDER_EMAIL'),
     adminEmails: getAdminEmails(),

@@ -1,21 +1,21 @@
 import sgMail from '@sendgrid/mail';
 import getEnv from '../envs';
-import {PoapEvent} from "../types";
+import { FullEventTemplate, PoapFullEvent } from '../types';
 
-export async function sendNewEventEmailToAdmins(event: PoapEvent): Promise<boolean> {
+
+export async function sendNewEventEmail(event: PoapFullEvent, recipients: string[]): Promise<boolean> {
     const env = getEnv();
 
     const sendgridApiKey = env.sendgridApiKey;
     const sendgridNewEventTemplate = env.sendgridNewEventTemplate;
     const sendgridSenderEmail = env.sendgridSenderEmail;
-    const adminEmails = env.adminEmails;
 
     // using Twilio SendGrid's v3 Node.js Library
     // https://github.com/sendgrid/sendgrid-nodejs
     sgMail.setApiKey(sendgridApiKey);
 
     const email = {
-        to: adminEmails,
+        to: recipients,
         from: sendgridSenderEmail,
         subject: 'New POAP event created',
         templateId: sendgridNewEventTemplate,
@@ -26,6 +26,7 @@ export async function sendNewEventEmailToAdmins(event: PoapEvent): Promise<boole
             website: event.event_url,
             img_url: event.image_url,
             fancy_id: event.fancy_id,
+            secret_code: event.secret_code,
         }
     };
 
@@ -37,6 +38,40 @@ export async function sendNewEventEmailToAdmins(event: PoapEvent): Promise<boole
         return false
     });
     return false
+}
+
+export async function sendNewEventTemplateEmail(eventTemplate: FullEventTemplate, recipients: string[]): Promise<boolean> {
+  const env = getEnv();
+
+  const sendgridApiKey = env.sendgridApiKey;
+  const sendgridNewEventTemplateTemplate = env.sendgridNewEventTemplateTemplate;
+  const sendgridSenderEmail = env.sendgridSenderEmail;
+
+  // using Twilio SendGrid's v3 Node.js Library
+  // https://github.com/sendgrid/sendgrid-nodejs
+  sgMail.setApiKey(sendgridApiKey);
+
+  const email = {
+    to: recipients,
+    from: sendgridSenderEmail,
+    subject: 'New POAP event template created',
+    templateId: sendgridNewEventTemplateTemplate,
+    dynamic_template_data: {
+      id: eventTemplate.id,
+      name: eventTemplate.name,
+      image_url: eventTemplate.title_image,
+      secret_code: eventTemplate.secret_code,
+    }
+  };
+
+  sgMail.sendMultiple(email).then(m => {
+    return true
+  }).catch(error => {
+    // Log friendly error
+    // console.error(error.toString());
+    return false
+  });
+  return false
 }
 
 
