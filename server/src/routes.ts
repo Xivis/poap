@@ -109,7 +109,7 @@ import * as admin from 'firebase-admin';
 import { uploadFile } from './plugins/google-storage-utils';
 import { getUserRoles } from './plugins/groups-decorator';
 import { sleep } from './utils';
-import { sendNewEventEmailToAdmins, sendRedeemTokensEmail } from './plugins/sendgrid-utils';
+import { sendNewEventEmail, sendNewEventTemplateEmail, sendRedeemTokensEmail } from './plugins/sendgrid-utils';
 
 function buildMetadataJson(homeUrl: string, tokenUrl: string, ev: PoapEvent) {
   return {
@@ -1447,6 +1447,7 @@ export default async function routes(fastify: FastifyInstance) {
             image: { type: 'string', format: 'binary' },
             secret_code: { type: 'string' },
             event_template_id: { type: 'integer' },
+            email: { type: 'string' },
           },
         },
         response: {
@@ -1553,8 +1554,21 @@ export default async function routes(fastify: FastifyInstance) {
       if (event == null) {
         return new createError.BadRequest('Invalid event');
       }
+      const recipients = [];
 
-      sendNewEventEmailToAdmins(event);
+      if(!event.from_admin){
+        const env = getEnv();
+        recipients.push(...env.adminEmails);
+      }
+
+      const email = req.body.email
+      if(email){
+        recipients.push(email);
+      }
+
+      if(recipients.length > 0){
+        sendNewEventEmail(event, recipients);
+      }
 
       return event;
     }
@@ -2820,6 +2834,7 @@ export default async function routes(fastify: FastifyInstance) {
               mobile_image_link: { type: 'string' },
               footer_icon: { type: 'string', format: 'binary' },
               secret_code: { type: 'number' },
+              email: { type: 'string' },
             },
           },
           response: {
@@ -2952,6 +2967,30 @@ export default async function routes(fastify: FastifyInstance) {
         if (event_template == null) {
           return new createError.BadRequest('Invalid event template');
         }
+
+        const recipients = [];
+
+        let is_admin: boolean = false;
+
+        if (req.user && req.user.hasOwnProperty('sub')) {
+          if (getUserRoles(req.user).indexOf(UserRole.administrator) != -1) {
+            is_admin = true
+          }
+        }
+
+        if(!is_admin){
+          const env = getEnv();
+          recipients.push(...env.adminEmails);
+        }
+
+        if(req.body.email){
+          recipients.push(req.body.email);
+        }
+
+        if(recipients.length > 0){
+          sendNewEventTemplateEmail(event_template, recipients);
+        }
+
         return event_template;
       }
   );

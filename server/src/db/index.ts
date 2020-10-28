@@ -236,7 +236,7 @@ export async function updateSignerGasPrice(
   return res.rowCount === 1;
 }
 
-export async function createEvent(event: Omit<PoapFullEvent, 'id'>): Promise<PoapEvent> {
+export async function createEvent(event: Omit<PoapFullEvent, 'id'>): Promise<PoapFullEvent> {
   const data = await db.one(
     'INSERT INTO events(${this:name}) VALUES(${this:csv}) RETURNING id',
     event
@@ -731,7 +731,7 @@ export async function getTotalEventTemplates(name: string): Promise<number> {
   return res.rowCount;
 }
 
-export async function createEventTemplate(event_template: Omit<FullEventTemplate, 'id'>): Promise<EventTemplate> {
+export async function createEventTemplate(event_template: Omit<FullEventTemplate, 'id'>): Promise<FullEventTemplate> {
   const data = await db.one(
       'INSERT INTO event_templates(${this:name}) VALUES(${this:csv}) RETURNING id',
       event_template
