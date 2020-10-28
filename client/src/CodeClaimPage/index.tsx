@@ -3,6 +3,7 @@ import { RouteComponentProps } from 'react-router';
 
 /* Helpers */
 import { HashClaim, getClaimHash, getTokensFor } from '../api';
+import { isValidEmail } from '../lib/helpers';
 
 /* Components*/
 import ClaimHeader from './ClaimHeader';
@@ -41,8 +42,6 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
   useEffect(() => {
     if (claim && !isVerified) {
       checkUserTokens();
-    } else {
-      setIsVerified(true);
     }
   }, [claim]); /* eslint-disable-line react-hooks/exhaustive-deps */
 
@@ -60,11 +59,24 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
   };
 
   const checkUserTokens = () => {
-    if (!claim || !claim.beneficiary) {
+    console.log('check user tokens')
+    if (!claim) return;
+
+    let { user_input, beneficiary } = claim;
+
+    let userToValidate: string | null = beneficiary;
+    if (!userToValidate) {
+      if (user_input && isValidEmail(user_input)) {
+        userToValidate = user_input;
+      }
+    }
+
+    if (!userToValidate) {
       setIsVerified(true);
       return;
     }
-    getTokensFor(claim.beneficiary)
+
+    getTokensFor(userToValidate)
       .then((tokens) => {
         const hasToken = tokens.filter((token) => token.event.id === claim.event_id).length > 0;
         if (hasToken) {
@@ -77,18 +89,20 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
   };
 
   const continueClaim = (claim: HashClaim) => {
+    setIsVerified(false);
     setClaim(claim);
   };
 
   let body = <QRHashForm loading={isClaimLoading} checkClaim={fetchClaim} error={claimError} />;
 
+  if (claim && claim.event.image_url) {
+    image = claim.event.image_url;
+  }
+
   if (claim && isVerified) {
     body = <ClaimForm claim={claim} onSubmit={continueClaim} />;
 
     title = claim.event.name;
-    if (claim.event.image_url) {
-      image = claim.event.image_url;
-    }
     if (claim.claimed) {
       if (!claim.tx_status && !beneficiaryHasToken) {
         body = <ClaimBlocked claim={claim} />;
@@ -106,9 +120,11 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
     }
   }
 
-  if ((hash && !claim && !claimError) || !isVerified) {
+  if (claim && !claimError && !isVerified) {
     body = <ClaimLoading />;
   }
+
+  const claimedWithEmail = !!(claim && claim.claimed && claim.user_input && isValidEmail(claim.user_input));
 
   return (
     <>
@@ -120,13 +136,13 @@ export const CodeClaimPage: React.FC<RouteComponentProps<{ hash: string }>> = ({
             <ClaimHeader
               title={title}
               image={image}
-              claimed={!!(claim && claim.tx_status === TX_STATUS.passed)}
+              claimed={!!(claim && claim.tx_status === TX_STATUS.passed) || claimedWithEmail}
             />
           ) : (
             <TemplateClaimHeader
               title={title}
               image={image}
-              claimed={!!(claim && claim.tx_status === TX_STATUS.passed)}
+              claimed={!!(claim && claim.tx_status === TX_STATUS.passed) || claimedWithEmail}
               claim={claim}
             />
           )}

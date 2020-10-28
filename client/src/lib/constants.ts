@@ -39,6 +39,7 @@ const ROUTES = {
   home: '/',
   scan: '/scan/:account',
   scanHome: '/scan',
+  redeem: '/redeem/:uid',
   token: '/token/:tokenId',
   callback: '/callback',
   signerClaimPage: '/signer/claim/:event',
@@ -141,8 +142,7 @@ const LAYERS = {
   layer2: 'Layer2',
 };
 
-const layerOneNetwork =
-  process.env.REACT_APP_ETH_NETWORK === 'mainnet' ? '' : `${process.env.REACT_APP_ETH_NETWORK}.`;
+const layerOneNetwork = process.env.REACT_APP_ETH_NETWORK === 'mainnet' ? '' : `${process.env.REACT_APP_ETH_NETWORK}.`;
 const layerTwoNetwork = process.env.REACT_APP_L2_ETH_NETWORK;
 
 const etherscanLinks = {

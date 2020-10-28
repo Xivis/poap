@@ -38,3 +38,34 @@ export async function sendNewEventEmailToAdmins(event: PoapEvent): Promise<boole
     });
     return false
 }
+
+
+export async function sendRedeemTokensEmail(recipient: string, token: string): Promise<boolean> {
+  const env = getEnv();
+
+  const sendgridApiKey = env.sendgridApiKey;
+  const sendgridRedeemTokensTemplate = env.sendgridRedeemTokensTemplate;
+  const sendgridSenderEmail = env.sendgridSenderEmail;
+
+  // using Twilio SendGrid's v3 Node.js Library
+  // https://github.com/sendgrid/sendgrid-nodejs
+  sgMail.setApiKey(sendgridApiKey);
+
+  const email = {
+    to: recipient,
+    from: sendgridSenderEmail,
+    subject: 'Claim your POAPs!',
+    templateId: sendgridRedeemTokensTemplate,
+    dynamic_template_data: {
+      token: token
+    }
+  };
+
+  try {
+    await sgMail.send(email);
+    return true
+  } catch (e){
+    console.log(e.toString());
+  }
+  return false
+}

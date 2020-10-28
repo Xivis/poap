@@ -100,7 +100,7 @@ CREATE TABLE server_transactions (
 CREATE TABLE qr_claims (
     "id" SERIAL PRIMARY KEY,
     "qr_hash" varchar(256) UNIQUE not null,
-    "tx_hash" varchar(256) UNIQUE,
+    "tx_hash" varchar(256),
     "event_id" integer,
     "beneficiary" varchar(256),
     "user_input" varchar(256),
@@ -160,4 +160,12 @@ CREATE TABLE qr_roll (
     "id" SERIAL PRIMARY KEY,
     "event_host_id" integer,
     "is_active" boolean default true
+);
+
+CREATE TABLE email_claims (
+    "id" SERIAL PRIMARY KEY,
+    "email" varchar(256),
+    "token" uuid default gen_random_uuid() not null unique,
+    "end_date" timestamp with time zone,
+    "processed" boolean default false
 );

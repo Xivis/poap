@@ -3,6 +3,7 @@ import unidecode from 'unidecode';
 import createError from 'http-errors';
 import {
   checkDualQrClaim,
+  checkDualEmailQrClaim,
   checkNumericIdExists,
   checkQrHashExists,
   claimQrClaim,
@@ -11,6 +12,8 @@ import {
   createNotification,
   createQrClaims,
   createTask,
+  deleteEmailClaim,
+  getActiveEmailClaims,
   getClaimedQrsHashList,
   getClaimedQrsList,
   getEvent,
@@ -30,6 +33,7 @@ import {
   getPendingTxsAmount,
   getPoapSettingByName,
   getPoapSettings,
+  getQrByUserInput,
   getQrClaim,
   getRangeClaimedQr,
   getRangeNotOwnedQr,
@@ -41,16 +45,20 @@ import {
   getTotalTransactions,
   getTransaction,
   getTransactions,
+  saveEmailClaim,
   saveEventTemplateUpdate,
   saveEventUpdate,
   unclaimQrClaim,
+  updateEmailQrClaims,
   updateEvent,
   updateEventOnQrRange,
   updateEventTemplate,
   updatePoapSettingByName,
+  updateProcessedEmailClaim,
   updateQrClaim,
   updateQrClaims,
   updateQrClaimsHashes,
+  updateQrInput,
   updateQrScanned,
   updateSignerGasPrice,
 } from './db';
@@ -62,6 +70,7 @@ import {
   getAddressBalance,
   getAllEventIds,
   getAllTokens,
+  getEmailTokens,
   getTokenImg,
   getTokenInfo,
   isEventEditable,
@@ -72,6 +81,7 @@ import {
   mintToken,
   mintUserToManyEvents,
   resolveName,
+  validEmail,
   verifyClaim,
 } from './eth/helpers';
 
@@ -99,7 +109,7 @@ import * as admin from 'firebase-admin';
 import { uploadFile } from './plugins/google-storage-utils';
 import { getUserRoles } from './plugins/groups-decorator';
 import { sleep } from './utils';
-import { sendNewEventEmailToAdmins } from './plugins/sendgrid-utils';
+import { sendNewEventEmailToAdmins, sendRedeemTokensEmail } from './plugins/sendgrid-utils';
 
 function buildMetadataJson(homeUrl: string, tokenUrl: string, ev: PoapEvent) {
   return {
@@ -309,7 +319,7 @@ export default async function routes(fastify: FastifyInstance) {
         description: 'get all address tokens',
         tags: ['Actions',],
         params: {
-          address: 'address#',
+          address: { type:'string' },
         },
         response: {
           200: {
@@ -346,6 +356,14 @@ export default async function routes(fastify: FastifyInstance) {
     },
     async (req, res) => {
       const address = req.params.address;
+      // First check if it's an email address
+      if (validEmail(address)) {
+        return await getEmailTokens(address);
+      }
+      // Check if it's a valid ethereum address
+      if (!await checkAddress(address)) {
+        return new createError.BadRequest('Address is not valid');
+      }
       try {
         return await poapGraph.getAllTokens(address);
       } catch(e) {
@@ -703,6 +721,19 @@ export default async function routes(fastify: FastifyInstance) {
       }
       qr_claim.event = event
 
+      // First check if it's an email address
+      if (validEmail(req.body.address)) {
+        const email = req.body.address.toLowerCase();
+        const dual_qr_claim = await checkDualEmailQrClaim(qr_claim.event.id, email);
+        if (!dual_qr_claim) {
+          await unclaimQrClaim(req.body.qr_hash);
+          return new createError.BadRequest('Email already claimed a code for this event');
+        }
+        await updateQrInput(req.body.qr_hash, email);
+        qr_claim.user_input = req.body.address;
+        return qr_claim
+      }
+
       const parsed_address = await checkAddress(req.body.address);
       if (!parsed_address) {
         await unclaimQrClaim(req.body.qr_hash);
@@ -742,6 +773,169 @@ export default async function routes(fastify: FastifyInstance) {
       }
 
       return qr_claim
+    }
+  );
+
+  fastify.get(
+    '/actions/claim-email',
+    {
+      schema: {
+        description: 'Get the email claim information',
+        tags: ['Actions',],
+        querystring: {
+          token: { type: 'string' },
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              token: { type: 'string' },
+              end_date: { type: 'string' },
+              email: { type: 'string' },
+              processed: { type: 'boolean' },
+            }
+          }
+        }
+      }
+    },
+    async (req, res) => {
+      // Get the email claim
+      const emailClaims = await getActiveEmailClaims(undefined ,req.query.token);
+      // If it isn't valid: throw error
+      if(emailClaims.length == 0) {
+        return new createError.BadRequest('Invalid token');
+      }
+      // Return the first valid email claim
+      return emailClaims[0];
+    }
+  );
+
+  fastify.post(
+    '/actions/claim-email',
+    {
+      schema: {
+        description: 'Send email to redeem tokens',
+        tags: ['Actions',],
+        body: {
+          type: 'object',
+          required: ['email'],
+          properties: {
+            email: { type: 'string' }
+          }
+        },
+        response: {
+          200: {
+            type: 'boolean',
+          }
+        }
+      },
+    },
+    async (req, res) => {
+      const email = req.body.email;
+
+      // If it's an invalid email: throw error
+      if(!validEmail(email)){
+        return new createError.BadRequest('Invalid email');
+      }
+
+      // If there is an email claim in progress: throw error
+      const activeEmailClaims = await getActiveEmailClaims(email);
+      if(activeEmailClaims.length > 0){
+        return new createError.BadRequest('You already have an active claim. Please check your email');
+      }
+
+      // Set the expiration time to an hour from now
+      const now = new Date();
+      now.setHours( now.getHours() + 1 );
+
+      // If there isn't any unclaimed QR: Just return
+      if((await getQrByUserInput(email, false)).length === 0) {
+        await sleep(1000);
+        return true;
+      }
+
+      // Create an email claim
+      const claim = await saveEmailClaim(email, now);
+      // Send mail
+      const response = await sendRedeemTokensEmail(email, claim.token);
+      // If the email failed: Remove email claim
+      if(!response) {
+        await deleteEmailClaim(email, now);
+      }
+      return response;
+    }
+  );
+
+  fastify.post(
+    '/actions/redeem-email-tokens',
+    {
+      schema: {
+        description: 'Redeem tokens saved with an email',
+        tags: ['Actions',],
+        body: {
+          type: 'object',
+          required: ['email', 'address', 'token'],
+          properties: {
+            email: { type: 'string' },
+            token: { type: 'string' },
+            address: { type: 'string' }
+          }
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              tx_hash: { type: 'string' }
+            }
+          }
+        }
+      },
+    },
+    async (req, res) => {
+      const email = req.body.email;
+      const address = req.body.address;
+      const token = req.body.token;
+
+      // If it's an invalid email: throw error
+      if(!validEmail(email)){
+        return new createError.BadRequest('Invalid email');
+      }
+
+      const parsed_address = await checkAddress(address);
+      if (!parsed_address) {
+        return new createError.BadRequest('Address is not valid');
+      }
+
+      // If there isn't a valid email claim: throw error
+      const activeEmailClaims = await getActiveEmailClaims(email, token);
+      if(activeEmailClaims.length === 0){
+        return new createError.BadRequest('Email claim not found');
+      }
+
+      // Get all the qr claims that do not have a transaction
+      const activeQrs = await getQrByUserInput(email, false);
+
+      // Get all the different events id
+      const event_ids = activeQrs.map(qr => qr.event_id);
+
+      // Mint all the tokens
+      const tx = await mintUserToManyEvents(event_ids, parsed_address, false, {
+        'estimate_mint_gas': event_ids.length,
+        'layer': Layer.layer2
+      });
+
+      if(!tx) {
+        return new createError.InternalServerError('There was a problem in token mint');
+      }
+
+      // Update the Qr claims with the transaction and the address
+      await updateEmailQrClaims(email, parsed_address, tx);
+
+      // Processed the email claim
+      await updateProcessedEmailClaim(email, token);
+
+      res.status(200);
+      return {tx_hash: tx.hash};
     }
   );
 

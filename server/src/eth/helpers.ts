@@ -13,7 +13,7 @@ import {
   getEvents,
   getLastSignerTransaction,
   getMigrationTask,
-  getPoapSettingByName,
+  getPoapSettingByName, getQrByUserInput,
   getSigner,
   getTransaction,
   saveTransaction,
@@ -241,10 +241,11 @@ export async function mintEventToManyUsers(eventId: number, toAddr: Address[], a
   await processTransaction(tx, txObj, OperationType.mintEventToManyUsers, JSON.stringify([eventId, toAddr]), awaitTx, extraParams);
 }
 
-export async function mintUserToManyEvents(eventIds: number[], toAddr: Address, awaitTx: boolean = true, extraParams?: any) {
+export async function mintUserToManyEvents(eventIds: number[], toAddr: Address, awaitTx: boolean = true, extraParams?: any): Promise<null | ContractTransaction> {
   const txObj = await getTxObj(true, extraParams);
   const tx = await txObj.contract.functions.mintUserToManyEvents(eventIds, toAddr, txObj.transactionParams);
   await processTransaction(tx, txObj, OperationType.mintUserToManyEvents, JSON.stringify({ eventIds, toAddr }), awaitTx, extraParams);
+  return tx;
 }
 
 export async function mintDeliveryToken(contract: Address, index: number, recipient: Address, events: number[], proofs: string[], awaitTx: boolean = true, extraParams?: any): Promise<null | ContractTransaction> {
@@ -416,6 +417,32 @@ export async function bumpTransaction(hash: string, gasPrice: string, updateTx: 
   }
 }
 
+export async function getEmailTokens(email: string): Promise<TokenInfo[]> {
+  const events = await getEvents();
+
+  const getEvent = (id: number) => {
+    const ev = events.find(e => e.id === id);
+    if (!ev) {
+      throw new Error(`Invalid EventId: ${id}`);
+    }
+    ev.supply = 1;
+    return ev;
+  };
+
+  const tokens: TokenInfo[] = [];
+
+  (await getQrByUserInput(email, false)).forEach(claim => {
+    tokens.push({
+      event: getEvent(claim.event_id),
+      tokenId: '',
+      owner: email,
+    });
+  });
+
+  return tokens;
+}
+
+
 export async function getAllTokens(address: Address): Promise<TokenInfo[]> {
   const events = await getEvents();
 
@@ -563,6 +590,11 @@ export async function lookupAddress(address: string): Promise<string> {
   const mainnetProvider = getDefaultProvider('homestead');
   const resolved = await mainnetProvider.lookupAddress(address);
   return resolved
+}
+
+export function validEmail(email: string) {
+  const re = /^(([^<>()\[\]\.,;:\s@\"]+(\.[^<>()\[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
+  return re.test(String(email).toLowerCase());
 }
 
 export async function checkAddress(address: string): Promise<string | null> {
