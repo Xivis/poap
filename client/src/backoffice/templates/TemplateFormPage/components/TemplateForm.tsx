@@ -37,7 +37,7 @@ export const TemplateForm: FC<Props> = ({ id }) => {
   const [templateId, setTemplateId] = useState<number | undefined>(id);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState<boolean>(false);
   const [template, setTemplate] = useState<Template | null>(null);
-  const [includeEmail, setIncludeEmail] = useState<boolean>(false);
+  const [includeEmail, setIncludeEmail] = useState<boolean>(true);
 
   // libs
   const history = useHistory();
