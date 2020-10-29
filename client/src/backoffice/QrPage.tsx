@@ -479,9 +479,7 @@ const QrPage: FC = () => {
                         {qr.user_input ? qr.user_input : qr.beneficiary}
                       </a>
                     )}
-                    {!qr.beneficiary && qr.user_input && (
-                      <>{qr.user_input}</>
-                    )}
+                    {!qr.beneficiary && qr.user_input && <>{qr.user_input}</>}
                   </div>
                 </div>
               );

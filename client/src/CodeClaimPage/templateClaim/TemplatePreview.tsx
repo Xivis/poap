@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
 
 // types
-import { Template } from 'api';
+import { Template, TemplatePageFormValues } from 'api';
 
 // assets
 import EmptyBadge from 'images/empty-badge.svg';
@@ -12,7 +12,7 @@ import { TemplateClaimFooter } from './TemplateClaimFooter';
 import ClaimForm from '../ClaimForm';
 
 type Props = {
-  template: Template | null;
+  template: Template | TemplatePageFormValues | null;
 };
 
 export const TemplatePreview: FC<Props> = ({ template }) => {

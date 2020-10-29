@@ -14,7 +14,7 @@ import { Tooltip } from 'react-lightweight-tooltip';
 
 /* Helpers */
 import { tryGetAccount } from 'poap-eth';
-import { HashClaim, postClaimHash, getClaimHash, postTokenMigration } from 'api';
+import { HashClaim, postClaimHash, getClaimHash, postTokenMigration, Template, TemplatePageFormValues } from 'api';
 import { AddressSchema } from 'lib/schemas';
 import { hasWeb3 } from 'poap-eth';
 
@@ -27,8 +27,7 @@ import ClaimFooterMessage from './ClaimFooterMessage';
 import { COLORS, STYLES, TX_STATUS } from 'lib/constants';
 import { useImageSrc } from 'lib/hooks/useImageSrc';
 
-/* Types */
-import { Template } from 'api';
+/* ABI */
 import abi from '../abis/PoapDelegatedMint.json';
 
 type QRFormValues = {
@@ -40,7 +39,7 @@ const CONTRACT_ADDRESS = process.env.REACT_APP_MINT_DELEGATE_CONTRACT;
 
 const ClaimForm: React.FC<{
   claim?: HashClaim;
-  template?: Template;
+  template?: Template | TemplatePageFormValues;
   onSubmit: (claim: HashClaim) => void;
 }> = ({ claim, onSubmit, template }) => {
   const [claimed, setClaimed] = useState<boolean>(false);

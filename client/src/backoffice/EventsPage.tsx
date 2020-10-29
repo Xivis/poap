@@ -7,6 +7,7 @@ import 'react-day-picker/lib/style.css';
 import { format } from 'date-fns';
 import { useToasts } from 'react-toast-notifications';
 import { useHistory } from 'react-router-dom';
+import { FiCheckSquare, FiSquare } from 'react-icons/fi';
 
 import { authClient } from 'auth';
 
@@ -21,7 +22,7 @@ import FilterButton from '../components/FilterButton';
 import FilterSelect from '../components/FilterSelect';
 
 // constants
-import { ROUTES } from 'lib/constants';
+import { COLORS, ROUTES } from 'lib/constants';
 
 // assets
 import { ReactComponent as EditIcon } from 'images/edit.svg';
@@ -59,6 +60,7 @@ type EventEditValues = {
   image?: Blob;
   isFile: boolean;
   secret_code: string;
+  email: string;
 };
 
 type DatePickerDay = 'start_date' | 'end_date';
@@ -162,6 +164,7 @@ type TemplateOptionType = {
 const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ create, event }) => {
   const [virtualEvent, setVirtualEvent] = useState<boolean>(event ? event.virtual_event : false);
   const [templateOptions, setTemplateOptions] = useState<Template[] | null>(null);
+  const [includeEmail, setIncludeEmail] = useState<boolean>(false);
 
   const [multiDay, setMultiDay] = useState<boolean>(event ? event.start_date !== event.end_date : false);
   const history = useHistory();
@@ -193,6 +196,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
         end_date: end_date.replace(dateRegex, '-'),
         isFile: false,
         secret_code: secret_code ? secret_code.toString().padStart(6, '0') : '',
+        email: '',
       };
     } else {
       const now = new Date();
@@ -211,6 +215,7 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
         image: new Blob(),
         isFile: true,
         secret_code: generateSecretCode(),
+        email: '',
       };
       return values;
     }
@@ -274,7 +279,11 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
     return [{ value: 0, label: 'Standard template' }, ...options];
   };
 
+  const toggleCheckbox = () => setIncludeEmail(!includeEmail);
+
   const templateSelectOptions = templateOptions ? parseTemplateToOptions(templateOptions) : [];
+
+  let CheckboxIcon = includeEmail ? FiCheckSquare : FiSquare;
 
   return (
     <div className={'bk-container'}>
@@ -292,6 +301,14 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
 
             if (create && !isFile) {
               actions.setErrors({ isFile: 'An image is required' });
+              actions.setSubmitting(false);
+              return;
+            }
+
+            if (includeEmail && !submittedValues['email']) {
+              actions.setErrors({ email: 'An email is required' });
+              actions.setSubmitting(false);
+              return;
             }
 
             Object.entries(othersKeys).forEach(([key, value]) => {
@@ -426,6 +443,14 @@ const EventForm: React.FC<{ create?: boolean; event?: PoapFullEvent }> = ({ crea
                 />
                 <div>
                   <EventField disabled={false} title={editLabel} name="secret_code" />
+                  {create && (
+                    <div className={'email-checkbox'}>
+                      <div onClick={toggleCheckbox} className={'box-label'}>
+                        <CheckboxIcon color={COLORS.primaryColor} /> Receive a backup of the event Edit Code
+                      </div>
+                      {includeEmail && <EventField disabled={false} title={'Email'} name="email" />}
+                    </div>
+                  )}
                 </div>
               </div>
               {event && event.image_url && (

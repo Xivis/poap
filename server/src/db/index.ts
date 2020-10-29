@@ -40,7 +40,7 @@ const publicTemplateColumns = 'id, name, title_image, title_link, header_link_te
   'header_link_color, main_color, footer_color, left_image_url, left_image_link, right_image_url, right_image_link, ' +
   'mobile_image_url, mobile_image_link, footer_icon';
 
-function formatDate(dbDate: string): string {
+export function formatDate(dbDate: string): string {
   return format(new Date(dbDate), 'DD-MMM-YYYY');
 }
 

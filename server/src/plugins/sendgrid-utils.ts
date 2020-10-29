@@ -1,5 +1,7 @@
 import sgMail from '@sendgrid/mail';
+
 import getEnv from '../envs';
+import { formatDate } from '../db';
 import { FullEventTemplate, PoapFullEvent } from '../types';
 
 
@@ -22,7 +24,7 @@ export async function sendNewEventEmail(event: PoapFullEvent, recipients: string
         dynamic_template_data: {
             name: event.name,
             description: event.description,
-            start_date: event.start_date,
+            start_date: formatDate(event.start_date),
             website: event.event_url,
             img_url: event.image_url,
             fancy_id: event.fancy_id,

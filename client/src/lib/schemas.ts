@@ -119,6 +119,7 @@ export const templateFormSchema = yup.object().shape({
     .string()
     .required('The secret code is required')
     .matches(/^[0-9]{6}$/, 'Must be exactly 6 digits'),
+  email: yup.string().email('An email is required'),
 });
 
 const PoapEventSchema = yup.object().shape({
@@ -144,6 +145,7 @@ const PoapEventSchema = yup.object().shape({
     .string()
     .required('The secret code is required')
     .matches(/^[0-9]{6}$/, 'Must be exactly 6 digits'),
+  email: yup.string().email('An email is required'),
 });
 
 const IssueForEventFormValueSchema = yup.object().shape({

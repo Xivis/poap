@@ -96,6 +96,7 @@ export type TemplatePageFormValues = {
   mobile_image_link: string;
   footer_icon: Blob | string;
   secret_code: string;
+  email: string;
 };
 export type EventTemplate = {
   created_date: string;
@@ -444,6 +445,13 @@ export async function updateEvent(event: FormData, fancyId: string): Promise<voi
 }
 
 export async function createEvent(event: FormData) {
+  const isAdmin = authClient.isAuthenticated();
+  if (isAdmin) {
+    return secureFetch(`${API_BASE}/events`, {
+      method: 'POST',
+      body: event,
+    });
+  }
   return fetchJson(`${API_BASE}/events`, {
     method: 'POST',
     body: event,
@@ -451,6 +459,13 @@ export async function createEvent(event: FormData) {
 }
 
 export async function createTemplate(event: FormData): Promise<Template> {
+  const isAdmin = authClient.isAuthenticated();
+  if (isAdmin) {
+    return secureFetch(`${API_BASE}/event-templates`, {
+      method: 'POST',
+      body: event,
+    });
+  }
   return fetchJson(`${API_BASE}/event-templates`, {
     method: 'POST',
     body: event,
