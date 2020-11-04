@@ -7,19 +7,27 @@ import { FullEventTemplate, PoapFullEvent } from '../types';
 
 function sendEmail(recipients: string[], templateName: string, templateData: any): Promise<boolean>{
   const env = getEnv();
+
+
+  const destinations = recipients.map(recipient => {
+    return {
+      Destination: {
+        ToAddresses: [recipient]
+      },
+    }
+  })
   // Create sendTemplatedEmail params
-  var params = {
-    Destination: {
-      ToAddresses: recipients
-    },
+  const params = {
+    Destinations: destinations,
     Source: env.senderEmail,
     Template: templateName,
-    TemplateData: JSON.stringify(templateData),
+    DefaultTemplateData: JSON.stringify(templateData),
   };
+
   // Load the AWS SDK for Node.js
-  AWS.config.update({region: 'us-west-2'});
+  AWS.config.update({region: env.awsRegion, accessKeyId: env.awsAccessKey, secretAccessKey: env.awsSecretAccessKey});
   // Create the promise and SES service object
-  return new AWS.SES().sendTemplatedEmail(params).promise()
+  return new AWS.SES().sendBulkTemplatedEmail(params).promise()
     .then((m) => true)
     .catch((e) => false);
 }

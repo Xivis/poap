@@ -24,6 +24,9 @@ export interface EnvVariables {
   redeemTokensEmailTemplate: string;
   senderEmail: string;
   adminEmails: string[];
+  awsRegion: string;
+  awsAccessKey: string;
+  awsSecretAccessKey: string;
   l1_subgraph_url: string;
   l2_subgraph_url: string;
 }
@@ -136,6 +139,9 @@ export default function getEnv(extraParams?: any): EnvVariables {
     redeemTokensEmailTemplate: ensureEnvVariable('REDEEM_TOKENS_EMAIL_TEMPLATE'),
     senderEmail: ensureEnvVariable('SENDER_EMAIL'),
     adminEmails: getAdminEmails(),
+    awsRegion: ensureEnvVariable('AWS_REGION'),
+    awsSecretAccessKey: ensureEnvVariable('AWS_SECRET_ACCESS_KEY'),
+    awsAccessKey: ensureEnvVariable('AWS_ACCESS_KEY'),
     l1_subgraph_url: ensureEnvVariable('L1_POAP_SUBGRAPH_URL'),
     l2_subgraph_url: ensureEnvVariable('L2_POAP_SUBGRAPH_URL'),
   };
